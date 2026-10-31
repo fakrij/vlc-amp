@@ -371,7 +371,7 @@ function Invoke-Setup {
     }
     Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" + $extra +
         "VLC's web interface is on for this computer only (127.0.0.1, port 48080, password in vlcrc); the helper uses it.`n`n" +
-        "To undo: restore $rc.before-titlebar (VLC closed) and delete the shortcut in $startup.") | Out-Null
+        "To undo: Start menu > Titlebar VLC skin > Uninstall (or Uninstall.cmd).") | Out-Null
 }
 
 if ($Setup) { Invoke-Setup; exit 0 }

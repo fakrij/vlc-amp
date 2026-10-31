@@ -54,36 +54,44 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
 ### Windows (recommended)
 
-1. Copy this folder somewhere permanent, for example `Documents\VLC-skin`.
-   The setup points VLC at the skin file in it.
-2. Close VLC and double-click **`taskbar\Setup.cmd`**. It:
-   - picks the skin file for your display scaling (`Titlebar-100/125/150/200.vlt`;
-     if you let the helper dock the player in the taskbar, the taller
-     `Titlebar-taskbar-NNN.vlt`, see [Taskbar mode](#taskbar-mode));
-   - makes VLC use the skin also when you double-click a file or folder in
-     Explorer;
-   - sends files you open to the running player (no second VLC window);
-   - removes the "Media Library" entry from the playlist (it does nothing in
-     a skin);
-   - asks whether to start the helper with Windows. The helper pins the player
-     on top each time VLC starts, gives VLC a taskbar button with previous /
-     play / next on hover and, if you want, docks it in the taskbar;
-   - turns on VLC's built-in web interface for this computer only
-     (`127.0.0.1`, port 48080, protected by a random password that is stored
-     in `vlcrc`). The helper uses it to read what VLC is playing and to send
-     commands; nothing is reachable from the network.
-   - installs the Lua extras: copies `lua\intf\titlebar.lua` to `%APPDATA%\vlc\lua\intf\`,
-     starts it with VLC and sets its default keys (see [Lua extras](#lua-extras));
-   - asks whether to add Windows media controls (see [Media controls](#media-controls)).
+1. Close VLC and double-click **`Install.cmd`** (in this folder, or in the
+   `Titlebar-VLC-skin-windows` folder built by `tools/make-windows-package.sh`).
+   It:
+   - installs VLC 3 with `winget` if it is missing;
+   - copies the skin to `%LOCALAPPDATA%\Titlebar-VLC-skin` (VLC points at the
+     skin file there, so the folder you started from can be deleted);
+   - runs the setup (`taskbar\vlc-taskbar.ps1 -Setup`), see below;
+   - adds Start menu entries (Titlebar VLC skin): setup again, VLC in taskbar,
+     uninstall, skin folder.
+2. Open a music file or folder.
 
-   Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
-3. Open a music file or folder.
+The setup:
+- picks the skin file for your display scaling (`Titlebar-100/125/150/200.vlt`;
+  if you let the helper dock the player in the taskbar, the taller
+  `Titlebar-taskbar-NNN.vlt`, see [Taskbar mode](#taskbar-mode));
+- makes VLC use the skin also when you double-click a file or folder in
+  Explorer, and sends files you open to the running player (no second VLC
+  window);
+- removes the "Media Library" entry from the playlist (it does nothing in a
+  skin);
+- asks whether to start the helper with Windows. The helper pins the player
+  on top each time VLC starts, gives VLC a taskbar button with previous /
+  play / next on hover and, if you want, docks it in the taskbar;
+- turns on VLC's built-in web interface for this computer only (`127.0.0.1`,
+  port 48080, protected by a random password stored in `vlcrc`). The helper
+  uses it to read what VLC is playing and to send commands; nothing is
+  reachable from the network;
+- installs the Lua extras (`%APPDATA%\vlc\lua\intf\titlebar.lua`, its default
+  keys; see [Lua extras](#lua-extras));
+- asks whether to add Windows media controls (see [Media controls](#media-controls)).
 
-**Undo**: close VLC, copy `vlcrc.before-titlebar` back over `vlcrc` (this also
-switches the web interface, the Lua extras and the media controls off again), and delete
-"Titlebar VLC helper" from the Startup folder (Win+R, `shell:startup`).
-The media controls plugin can stay (VLC ignores it when it is not switched on)
-or be deleted: `libwin10smtc_plugin.dll` in VLC's `plugins\misc` folder. `%APPDATA%\vlc\lua\intf\titlebar.lua` can stay too.
+Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
+
+**Undo**: Start menu > Titlebar VLC skin > **Uninstall Titlebar skin** (or
+`Uninstall.cmd`). It restores `vlcrc.before-titlebar` (keeping your last
+settings as `vlcrc.titlebar-removed`), stops the helper, removes its Startup
+shortcut, the Lua script, the Start menu entries and the installed folder,
+and offers to remove the media controls plugin. VLC stays installed.
 
 ### Linux (any distro)
 
@@ -471,11 +479,13 @@ These come from VLC's skin engine (skins2); details in
 |---|---|
 | `Titlebar-*.vlt` | The skin, one file per display scaling; `Titlebar-taskbar-*.vlt` the same with a taller strip for the taskbar |
 | `lua/intf/titlebar.lua` | Lua interface: A-B loop, folder jump, EQ presets, bitrate for lossless files |
+| `Install.cmd`, `Uninstall.cmd` | Windows: one-step install / removal (`taskbar\install.ps1`, `taskbar\uninstall.ps1`) |
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs` |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
 | `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, pin autostart, `--uninstall`), `titlebar-pin.py` (pin on start) |
 | `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
+| `tools/make-windows-package.sh` | Builds `dist/Titlebar-VLC-skin-windows/` (+ zip) to copy to a Windows PC |
 | `tools/` | Test harness: real VLC under Xvfb, screenshots ([tools/README.md](tools/README.md)) |
 | `docs/` | [Architecture](docs/architecture.md), [Lua API notes](docs/lua-api-notes.md), screenshots |
 | `BACKLOG.md` | Wishlist, what is possible, agent task briefs |
