@@ -226,6 +226,8 @@ VLC must have its Lua support (the normal Windows and distribution builds do).
   VLC's log (start VLC with `-v`). The EQ panel shows the preset's sliders.
 - The sample rate keeps showing whole kHz ("44" for 44.1 kHz): that is how
   VLC's skin engine formats it.
+- The default keys live in `lua/vlcrc-keys.txt`; both setups write them into
+  `vlcrc` unless you already set the action.
 - Change the keys in VLC: Tools > Preferences > All > Hotkeys (or `vlcrc`).
   The script uses five VLC actions that do nothing for music, so keep these
   names: A-B loop = *Sync subtitle (mark audio)*, next / previous folder =

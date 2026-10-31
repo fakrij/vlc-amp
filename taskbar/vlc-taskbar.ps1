@@ -225,14 +225,18 @@ function Get-VlcRemote {
 
 # ---- Lua interface (lua\intf\titlebar.lua): A-B loop, next / previous folder, EQ presets ----
 # Its triggers are VLC hotkey actions that do nothing for music (see docs/architecture.md, "Lua interface").
-# Default keys, written into vlcrc only where the user has not set the action. The tray menu and the web
-# interface use the action names without the "key-" prefix.
-$LuaKeys = [ordered]@{
-    "key-subsync-markaudio"        = "Ctrl+Shift+a"       # A-B loop: set A, set B (loops), clear
-    "key-viewpoint-roll-clock"     = "Ctrl+Shift+Right"   # next folder
-    "key-viewpoint-roll-anticlock" = "Ctrl+Shift+Left"    # previous folder
-    "key-viewpoint-fov-in"         = "Ctrl+Shift+Up"      # next equalizer preset
-    "key-viewpoint-fov-out"        = "Ctrl+Shift+Down"    # previous equalizer preset
+# Default vlcrc settings come from lua\vlcrc-keys.txt (shared with linux/setup.sh): one "<section> <key>=<value>"
+# per line, "#" lines and blank lines ignored. A key is written only where vlcrc has no active, non-empty value.
+function Set-VlcDefaults([System.Collections.Generic.List[string]]$lines, $file) {
+    if (-not (Test-Path $file)) { return }
+    foreach ($l in [IO.File]::ReadAllLines($file)) {
+        $t = $l.Trim()
+        if (-not $t -or $t.StartsWith("#")) { continue }
+        if ($t -match '^(\S+)\s+([^=\s]+)=(.*)$') {
+            $sec = $Matches[1]; $key = $Matches[2]; $val = $Matches[3].Trim()
+            if ($val -and -not (Get-VlcSetting $lines $key)) { Set-VlcOption $lines $sec $key $val }
+        }
+    }
 }
 
 function Invoke-Setup {
@@ -298,12 +302,10 @@ function Invoke-Setup {
         if (-not $other -or $other -eq "dummy" -or $other -eq "titlebar") {
             $luaDir = Join-Path $env:APPDATA "vlc\lua\intf"
             New-Item -ItemType Directory -Force -Path $luaDir | Out-Null
-            Copy-Item $luaSrc (Join-Path $luaDir "titlebar.lua") -Force
+            Copy-Item (Join-Path $root "lua\intf\*.lua") $luaDir -Force
             Set-VlcModule $lines "core" "extraintf" "luaintf"
             Set-VlcOption $lines "lua" "lua-intf" "titlebar"                       # (the key lives in vlcrc's [lua] section)
-            foreach ($k in $LuaKeys.Keys) {
-                if (-not (Get-VlcSetting $lines $k)) { Set-VlcOption $lines "core" $k $LuaKeys[$k] }
-            }
+            Set-VlcDefaults $lines (Join-Path $root "lua\vlcrc-keys.txt")             # default key bindings
             $luaOn = $true
         }
     }

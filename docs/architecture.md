@@ -264,7 +264,7 @@ VLC 3.0.20 under the test harness (`tools/`).
 | vlcrc | Windows `%APPDATA%\vlc\vlcrc`; Linux `${XDG_CONFIG_HOME:-$HOME/.config}/vlc/vlcrc` |
 | `[core]` `extraintf` | add `luaintf` to the colon-separated list (`http:luaintf`, `win10smtc:http:luaintf`), keep the others |
 | `[lua]` `lua-intf` | `titlebar` (the option belongs to the `lua` module, like `http-password`; only set it when it is unset or `dummy`) |
-| `[core]` keys | five `key-...` lines below, written only when the action has no active line yet |
+| `[core]` keys | the five `key-...` lines of `lua/vlcrc-keys.txt` (format `<section> <key>=<value>`, `#` comments), written only when vlcrc has no active, non-empty value for the key. Both `vlc-taskbar.ps1 -Setup` and `linux/setup.sh` read this file, so it is the one list to edit |
 
 Both `http` and `luaintf` are interface modules of VLC's one `lua` plugin;
 `lua-intf` is read only by `luaintf` (`modules/lua/intf.c`: `http`, `cli` and
@@ -274,7 +274,7 @@ only. The script needs a VLC with Lua (the Windows build and the Ubuntu 24.04
 packages used by the harness have it; other distributions: not checked). It also works with Lua 5.1
 (Windows) and 5.2 (the Ubuntu 24.04 build used by the harness).
 
-vlcrc lines, exactly (the `[lua]` and `[core]` section headers only matter for
+vlcrc lines, exactly (same as `lua/vlcrc-keys.txt` plus the two lines the setups handle themselves; the `[lua]` and `[core]` section headers only matter for
 a file that does not have the option yet; VLC reads these keys from any
 section):
 
