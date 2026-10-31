@@ -35,13 +35,11 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
   ![Full player](docs/img/full.png)
 
-- **Themes**: 10 colour schemes plus one in your own colour. Dark: Midnight
-  (cyan, the default), Ember (amber), Forest (mint), Nord (frost blue), Dusk
-  (pink), Carbon (red). Light: Paper (blue), Sand (teal on cream), Sage (green),
-  Rose (raspberry). **Custom**: dark, in any colour you pick (see
-  [Custom colour](#custom-colour)). The round button in the full player's
-  title bar steps to the next theme; its tooltip names the current and the
-  next one.
+- **Themes**: Midnight (dark, cyan-blue) and Paper (white / grey, blue). The
+  round button in the full player's title bar switches between them. Each
+  theme costs memory, so the skin ships with these two only; 9 more colour
+  schemes and a Custom theme in any colour can be built in (see
+  [More themes](#more-themes)).
 
   ![Themes](docs/img/themes.png)
 
@@ -121,12 +119,24 @@ Display: large time (click to switch elapsed / time left), the other value and
 the total under it, title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
 speed. Then the seek bar, transport, volume, PL and EQ.
 
-### Custom colour
+### More themes
 
-The Custom theme is the one theme whose accent you choose. The `.vlt` files
-carry the Custom theme in a red reference colour; the tool in `custom-colour/`
-turns it into your colour and rewrites the `.vlt` files in this folder (close
-VLC first if the file is locked; it is read when VLC starts).
+The generator has 9 more themes: dark Ember (amber), Forest (mint), Nord
+(frost blue), Dusk (pink), Carbon (red); light Sand (teal on cream), Sage
+(green), Rose (raspberry); and **Custom**, dark in any colour you choose.
+Each adds about 10 MB of VLC memory at 100 % scaling (20 MB at 150 %) and some
+start-up time, so build only the ones you want (the first is the default):
+
+```bash
+python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Nord,Custom" --custom "#33ff99"
+```
+
+`--themes all` builds every theme (about 240 MB of VLC memory at 100 %).
+
+**Custom colour.** A skin that contains Custom (built with it, as above) can
+be recoloured later without the generator: the tool in `custom-colour/`
+rewrites the `.vlt` files in this folder (close VLC first; it reads them at
+start). Then restart VLC and pick Custom with the theme button.
 
 - **Windows**: double-click **`custom-colour\Custom colour.cmd`**. A colour
   dialog opens (starting at the current accent), then every `Titlebar-*.vlt`
@@ -138,11 +148,6 @@ VLC first if the file is locked; it is read when VLC starts).
   `python3 custom-colour/custom-colour.py "#33ff99"` skips the dialog;
   `--reset` returns to the default accent (`#b48cff`); more arguments are
   `.vlt` files to change instead of the default ones.
-
-Then restart VLC, open the full player and click the theme button in its title
-bar until Custom shows. Rerun the tool to change the colour again. A new
-build of the skin (copying fresh `Titlebar-*.vlt` files here) starts with the
-default accent: run the tool again.
 
 ### Playlist and equalizer
 
@@ -240,10 +245,10 @@ These come from VLC's skin engine (skins2); details in
   actions; options are in the backlog).
 - Flipping the panel side moves the bar once.
 - The player's invisible area does not snap to screen edges.
-- Eleven themes cost memory and start-up time: VLC uses about 190 MB at 100 %
-  scaling and 310 MB at 150 % (one theme alone: about 85 MB). To make it
-  lighter, build a skin with only the themes you use:
-  `python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Custom"`.
+- Memory: VLC with this skin (2 themes) uses about 146 MB at 100 % scaling and
+  167 MB at 150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of
+  that is VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
+  150 %), see [More themes](#more-themes).
 - Windows only: the taskbar helper. The skin itself also works on Linux.
 
 ## Project files
@@ -267,8 +272,9 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
 width in logical pixels (min 442), `--out` the output folder (default
-`source/dist`), `--preview` also writes a PNG of all states, `--themes` builds
-only the named themes (comma-separated, the first one is the default), and
+`source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
+the themes (comma-separated, the first one is the default; `all` = every
+theme; default `Midnight,Paper`), and
 `--custom #rrggbb` sets the Custom theme's colour. See
 [docs/architecture.md](docs/architecture.md) for how the generator works.
 

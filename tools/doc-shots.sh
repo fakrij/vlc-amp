@@ -56,16 +56,14 @@ click 507 12; click 479 12             # EQ, PL off
 click 27 12                            # expand
 park; shot full 0 0 $W 122
 
-# themes, in THEME_SEEDS order: the theme button (full player, 434,11) steps to the next one
-for i in $(seq 0 10); do
-    park; shot theme-$i 0 0 $W 122
-    click 434 11
-done                                             # 11 clicks: back to theme 0
-for i in 1 2 3 4 5 6; do click 434 11; done      # theme 6: Paper (light)
+# themes (the release build has Midnight + Paper): the theme button (full player, 434,11) toggles
+park; shot theme-0 0 0 $W 122
+click 434 11                                     # Paper
+park; shot theme-1 0 0 $W 122
 click 503 11; click 479 12                       # collapse, PL
 park; shot light-strip-playlist 0 0 $W 222
 click 479 12; click 27 12                        # PL off, expand
-for i in 1 2 3 4 5; do click 434 11; done        # back to theme 0 (Midnight), the default
+click 434 11                                     # back to Midnight, the default
 $T quit >/dev/null
 $T xvfb-stop >/dev/null
 
@@ -73,12 +71,11 @@ $T xvfb-stop >/dev/null
 import sys
 from PIL import Image
 out = sys.argv[1]
-ims = [Image.open("%s/theme-%d.png" % (out, i)) for i in range(11)]
+ims = [Image.open("%s/theme-%d.png" % (out, i)) for i in range(2)]
 w, h = ims[0].size
-grid = Image.new("RGB", (w * 2 + 12, h * 6 + 60), (230, 232, 235))
-for i, im in enumerate(ims):               # left: the 6 dark themes; right: 4 light + Custom
-    col, row = (0, i) if i < 6 else (1, i - 6)
-    grid.paste(im, (col * (w + 12), row * (h + 12)))
+grid = Image.new("RGB", (w, h * 2 + 12), (230, 232, 235))
+for i, im in enumerate(ims):
+    grid.paste(im, (0, i * (h + 12)))
 grid.save("%s/themes.png" % out)
 EOF
 echo "screenshots in $OUT"

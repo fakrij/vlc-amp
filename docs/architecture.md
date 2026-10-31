@@ -76,7 +76,8 @@ fill, playlist rows and so on from the accent, **only by mixing it with
 neutral colours** (black, white, grey); the Custom theme depends on that (see
 below). `apply_theme(i)` sets the module-level colour names (`CYAN*` are the
 accent colours, named after the default theme). `--themes` builds a subset
-(`set_themes`). The generator renders the whole skin once per theme, into the
+(`set_themes`); the release skins use `DEFAULT_THEMES` (Midnight, Paper), and
+with a single theme the theme button is left out. The generator renders the whole skin once per theme, into the
 same 4 layouts:
 
 - bitmap ids get the prefix `t<i>_` (`Skin.prefix`, applied by `Skin.add` and
@@ -137,8 +138,10 @@ theme (`pack_atlases`, shelf packing) and cut out with `<SubBitmap>`:
 bitmaps (the progress fill frame sheets, wide stretch pieces; > 16384 px)
 stay separate files to avoid storing them twice.
 
-Memory (RSS of VLC, 11 themes): about 190 MB at 100 %, 310 MB at 150 %; one
-theme alone is about 85 MB. Most of the per-theme cost is the fill frame
+Memory (RSS of VLC on Linux, 8 s after start, `smaps_rollup`): VLC's own default
+skin 131 MB at 100 %; Midnight alone 136 MB, Midnight + Paper 146 MB, all 11
+themes 240 MB (150 %: 146 / 167 / 360 MB). About 100 MB is VLC and its
+libraries, shared with any skin; each theme adds ~10 MB at 100 %. Most of the per-theme cost is the fill frame
 sheets (`title_fill`, `seek`, volume): `CtrlSliderBg` copies its whole frame
 sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
 Hence `FILL_FRAMES = 51` (2 % steps; 101 frames cost 80 MB more at 150 %).

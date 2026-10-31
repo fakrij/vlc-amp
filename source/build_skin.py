@@ -144,17 +144,20 @@ def _theme(mode, hue, sat, accent, led):
 
 
 THEMES, CUSTOM = [], None      # CUSTOM = index of the Custom theme, None when it is not built
+# The release skins carry only these: every theme costs ~10 MB of VLC memory at 100 % scaling
+# (~20 MB at 150 %) and start-up time. --themes all builds every theme.
+DEFAULT_THEMES = ["midnight", "paper"]
 
 
 def set_themes(names=None):
-    """Build all themes, or only the named ones (fewer themes = less memory, faster start)."""
+    """Build all themes (names=None), or only the named ones, in THEME_SEEDS order."""
     global CUSTOM
     seeds = [t for t in THEME_SEEDS if names is None or t[1].lower() in names]
     THEMES[:] = [(mode, name, _theme(mode, hue, sat, acc, led)) for mode, name, hue, sat, acc, led in seeds]
     CUSTOM = next((i for i, t in enumerate(THEMES) if t[1] == "Custom"), None)
 
 
-set_themes()
+set_themes(DEFAULT_THEMES)
 
 
 def apply_theme(i):
@@ -783,10 +786,11 @@ def build(skin, W):
         hslice(skin, lay, "full_bg", bg, 0, 0, 14, 8, right_action="resizeE")
         label_on(skin, "lbl_now", bg, 18, 5, 70, 12, "NOW PLAYING")
         lay.image("lbl_now", P(18), P(5), action="move")
-        # theme button, left of the menu button: steps to the next theme
+        # theme button, left of the menu button: steps to the next theme (none with one theme)
         nxt = (cur["theme"] + 1) % len(THEMES)
-        lay.button("b_theme", F(122), P(5), select_theme(nxt),
-                   "Theme: %s (click: %s)" % (THEMES[cur["theme"]][1], THEMES[nxt][1]), **tr)
+        if nxt != cur["theme"]:
+            lay.button("b_theme", F(122), P(5), select_theme(nxt),
+                       "Theme: %s (click: %s)" % (THEMES[cur["theme"]][1], THEMES[nxt][1]), **tr)
         lay.button("b_menu", F(102), P(5), "dialogs.popup()", "VLC menu (open files, skins, settings)", **tr)
         lay.checkbox("t_top_s", F(82), P(5), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
@@ -1239,16 +1243,19 @@ def main():
     ap.add_argument("--out", default=os.path.join(HERE, "dist"))
     ap.add_argument("--preview", action="store_true")
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
-    ap.add_argument("--themes", help="comma-separated theme names to build (default: all): " +
+    ap.add_argument("--themes", default=",".join(DEFAULT_THEMES),
+                    help="comma-separated theme names to build, or 'all' (default: %(default)s): " +
                     ", ".join(t[1] for t in THEME_SEEDS))
     a = ap.parse_args()
-    if a.themes:
+    if a.themes.lower() == "all":
+        set_themes()
+    else:
         names = [n.strip().lower() for n in a.themes.split(",")]
         unknown = set(names) - {t[1].lower() for t in THEME_SEEDS}
         if unknown:
             ap.error("unknown theme(s): " + ", ".join(sorted(unknown)))
         set_themes(names)
-        apply_theme(0)
+    apply_theme(0)
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", a.custom):
         ap.error("--custom must look like #b48cff")
     S = a.scale
