@@ -46,58 +46,142 @@ def H(c, a=255):
 
 
 # ---------------------------------------------------------------- palettes
-# The skin is rendered once per theme (6 = dark / light x 3 accents). apply_theme()
-# sets the module-level colour names below; CYAN* are the accent colours (cyan in the
-# default theme), AMBER the LED colour.
+# The skin is rendered once per theme. apply_theme() sets the module-level colour names
+# below; CYAN* are the accent colours (cyan in the default theme), AMBER the LED colour.
+# A theme is a few seed colours: base (dark / light template, tinted with a hue), accent
+# and LED. Everything else is derived from them by mixing with grey, black or white.
 DARK = dict(
-    BG_TOP="#2c3137", BG_BOT="#1a1d21", OUTLINE="#08090b", HILITE="#48505a", PL_FLAT="#24282d",
-    BTN={"up": ("#3a4047", "#262a2f"), "over": ("#454c54", "#2e3339"), "down": ("#1d2125", "#2a2f35")},
-    BTN_BORDER="#0b0c0e", BTN_HILITE="#535b64", ICON_UP="#c3cbd3", ICON_OVER="#ffffff",
-    LCD_EDGE="#3a4048", AMBER="#f2a93b", AMBER_OFF="#4a3a1c", GRIP="#66707a", LABEL="#9aa3ad",
-    THUMB_UP=("#e2e7ec", "#8a939c"), THUMB_OVER=("#ffffff", "#a4adb6"), TRACK="#0b0d0f",
+    BG_TOP="#2e3135", BG_BOT="#1b1c1e", OUTLINE="#08090a", HILITE="#4c5055", PL_FLAT="#26282b",
+    BTN={"up": ("#3d4045", "#28292c"), "over": ("#484b50", "#303236"), "down": ("#1f2023", "#2c2e32")},
+    BTN_BORDER="#0b0c0d", BTN_HILITE="#565a60", ICON_UP="#c8cbcf", ICON_OVER="#ffffff",
+    LCD_EDGE="#3d4045", GRIP="#6c7075", LABEL="#9fa3a8",
+    THUMB_UP=("#e5e7e9", "#8f9399"), THUMB_OVER=("#ffffff", "#a9adb2"), TRACK="#0c0d0e",
     PT_PLAY="#ffffff", HEAD_OVER="#ffffff", SHADOW=200, SHADOW2=120)
 LIGHT = dict(
-    BG_TOP="#eef1f4", BG_BOT="#d3d9df", OUTLINE="#7d8791", HILITE="#ffffff", PL_FLAT="#e3e7eb",
-    BTN={"up": ("#fbfcfd", "#dde2e7"), "over": ("#ffffff", "#e9edf1"), "down": ("#c9d0d7", "#d9dfe5")},
-    BTN_BORDER="#8a949e", BTN_HILITE="#ffffff", ICON_UP="#3a4148", ICON_OVER="#000000",
-    LCD_EDGE="#ffffff", AMBER="#e8901a", AMBER_OFF="#d9c6a5", GRIP="#8a949e", LABEL="#5a636c",
-    THUMB_UP=("#ffffff", "#b9c1c9"), THUMB_OVER=("#ffffff", "#d5dbe1"), TRACK="#b9c2cb",
+    BG_TOP="#f0f1f2", BG_BOT="#d6d9dc", OUTLINE="#83878b", HILITE="#ffffff", PL_FLAT="#e5e7e9",
+    BTN={"up": ("#fbfcfc", "#e0e2e5"), "over": ("#ffffff", "#ebedee"), "down": ("#cdd0d3", "#dcdfe1")},
+    BTN_BORDER="#8f9397", BTN_HILITE="#ffffff", ICON_UP="#3d4043", ICON_OVER="#000000",
+    LCD_EDGE="#ffffff", GRIP="#8f9397", LABEL="#5e6266",
+    THUMB_UP=("#ffffff", "#bdc1c5"), THUMB_OVER=("#ffffff", "#d8dbde"), TRACK="#bec2c6",
     PT_PLAY="#000000", HEAD_OVER="#000000", SHADOW=60, SHADOW2=30)
-# accent: CYAN (fills, active icons), CYAN_TXT / CYAN2 / CYAN_DIM (LCD text: main / secondary
-# / off), LCD_BG, TITLE_FILL (played part of the strip title), LCD_HI (LCD toggle hover),
-# DIVIDER, EQ_TRACK, SCROLL_TRACK, PT_SEL / PT_BG2 (playlist selection / odd rows)
-ACCENTS = {
-    "dark": [
-        ("cyan", dict(CYAN="#5fd3e8", CYAN_TXT="#63d8ec", CYAN2="#4fb3c6", CYAN_DIM="#2f6f7c", LCD_BG="#061114",
-                      TITLE_FILL="#0e3540", LCD_HI="#e8fbff", DIVIDER="#15343d", EQ_TRACK="#15262b",
-                      SCROLL_TRACK="#0a1a1e", PT_SEL="#0f3640", PT_BG2="#08171b")),
-        ("amber", dict(CYAN="#ffb547", CYAN_TXT="#ffbf5e", CYAN2="#d9a050", CYAN_DIM="#7a5a2a", LCD_BG="#140d04",
-                       TITLE_FILL="#3d2a0e", LCD_HI="#fff1dc", DIVIDER="#3a2a12", EQ_TRACK="#2a1e0e",
-                       SCROLL_TRACK="#1c1308", PT_SEL="#3d2a0e", PT_BG2="#1a1107")),
-        ("green", dict(CYAN="#6ee68f", CYAN_TXT="#7cf29b", CYAN2="#5cc47a", CYAN_DIM="#2f6e40", LCD_BG="#04110a",
-                       TITLE_FILL="#0d3a1d", LCD_HI="#e6ffec", DIVIDER="#133a22", EQ_TRACK="#13261a",
-                       SCROLL_TRACK="#08180e", PT_SEL="#0d3a1d", PT_BG2="#071a0e")),
-    ],
-    "light": [
-        ("blue", dict(CYAN="#1f7fc4", CYAN_TXT="#0d5f99", CYAN2="#3f78a3", CYAN_DIM="#9fb8cc", LCD_BG="#e4eef6",
-                      TITLE_FILL="#c3dbee", LCD_HI="#08324f", DIVIDER="#b7cde0", EQ_TRACK="#c9d9e6",
-                      SCROLL_TRACK="#d2e1ed", PT_SEL="#c3dbee", PT_BG2="#dbe8f2")),
-        ("red", dict(CYAN="#d0462f", CYAN_TXT="#a8321f", CYAN2="#b5584a", CYAN_DIM="#dcb3ab", LCD_BG="#f7e9e5",
-                     TITLE_FILL="#f0cfc6", LCD_HI="#5a1409", DIVIDER="#e5c4bb", EQ_TRACK="#ebd3cc",
-                     SCROLL_TRACK="#efdcd6", PT_SEL="#f0cfc6", PT_BG2="#f2e1dc")),
-        ("green", dict(CYAN="#2e8b45", CYAN_TXT="#1f6e34", CYAN2="#4a8a5a", CYAN_DIM="#a9cdb2", LCD_BG="#e6f3e8",
-                       TITLE_FILL="#c5e3cb", LCD_HI="#0b3a17", DIVIDER="#bfdcc5", EQ_TRACK="#cfe5d3",
-                       SCROLL_TRACK="#d6eadb", PT_SEL="#c5e3cb", PT_BG2="#dcede0")),
-    ],
-}
-THEMES = [(mode, name, dict(base, **acc)) for mode, base in (("dark", DARK), ("light", LIGHT))
-          for name, acc in ACCENTS[mode]]          # index 0 = dark cyan = default
+
+
+def _rgb(c):
+    return tuple(int(c.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def mix(a, b, t):
+    """Colour a mixed with colour b; t = share of b."""
+    return "#%02x%02x%02x" % tuple(round(x + (y - x) * t) for x, y in zip(_rgb(a), _rgb(b)))
+
+
+def tint(c, hue, sat):
+    """Same lightness as c, with the given hue (degrees) and HLS saturation."""
+    import colorsys
+    _, l, _ = colorsys.rgb_to_hls(*(v / 255 for v in _rgb(c)))
+    return "#%02x%02x%02x" % tuple(round(v * 255) for v in colorsys.hls_to_rgb(hue / 360, l, sat))
+
+
+def base_palette(mode, hue, sat):
+    """The dark or light template, every colour tinted with hue / sat."""
+    def t(v):
+        if isinstance(v, str):
+            return tint(v, hue, sat)
+        if isinstance(v, tuple):
+            return tuple(t(x) for x in v)
+        if isinstance(v, dict):
+            return {k: t(x) for k, x in v.items()}
+        return v
+    return t(DARK if mode == "dark" else LIGHT)
+
+
+def accent_palette(mode, A, led):
+    """Accent colours from one colour A: CYAN (fills, active icons), CYAN_TXT / CYAN2 /
+    CYAN_DIM (LCD text: main / secondary / off), LCD_BG, TITLE_FILL (played part of the strip
+    title), LCD_HI (LCD toggle hover), DIVIDER, EQ_TRACK, SCROLL_TRACK, PT_SEL / PT_BG2
+    (playlist selection / odd rows); AMBER / AMBER_OFF from the LED colour.
+    Only mixes with neutral colours: the custom theme's recolouring relies on it."""
+    k, w, g = "#000000", "#ffffff", "#808080"
+    if mode == "dark":
+        return dict(CYAN=A, CYAN_TXT=mix(A, w, 0.05), CYAN2=mix(A, k, 0.18), CYAN_DIM=mix(A, k, 0.52),
+                    LCD_BG=mix(A, k, 0.93), TITLE_FILL=mix(A, k, 0.78), LCD_HI=mix(A, w, 0.85),
+                    DIVIDER=mix(A, k, 0.78), EQ_TRACK=mix(A, "#141414", 0.88), SCROLL_TRACK=mix(A, k, 0.89),
+                    PT_SEL=mix(A, k, 0.78), PT_BG2=mix(A, k, 0.9), AMBER=led, AMBER_OFF=mix(led, k, 0.7))
+    return dict(CYAN=A, CYAN_TXT=mix(A, k, 0.25), CYAN2=mix(A, g, 0.3), CYAN_DIM=mix(A, w, 0.6),
+                LCD_BG=mix(A, w, 0.9), TITLE_FILL=mix(A, w, 0.74), LCD_HI=mix(A, k, 0.6),
+                DIVIDER=mix(A, w, 0.72), EQ_TRACK=mix(A, w, 0.78), SCROLL_TRACK=mix(A, w, 0.82),
+                PT_SEL=mix(A, w, 0.74), PT_BG2=mix(A, w, 0.86), AMBER=led, AMBER_OFF=mix(led, w, 0.62))
+
+
+# The custom theme is rendered with a pure red accent and a neutral grey base, so every
+# pixel is grey + t * red; recolour() turns it into grey + t * any colour (exact, since the
+# palette only mixes the accent with neutral colours). The .vlt keeps the red originals in
+# custom-ref/ for the colour picker tools.
+CUSTOM_REF = "#ff0000"
+CUSTOM_DEFAULT = "#b48cff"
+
+# (mode, name, base hue, base saturation, accent, LED); the button in the full player's
+# title bar steps through them in this order. Index 0 = default.
+THEME_SEEDS = [
+    ("dark",  "Midnight", 210, 0.12, "#5fd3e8", "#f2a93b"),
+    ("dark",  "Ember",     28, 0.12, "#ffb547", "#ff7b4a"),
+    ("dark",  "Forest",   150, 0.09, "#78e0a0", "#e8d36a"),
+    ("dark",  "Nord",     220, 0.17, "#88c0d0", "#ebcb8b"),
+    ("dark",  "Dusk",     268, 0.15, "#ff79c6", "#f1fa8c"),
+    ("dark",  "Carbon",     0, 0.00, "#ff5a4f", "#ffd166"),
+    ("light", "Paper",    210, 0.12, "#1f7fc4", "#e8901a"),
+    ("light", "Sand",      44, 0.45, "#1f9a92", "#d0561c"),
+    ("light", "Sage",     120, 0.10, "#2e8b45", "#d08a1a"),
+    ("light", "Rose",     345, 0.22, "#c2185b", "#e8901a"),
+    ("dark",  "Custom",     0, 0.00, CUSTOM_REF, None),
+]
+
+
+def _theme(mode, hue, sat, accent, led):
+    if led is None:     # custom: LED from the accent, so it follows the chosen colour
+        led = mix(accent, "#ffffff", 0.25)
+    return dict(base_palette(mode, hue, sat), **accent_palette(mode, accent, led))
+
+
+THEMES, CUSTOM = [], None      # CUSTOM = index of the Custom theme, None when it is not built
+
+
+def set_themes(names=None):
+    """Build all themes, or only the named ones (fewer themes = less memory, faster start)."""
+    global CUSTOM
+    seeds = [t for t in THEME_SEEDS if names is None or t[1].lower() in names]
+    THEMES[:] = [(mode, name, _theme(mode, hue, sat, acc, led)) for mode, name, hue, sat, acc, led in seeds]
+    CUSTOM = next((i for i, t in enumerate(THEMES) if t[1] == "Custom"), None)
+
+
+set_themes()
 
 
 def apply_theme(i):
     pal = dict(THEMES[i][2])
     pal["ICON"] = {"up": pal.pop("ICON_UP"), "over": pal.pop("ICON_OVER"), "down": pal["CYAN"]}
     globals().update(pal)
+
+
+def recolour(im, accent):
+    """Custom theme: a pixel grey n + t * red becomes n + t * accent (alpha unchanged)."""
+    from PIL import ImageChops
+    r, g, _, a = im.split()
+    t = ImageChops.subtract(r, g)                     # t * 255; g is the grey part n
+    return Image.merge("RGBA", [ImageChops.add(g, t.point(lambda v, c=c: round(v * c / 255)))
+                                for c in _rgb(accent)] + [a])
+
+
+def recolour_hex(c, accent):
+    r, g, _ = _rgb(c)
+    return "#%02X%02X%02X" % tuple(min(255, g + round((r - g) * x / 255)) for x in _rgb(accent))
+
+
+def recolour_xml(xml, accent, slot=None):
+    """Recolour the colours of the custom theme's controls (visible="th<slot>.isVisible ...")."""
+    mark = 'visible="th%d.isVisible' % (CUSTOM if slot is None else slot)
+    return "\n".join(re.sub(r"#[0-9A-Fa-f]{6}", lambda m: recolour_hex(m.group(0), accent), l) if mark in l else l
+                     for l in xml.split("\n"))
 
 
 apply_theme(0)
@@ -550,6 +634,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
 
 # ---------------------------------------------------------------- windows
 MIN_W = 442   # narrowest strip: keeps a ~22 px title window
+FILL_FRAMES = 51   # frames of the seek / title progress fills (2 % steps); each frame costs memory in every theme
 
 # State that must survive layout switches and restarts lives in tiny invisible "flag"
 # windows: VLC saves every window's visibility, and controls can test it with
@@ -612,7 +697,7 @@ def build(skin, W):
         make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
         make_fill_frames(skin, "vol64", 64, 8, 2, 4, P(64))
         make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
-        make_fill_frames(skin, "seek", sw, 6, 1, 4, 101)
+        make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
         c = Canvas(12, 12)
         icon(c, "speaker", 0, 0, 12, LABEL)
         skin.add("ic_speaker", c.done())
@@ -627,19 +712,14 @@ def build(skin, W):
             make_button(skin, "b_pl_" + lbl, 32, 14, label=lbl.upper())
         for lbl in ("shuf", "loop", "rep1"):
             make_toggle(skin, "t_pl_" + lbl, 38, 14, label=lbl.upper(), use_led=True)
-        # theme switcher (full player title bar): light / dark, and one dot per accent
-        make_button(skin, "b_mode", 18, 12, "moon" if cur["mode"] == "light" else "sun", icon_size=9)
-        for k, (mode, name, pal) in enumerate(t for t in THEMES if t[0] == cur["mode"]):
-            for st in ("up", "over", "down"):
-                c = Canvas(12, 12)
-                if k == cur["accent"]:      # current accent: ring around the dot
-                    c.circle(6, 6, 5.5, ICON["over"] if st == "over" else ICON["up"])
-                    c.circle(6, 6, 4.3, BG_BOT)
-                elif st == "over":
-                    c.circle(6, 6, 5.5, ICON["up"])
-                    c.circle(6, 6, 4.5, BG_BOT)
-                c.circle(6, 6, 3.4 if st != "down" else 2.8, pal["CYAN"])
-                skin.add("dot%d_%s" % (k, st), c.done())
+        # theme button (full player title bar): a dot in the theme's accent colour
+        for st in ("up", "over", "down"):
+            c = Canvas(18, 12)
+            button_face(c, 18, 12, st)
+            c.circle(9, 6, 4.4, ICON[st])
+            c.circle(9, 6, 3.3, BG_BOT)
+            c.circle(9, 6, 2.5 if st != "down" else 2.0, CYAN)
+            skin.add("b_theme_" + st, c.done())
 
     def panel_toggles(lay, pl_base, eq_base, x_pl, x_eq, y):
         lay.checkbox(pl_base, x_pl, y, PL_ON, "plflag.show()", "plflag.hide()",
@@ -674,9 +754,9 @@ def build(skin, W):
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, 16
-        make_progress_frames(skin, "title_fill", fw, fh, 101, TITLE_FILL)
+        make_progress_frames(skin, "title_fill", fw, fh, FILL_FRAMES, TITLE_FILL)
         lay.slider("s_title_" + lay.id, P(dx + 1), P(4), "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2),
-                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=101,
+                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=FILL_FRAMES,
                    rb="righttop")
         lay.text(P(dx + 5), P(5), P(dw - 10), "lcd12", "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
@@ -703,14 +783,10 @@ def build(skin, W):
         hslice(skin, lay, "full_bg", bg, 0, 0, 14, 8, right_action="resizeE")
         label_on(skin, "lbl_now", bg, 18, 5, 70, 12, "NOW PLAYING")
         lay.image("lbl_now", P(18), P(5), action="move")
-        # theme switcher, left of the menu button
-        modes = [t[0] for t in THEMES]
-        other = "light" if cur["mode"] == "dark" else "dark"
-        lay.button("b_mode", F(176), P(5), select_theme(modes.index(other) + cur["accent"]),
-                   "Switch to the %s theme" % other, **tr)
-        for k, (mode, name, pal) in enumerate(t for t in THEMES if t[0] == cur["mode"]):
-            lay.button("dot%d" % k, F(154 - 14 * k), P(5), select_theme(modes.index(mode) + k),
-                       "%s %s" % (mode.capitalize(), name), **tr)
+        # theme button, left of the menu button: steps to the next theme
+        nxt = (cur["theme"] + 1) % len(THEMES)
+        lay.button("b_theme", F(122), P(5), select_theme(nxt),
+                   "Theme: %s (click: %s)" % (THEMES[cur["theme"]][1], THEMES[nxt][1]), **tr)
         lay.button("b_menu", F(102), P(5), "dialogs.popup()", "VLC menu (open files, skins, settings)", **tr)
         lay.checkbox("t_top_s", F(82), P(5), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
@@ -743,7 +819,7 @@ def build(skin, W):
                  sample="SPEED 1x", **tr)
         # seek bar (stretches; the fill frames scale with it)
         lay.slider("s_seek_" + lay.id, P(8), P(78), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
-                   "time", "$T / $D", bg="seek", nbvert=101, rb="righttop")
+                   "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, rb="righttop")
         # transport row
         ty = 96
         lay.button("fb_prev", P(8), P(ty), "playlist.previous()", "Previous")
@@ -836,14 +912,14 @@ def build(skin, W):
     # The playlist sits next to the bar when the EQ is closed, otherwise beyond the EQ,
     # so it is placed twice with complementary visibility.
     # Every theme adds its own copy of all controls, visible only while its flag window
-    # (th0..th5) is shown; the layouts themselves are shared, so the width stays shared.
+    # (th0, th1, ...) is shown; the layouts themselves are shared, so the width stays shared.
     layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(MIN_W), maxw=P(4000))
                for mode in ("full", "strip") for d in ("up", "dn")]   # last = default: strip-dn
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
         apply_theme(ti)
         skin.prefix = "t%d_" % ti
-        cur.update(mode=tmode, accent=[t[0] for t in THEMES][:ti].count(tmode))
+        cur.update(theme=ti)
         make_bitmaps()
         for lay in layouts:
             mode, d = lay.id.split("-")
@@ -1137,7 +1213,7 @@ def preview(skin, path):
         ("strip + playlist, opening above (taskbar)", preview_layout(skin, su, flags=PL)),
         ("expanded player", preview_layout(skin, fd)),
         ("expanded player + EQ, opening above, countdown", preview_layout(skin, fu, flags=EQ + T)),
-    ] + [("theme: %s %s" % (m, n), preview_layout(skin, fd, theme=i)) for i, (m, n, _) in enumerate(THEMES)
+    ] + [("theme %d: %s" % (i, n), preview_layout(skin, fd, theme=i)) for i, (m, n, _) in enumerate(THEMES)
          if i]
     pad = P(24)
     lab = ImageFont.truetype(FONT_BOLD, P(12))
@@ -1162,7 +1238,19 @@ def main():
     ap.add_argument("--width", type=int, default=556)
     ap.add_argument("--out", default=os.path.join(HERE, "dist"))
     ap.add_argument("--preview", action="store_true")
+    ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
+    ap.add_argument("--themes", help="comma-separated theme names to build (default: all): " +
+                    ", ".join(t[1] for t in THEME_SEEDS))
     a = ap.parse_args()
+    if a.themes:
+        names = [n.strip().lower() for n in a.themes.split(",")]
+        unknown = set(names) - {t[1].lower() for t in THEME_SEEDS}
+        if unknown:
+            ap.error("unknown theme(s): " + ", ".join(sorted(unknown)))
+        set_themes(names)
+        apply_theme(0)
+    if not re.fullmatch(r"#[0-9A-Fa-f]{6}", a.custom):
+        ap.error("--custom must look like #b48cff")
     S = a.scale
     if a.width < MIN_W:
         ap.error("--width must be at least %d" % MIN_W)
@@ -1181,11 +1269,24 @@ def main():
     shutil.rmtree(stage, ignore_errors=True)
     os.makedirs(os.path.join(stage, "img"))
     os.makedirs(os.path.join(stage, "fonts"))
+    # the Custom theme must be pure grey + red, or recolouring it would be wrong
+    from PIL import ImageChops
+    cpre = "t%d_" % CUSTOM if CUSTOM is not None else "-"
+    for bid, im in skin.bitmaps.items():
+        if bid.startswith(cpre):
+            r, g, b, _ = im.split()
+            assert ImageChops.difference(g, b).getextrema()[1] <= 1 and \
+                ImageChops.subtract(g, r).getextrema()[1] <= 1, "custom theme bitmap not grey + red: " + bid
     atlases, singles = pack_atlases(skin)
-    for aid, atlas, _ in atlases:
-        atlas.save(os.path.join(stage, "img", aid + ".png"), optimize=True)
-    for bid in singles:
-        skin.bitmaps[bid].save(os.path.join(stage, "img", bid + ".png"), optimize=True)
+    # img/ gets the Custom theme in its colour; custom-ref/ keeps the red originals (and the
+    # unrecoloured theme.xml) for the colour picker tools (custom-colour/)
+    if CUSTOM is not None:
+        os.makedirs(os.path.join(stage, "custom-ref", "img"))
+    for fid, im in [(aid, atlas) for aid, atlas, _ in atlases] + [(bid, skin.bitmaps[bid]) for bid in singles]:
+        if fid.startswith(cpre) or fid == "atlas_" + cpre[:-1]:
+            im.save(os.path.join(stage, "custom-ref", "img", fid + ".png"), optimize=True)
+            im = recolour(im, a.custom)
+        im.save(os.path.join(stage, "img", fid + ".png"), optimize=True)
     shutil.copy(FONT_MONO, os.path.join(stage, "fonts"))
     lic = os.path.join(HERE, "fonts", "LICENSE-DejaVu.txt")
     if os.path.exists(lic):
@@ -1197,6 +1298,13 @@ def main():
     assert all(ids), "element without id: %r" % [t for t, i in zip(tags, ids) if not i][:3]
     dup = [k for k, v in Counter(i.group(1) for i in ids).items() if v > 1]
     assert not dup, "duplicate ids: %r" % sorted(dup)[:5]
+    if CUSTOM is not None:
+        with open(os.path.join(stage, "custom-ref", "theme.xml"), "w", encoding="utf-8") as fh:
+            fh.write(xml)
+    if CUSTOM is not None:
+        with open(os.path.join(stage, "custom-ref", "slot.txt"), "w", encoding="utf-8") as fh:
+            fh.write("slot=%d\naccent=%s\n" % (CUSTOM, a.custom.lower()))
+        xml = recolour_xml(xml, a.custom)
     with open(os.path.join(stage, "theme.xml"), "w", encoding="utf-8") as fh:
         fh.write(xml)
 
@@ -1209,6 +1317,21 @@ def main():
     print("wrote", vlt, "(%d bitmaps: %d in %d atlases, %d separate)" % (
         len(skin.bitmaps), len(skin.bitmaps) - len(singles), len(atlases), len(singles)))
     if a.preview:
+        for bid in skin.bitmaps:                      # show the Custom theme in its colour
+            if bid.startswith(cpre):
+                skin.bitmaps[bid] = recolour(skin.bitmaps[bid], a.custom)
+
+        def walk(nodes):
+            for n in nodes:
+                if CUSTOM is not None and (getattr(n, "vis", None) or "").startswith("th%d.isVisible" % CUSTOM):
+                    if getattr(n, "color", None):
+                        n.color = recolour_hex(n.color, a.custom)
+                    if getattr(n, "colors", None):
+                        n.colors = {k: recolour_hex(v, a.custom) for k, v in n.colors.items()}
+                walk(getattr(n, "children", []))
+        for w in skin.windows:
+            for lay in w["layouts"]:
+                walk(lay.nodes)
         pv = os.path.join(a.out, "preview-%s.png" % name)
         preview(skin, pv)
         print("wrote", pv)
