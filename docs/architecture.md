@@ -371,18 +371,51 @@ grows. Never run it against your real home unless you want the changes.
   interface"). Optionally it creates a Startup shortcut running the helper
   with `-Watch` (and `-NoDock`).
 - `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
-  windows), reads the main window's region (`GetWindowRgn`): if the visible
-  box reaches the window bottom, the bar is at the bottom; a pixel test at the
-  strip's rounded corner (one bar height from the bar's outer edge) tells the
-  strip from the full player. Then it moves
-  the window so the strip sits in the taskbar, re-asserts `HWND_TOPMOST` when
-  the taskbar is above it, and steps aside for full-screen apps.
+  windows) and reads the main window's region (`GetWindowRgn` +
+  `GetRegionData`). `DockShape.Classify` (pure code, tested with the X11
+  shapes of the real skin) decides from the visible height: strip `bar`,
+  `bar + EQ`, `bar + PL`, `bar + EQ + PL` or full `122 + ...` tells strip /
+  full and which panels are open, and the visible part touching the window's
+  top or bottom gives "dn" / "up" (the full player with both panels fills the
+  window: direction kept from before). The old pixel test at the strip's
+  rounded corner only breaks ties (bar 40: strip + PL = full + EQ). A height
+  that fits a strip of another height than `BarHeight` is taken as such (the
+  helper's skin file differs from VLC's; with the old test that made a strip
+  with PL / EQ open count as the full player, placed above the taskbar).
+- Moving: skins2 keeps its own copy of the window position and never notices
+  moves from outside (no `WM_MOVE` handling in `win32_loop.cpp`), and every
+  later move or resize it does starts from that copy
+  (`GenericWindow::resize` -> `MoveWindow(m_left, m_top, ...)`). A window moved
+  with `SetWindowPos` therefore jumps back on every expand / collapse / flip and
+  during a resize drag (whose width is computed from client coordinates, so it
+  collapses to the minimum). Verified on X11, which has the same logic. So the
+  helper posts a drag on the skin's grip (`WM_LBUTTONDOWN`, `WM_MOUSEMOVE` by
+  the offset, `WM_LBUTTONUP` at client 6, bar / 2; `CtrlMove` moves by the
+  client offset and updates its copy). A stale copy makes the first drag land
+  off by as much; the next one corrects it. `SetWindowPos` only as a fallback
+  (2 drags without effect, or 4 misses in a row). No moves while a mouse
+  button is down (`GetAsyncKeyState`): with `DockTo=start` the right edge goes
+  back to Start after a resize, so the strip grows to the left.
+- Z-order: VLC's pin is the `WS_EX_TOPMOST` of its 1 x 1 flag windows
+  (`WindowManager::setOnTop` sets every top-level skin window; the helper never
+  touches those). The main window is kept topmost while VLC is pinned or the
+  strip is in the taskbar (the taskbar is topmost, a non-topmost strip would be
+  behind it), re-raised when the taskbar comes above it (item 15), and made
+  non-topmost again for an unpinned full player. Before, `Move()` always
+  inserted `HWND_TOPMOST`, which re-pinned VLC right after an unpin. It steps
+  aside for full-screen apps.
+- A docked strip with PL / EQ open on the side away from the screen (the "dn"
+  layouts under a bottom taskbar) gets a posted click on the flip arrow of the
+  panel next to the strip (`FlipPanels`, at most 3 tries).
 - Start pinned: VLC never saves "always on top", so the helper posts a click
   (`WM_MOUSEMOVE` / `WM_LBUTTONDOWN` / `UP`) on the skin's own pin button
-  1.5 s after VLC's window appears. The positions in `PinOnce` / `ClickPin` must
-  follow the generator's layout. The strip's height is `VlcDock.BarHeight` (set
-  by the script from the skin file name; 24 or 36 / `--bar-height`) in
-  `ReadShape`, `Place` and `ClickPin`; the full player's 122 px stay fixed.
+  1.5 s after VLC's window appears (no click if the flag windows say it is
+  pinned already). The click points (pin, grip, flip arrows) are in
+  `DockShape.PinPoint` / `GripPoint` / `FlipPoint` and must follow the
+  generator's layout (`build_skin.py`: `add_strip`, `add_full`, `flip_button`).
+  The strip's height is `VlcDock.BarHeight` (set by the script from the skin
+  file name; 24 or 36 / `--bar-height`), unless the shape shows another one; the
+  full player's 122 px stay fixed.
 - Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
   own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`). The menu's
   "Playback" submenu (A-B loop, next / previous folder, next EQ preset) sends
