@@ -636,7 +636,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 442   # narrowest strip: keeps a ~22 px title window
+MIN_W = 420   # narrowest strip: EQ band block (400 px) plus a 10 px margin each side; title window 62 px
 FILL_FRAMES = 51   # frames of the seek / title progress fills (2 % steps); each frame costs memory in every theme
 
 # State that must survive layout switches and restarts lives in tiny invisible "flag"
@@ -667,9 +667,7 @@ def build(skin, W):
         """All bitmaps of the current theme (skin.prefix namespaces them)."""
         make_button(skin, "b_expand", 22, 18, "expand")
         make_button(skin, "b_prev", 22, 18, "prev")
-        make_button(skin, "b_slower", 22, 18, "slower")
         make_toggle(skin, "t_play", 26, 18, icon_off="play", icon_on="pause", on_color=CYAN)
-        make_button(skin, "b_faster", 22, 18, "faster")
         make_button(skin, "b_next", 22, 18, "next")
         make_toggle(skin, "t_pl", 26, 18, label="PL", use_led=True)
         make_toggle(skin, "t_eq", 26, 18, label="EQ", use_led=True)
@@ -746,11 +744,9 @@ def build(skin, W):
         hslice(skin, lay, "strip_bg", c.done(hard_edges=True), 0, 0, 14, 10, right_action="resizeE")
         lay.button("b_expand", P(16), P(3), "main.setLayout(full-%s)" % d, "Expand to full player")
         lay.button("b_prev", P(44), P(3), "playlist.previous()", "Previous")
-        lay.button("b_slower", P(68), P(3), "vlc.slower()", "Slower")
-        lay.checkbox("t_play", P(92), P(3), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("b_faster", P(120), P(3), "vlc.faster()", "Faster")
-        lay.button("b_next", P(144), P(3), "playlist.next()", "Next")
-        dx, dw = 172, W - (TW + 170) - 172
+        lay.checkbox("t_play", P(68), P(3), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("b_next", P(96), P(3), "playlist.next()", "Next")
+        dx, dw = 124, W - (TW + 170) - 124   # slower / faster live in the full player only
         c = Canvas(dw, 18)
         lcd(c, 0, 0, dw, 18)
         hslice(skin, lay, "strip_lcd", c.done(), P(dx), P(3), 4, 4)

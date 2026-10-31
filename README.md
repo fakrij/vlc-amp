@@ -10,7 +10,7 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
 ## Features
 
-- **Strip**: expand, previous, slower, play / pause, faster, next, song title,
+- **Strip**: expand, previous, play / pause, next, song title,
   time, volume, playlist, equalizer, always on top. Drag the grip on the left
   to move it, the right edge to make it wider.
 - **Seek from the title**: the title window is also the seek bar. The played
@@ -96,7 +96,6 @@ Interface > Preferences > **Use native style**, restart VLC.
 | Grip (dots, left) | Drag to move the player |
 | Expand | Full player |
 | Previous / next | Previous / next track |
-| Speedometers | Slower / faster playback |
 | Play / pause | |
 | Title | Song name (scrolls when long). Click = jump to that point, drag = seek, wheel = 5 % |
 | Time | Elapsed; click for time left |
@@ -267,7 +266,7 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (min 442), `--out` the output folder (default
+width in logical pixels (min 420), `--out` the output folder (default
 `source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
 the themes (comma-separated, the first one is the default; `all` = every
 theme; default `Midnight`), and
