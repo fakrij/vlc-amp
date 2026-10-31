@@ -9,14 +9,14 @@ OUT=${1:-dist}
 NAME=Titlebar-VLC-skin-windows
 PKG="${OUT:?}/${NAME:?}"
 
-files=$(git ls-files -- Install.cmd Uninstall.cmd README.md 'Titlebar-*.vlt' taskbar lua docs/img)
-dirty=$(git status --porcelain -- $files)
+paths=(Install.cmd Uninstall.cmd README.md 'Titlebar-*.vlt' taskbar lua docs/img)
+dirty=$(git status --porcelain -- "${paths[@]}")
 [ -z "$dirty" ] || { echo "warning: uncommitted changes in packaged files (not included):"; echo "$dirty"; }
 
 rm -rf "${PKG:?}" "${PKG:?}.zip"
 mkdir -p "$PKG"
 # git archive applies .gitattributes, so .ps1 / .cmd / .cs get CRLF line endings
-git archive --format=tar HEAD -- $files | tar -x -C "$PKG"
+git archive --format=tar HEAD -- "${paths[@]}" | tar -x -C "$PKG"
 sed 's/$/\r/' > "$PKG/READ ME FIRST.txt" <<'TXT'
 Titlebar - a VLC skin
 
