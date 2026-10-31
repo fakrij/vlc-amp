@@ -7,7 +7,8 @@
 #   -Setup    write VLC's settings, offer to start the helper with Windows, then exit
 #   -Watch    do not start VLC; wait for it (files opened from Explorer), keep running
 #   -NoDock   do not dock in the taskbar, only pin VLC on top when it starts
-param([switch]$Setup, [switch]$Watch, [switch]$NoDock)
+#   -DebugLog write a log to %TEMP%\titlebar-helper.log (or set the $DebugLog line below to $true)
+param([switch]$Setup, [switch]$Watch, [switch]$NoDock, [switch]$DebugLog)
 
 # ---------------- settings ----------------
 $Skin              = "auto"             # "auto" = pick Titlebar-NNN.vlt from the Windows display scale, or a file name
@@ -17,6 +18,7 @@ $OffsetY           = 0                  # nudge the strip up (-) or down (+) ins
 $HideVlcTaskbarButton = $true           # the player is in the taskbar already, so hide VLC's own taskbar button
 $StartVlc          = $true              # start VLC if it is not running (not in -Watch mode)
 $StartPinned       = $true              # pin VLC "always on top" each time it starts
+$DebugLog          = $DebugLog.IsPresent -or $false   # $true = log what the helper does to %TEMP%\titlebar-helper.log
 # -----------------------------------------
 
 $ErrorActionPreference = "Stop"
@@ -167,5 +169,6 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::OffsetY     = $OffsetY
 [VlcDock]::Dock        = -not $NoDock
 [VlcDock]::StartPinned = $StartPinned
+if ($DebugLog) { [VlcDock]::LogPath = Join-Path $env:TEMP "titlebar-helper.log" }
 [VlcDock]::ExitWithVlc = -not $Watch
 [VlcDock]::Run()   # returns when VLC exits (not in -Watch mode)

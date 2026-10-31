@@ -109,6 +109,12 @@ Settings are at the top of `taskbar\vlc-taskbar.ps1`: which skin file (`auto` =
 by display scaling), dock position (`start`, `left`, `right` = next to the
 tray icons), gap, vertical nudge, start pinned.
 
+If the player misbehaves (for example it vanishes when you click the taskbar),
+turn on the helper's log: change `$false` to `$true` on the `$DebugLog` line of
+that file, or run `vlc-taskbar.ps1 -DebugLog`. The helper then writes what it
+sees and does to `%TEMP%\titlebar-helper.log` (1 MB at most, the older part in
+`titlebar-helper.log.old`). Send that file along with the report.
+
 It is still VLC's own window kept in place, not part of Explorer, so it
 cannot be pinned like an app icon. To start it with Windows, put a shortcut to
 `VLC in taskbar.cmd` in the Startup folder (Win+R, `shell:startup`).
