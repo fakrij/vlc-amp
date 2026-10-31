@@ -77,6 +77,54 @@ switches the web interface and the media controls off again), and delete
 The media controls plugin can stay (VLC ignores it when it is not switched on)
 or be deleted: `libwin10smtc_plugin.dll` in VLC's `plugins\misc` folder.
 
+### Linux (any distro)
+
+Works with VLC from your distro's package, Flatpak (`org.videolan.VLC`) or
+Snap, on any desktop; Wayland sessions run the skin through XWayland. The
+script needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
+
+1. Copy this folder somewhere permanent, for example `~/VLC-skin` (the setup
+   points VLC at the skin file in it; for a Snap VLC it must be under your home
+   folder, not in a hidden folder).
+2. Close VLC and run **`linux/setup.sh`** (`sh linux/setup.sh` if it is not
+   executable). It:
+   - finds VLC (package, Flatpak or Snap; asks if there are several) and its
+     settings file (`vlcrc`);
+   - picks the skin file for your display scaling and prints what it detected
+     (`GDK_SCALE`, `QT_SCALE_FACTOR`, `Xft.dpi`, KDE and GNOME settings);
+     `--scale 150` overrides it;
+   - makes VLC use the skin also when you open a file or folder from the file
+     manager, and send it to the running player (no second window);
+   - adds a launcher **"VLC (Titlebar)"** to your applications menu
+     (`~/.local/share/applications/vlc-titlebar.desktop`, a copy of VLC's with
+     `--no-media-library`). Reason: the `vlc` program always adds
+     `--media-library` itself, which beats the setting in `vlcrc`, so only
+     this launcher removes the useless "Media Library" entry from the
+     playlist. It offers to make the launcher the default app for audio files
+     (`--default-player` / `--no-default-player` skip the question);
+   - turns on VLC's built-in web interface for this computer only
+     (`127.0.0.1`, port 48080, random password in `vlcrc`). Nothing on Linux
+     uses it yet; `--no-web` leaves it off;
+   - offers to start VLC pinned (always on top) at every login, with
+     `linux/titlebar-pin.py` (`--pin-autostart` / `--no-pin-autostart`; only when
+     that file and `python3` exist). It points at the file's place in this
+     folder: run the setup again if you move the folder.
+
+   Your previous VLC settings are kept as `vlcrc.before-titlebar` next to
+   `vlcrc` (`~/.config/vlc/` for the package, `~/.var/app/org.videolan.VLC/config/vlc/`
+   for Flatpak, `~/snap/vlc/common/` for Snap). The script refuses to run while
+   VLC is running: VLC rewrites its settings when it exits.
+3. Open a music file or folder with **VLC (Titlebar)**.
+
+Other options: `--yes` (answers yes to every question), `--vlc native|flatpak|snap` (which VLC),
+`--help`. Starting plain `vlc` from a terminal still shows the Media Library
+entry; run `vlc --no-media-library` there.
+
+**Undo**: `linux/setup.sh --uninstall` (VLC closed) puts `vlcrc` back, removes
+the launcher and the start-pinned autostart, and gives back the default app
+for audio files. Details and the
+list of settings: [docs/architecture.md](docs/architecture.md#the-linux-setup-linuxsetupsh).
+
 ### Manual (any OS)
 
 1. Pick the file for your display scaling: `Titlebar-100.vlt`,
@@ -229,6 +277,9 @@ Tested with this skin.
 | Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `titlebar-helper.log.old`. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`Titlebar-150.vlt` for 150 %), or run Setup again. |
 | Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
+| Linux: the playlist shows a "Media Library" entry | Start VLC from the "VLC (Titlebar)" launcher (or `vlc --no-media-library`), not plain `vlc`. Run `linux/setup.sh` if the launcher is missing. |
+| Linux: opening a file starts a second VLC | Run `linux/setup.sh` (VLC closed); one instance works over D-Bus, so it needs a desktop session. |
+| Linux: the skin is too small / too big | `linux/setup.sh --scale 150` (100, 125, 150 or 200). |
 | Back to the normal VLC look | Menu (≡) > Interface > Preferences > Use native style, or the Undo steps above. |
 
 ## Limits
@@ -245,13 +296,16 @@ These come from VLC's skin engine (skins2); details in
   150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is
   VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
   150 %), see [More themes](#more-themes).
-- Windows only: the taskbar helper. The skin itself also works on Linux.
+- Windows only: the taskbar helper and the media-controls plugin (Linux has
+  MPRIS built in). On Linux the strip floats: no docking into a panel (GNOME
+  has none; backlog 22c). Wayland runs through XWayland and is untested.
 
 ## Project files
 
 | Path | What |
 |---|---|
 | `Titlebar-*.vlt` | The skin, one file per display scaling |
+| `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, `--uninstall`) |
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs` |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |

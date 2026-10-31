@@ -15,7 +15,8 @@ behaviour**; several "obvious" assumptions turned out wrong (see
 ```
 source/build_skin.py  --(Pillow)-->  Titlebar-NNN.vlt  (tar.gz: theme.xml + img/*.png + fonts/)
                                           |
-                    VLC skins2 interface  <--  vlcrc (intf=skins2, skins2-last=...)  <--  taskbar/Setup.cmd
+                    VLC skins2 interface  <--  vlcrc (intf=skins2, skins2-last=...)  <--  taskbar/Setup.cmd (Windows)
+                                                              linux/setup.sh (Linux)
                                           |
                taskbar/VlcDock.cs (Windows) moves / pins VLC's window, read via its window region
 ```
@@ -195,17 +196,152 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
   `b_x.png` and `B_x.png` collide. Ids differing only by case are rejected by
   the build.
 
+## vlcrc keys (what both setups write)
+
+`taskbar/vlc-taskbar.ps1 -Setup` (Windows) and `linux/setup.sh` (Linux) write
+the same settings into VLC's `vlcrc`. VLC ignores the `[section]` headers when
+it reads the file (`src/config/file.c` skips lines starting with `#` or `[`),
+but both setups keep every key under the section VLC itself writes it in. Both
+rewrite every line of a key (the commented default `#key=...` and any active
+one; a `vlcrc` written by VLC has both) and only add the key to its section
+when no line exists. Colon lists are merged, never replaced.
+
+| Key | Section | Value | Windows | Linux | Why |
+|---|---|---|---|---|---|
+| `intf` | core | `skins2` | yes | yes | The skin instead of the normal window |
+| `skins2-last` | skins2 | absolute path of `Titlebar-NNN.vlt` | yes | yes | Which skin; NNN from the display scale |
+| `one-instance` | core | `1` | yes | yes | Files opened from the file manager go to the running player (Windows: window message; Linux: D-Bus, see below) |
+| `one-instance-when-started-from-file` | core | `1` | yes | yes | Same, for launches with `--started-from-file` (what the launchers pass) |
+| `playlist-enqueue` | core | `0` | yes | yes | ...and the file starts playing |
+| `media-library` | core | `0` | yes | yes | No "Media Library" node in the playlist. **On Linux the `vlc` program overrides it**, so the Linux setup also writes a launcher with `--no-media-library` |
+| `skins2-taskbar` | skins2 | `1`, or `0` when docked | yes | no | Windows-only option (it does not exist in VLC's Linux build) |
+| `extraintf` | core | colon list: `http`, plus `win10smtc` (Windows, media controls) or `luaintf` (Linux, when `lua/intf/titlebar.lua` exists) | yes | yes | Control interfaces started next to skins2 |
+| `http-host` | core | `127.0.0.1` | yes | yes | Web interface for this computer only |
+| `http-port` | core | `48080` | yes | yes | An unusual port |
+| `http-password` | lua | random, 24 letters and digits; kept if already set | yes | yes | Locks the web interface. Windows: the helper's control channel uses it. Linux: nothing uses it yet, it is there for later helpers (`--no-web` skips the three web keys) |
+| `lua-intf` | lua | `titlebar` | no | with the Lua script | Which script the `luaintf` interface runs (`modules/lua/vlc.c`: `lua-intf` and `lua-config` belong to the primary `lua` module) |
+
+On Linux more keys can be added without changing `setup.sh`: see
+`lua/vlcrc-keys.txt` under "Lua extras" below.
+
+## The Linux setup (`linux/setup.sh`)
+
+POSIX `sh` + `awk` / `sed` / `grep` (run with dash and bash; `shellcheck` was
+not available when it was written). Python is only needed for the optional
+`linux/titlebar-pin.py` (start pinned). Every path honours `HOME`,
+`XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` and `XDG_DATA_DIRS`, so it
+can run against a private home (the test harness does).
+
+**Which VLC.** Native: `command -v vlc`, unless the path is under `/snap/`
+(snapd puts `/snap/bin` in `PATH`). Flatpak: `flatpak info org.videolan.VLC`.
+Snap: `snap list vlc`. With several it asks (`--yes` takes the first; `--vlc`
+chooses). It refuses to run while a VLC of the user is running (it scans
+`/proc/*/comm` for `vlc` / `vlc.bin`, and `flatpak ps`), because VLC rewrites
+`vlcrc` on exit. `--ignore-running` overrides (the tests need it: other agents'
+VLCs run at the same time).
+
+| Flavor | `vlcrc` | Lua dir (`lua/intf`) | Status |
+|---|---|---|---|
+| Native | `${XDG_CONFIG_HOME:-~/.config}/vlc/vlcrc` | `${XDG_DATA_HOME:-~/.local/share}/vlc/lua/intf` | Verified: VLC's user config / data dir, and `vlclua_dir_list` (`modules/lua/vlc.c`) looks in the user data dir first |
+| Flatpak | `~/.var/app/org.videolan.VLC/config/vlc/vlcrc` | `~/.var/app/org.videolan.VLC/data/vlc/lua/intf` | Flatpak's sandbox `XDG_CONFIG_HOME` / `XDG_DATA_HOME` (documented Flatpak behaviour); **not run on a real Flatpak**. The Flathub manifest has `--filesystem=host` (the skin file is readable) and `--own-name=org.mpris.MediaPlayer2.vlc` |
+| Snap | `~/snap/vlc/common/vlcrc`; older snaps: `~/snap/vlc/common/.config/vlc/vlcrc`, `~/snap/vlc/current/.config/vlc/vlcrc` (the first that exists wins) | `~/snap/vlc/current/.local/share/vlc/lua/intf` | The first is verified in VLC's snap wrapper (`extras/package/snap/vlc-snap-wrapper.sh` runs `vlc --config=$SNAP_USER_COMMON/vlcrc`). **The other two and the Lua dir are unverified.** The snapcraft.yaml has no `network-bind` plug, so the web interface may not start in the Snap. The Snap reads only non-hidden files under `$HOME`; the setup warns when the skin is elsewhere |
+
+A missing `vlcrc` is created (mode 0600, as VLC does) with only our keys under
+their `[section]` headers; VLC fills in the rest at the next exit. An existing
+one is backed up once as `vlcrc.before-titlebar` (`cp -p`), edited in a
+temporary copy and written back in one go. Edits are done by the `rc_edit` awk
+function (values go through the environment so backslashes survive). Running
+the setup twice changes nothing.
+
+**Scale.** `--scale N` (`150` or `1.5`), else the first of these that gives a
+number: `GDK_SCALE`, `QT_SCALE_FACTOR`, `Xft.dpi` / 96 from `xrdb -query`,
+`kreadconfig6` / `kreadconfig5 --group KScreen --key ScaleFactor`, GNOME
+`scaling-factor` and `text-scaling-factor` (`gsettings`, only values above 1).
+All values found are printed. The nearest of 100 / 125 / 150 / 200 is used;
+nothing found means 100. skins2 draws in real X pixels, so which file is right
+under XWayland with compositor scaling is unverified.
+
+**Media Library gotcha.** The Linux `vlc` program (`bin/vlc.c`) builds its
+argument list as `--no-ignore-config --media-library [--dbus] <your arguments>`
+(`--dbus` when built with D-Bus; Windows' `winvlc.c` adds none of them), so
+`media-library=0` in `vlcrc` loses. A later `--no-media-library` on the command
+line wins over the earlier `--media-library`. Hence the launcher
+`~/.local/share/applications/vlc-titlebar.desktop`: a copy of the system
+launcher (`vlc.desktop`, Flatpak's `org.videolan.VLC.desktop`, Snap's
+`vlc_vlc.desktop`; searched in `XDG_DATA_DIRS` plus the usual Flatpak and snapd
+export dirs) with `Name=VLC (Titlebar)`, `--no-media-library` inserted before
+`--started-from-file` (or the first file placeholder) in every `Exec=`, the
+translated `Name[..]` lines and `DBusActivatable` removed (a launcher that
+activates over D-Bus would skip `Exec`), and the marker line
+`X-Titlebar-Skin=1` (uninstall only deletes a file that has it). With no system
+launcher, a basic one is generated (Flatpak: `flatpak run --file-forwarding
+org.videolan.VLC --no-media-library --started-from-file @@u %U @@`).
+`update-desktop-database` runs on the folder when present. Checked with the
+harness: started like plain `vlc` the playlist shows a "Media Library" node,
+started through the launcher's `Exec` it does not.
+
+**One instance on Linux** goes through D-Bus: the first VLC owns
+`org.mpris.MediaPlayer2.vlc`; a second one started with a file hands it over
+and exits with code 0, the first one's playlist grows and plays the new file.
+It needs a session bus (checked inside `dbus-run-session`).
+
+**Default app.** Optional: `--default-player`, `--no-default-player`, a prompt
+(`--yes` answers yes; with no terminal and no flag it is skipped). For each
+`audio/*` type in the launcher's `MimeType=` it runs `xdg-mime default
+vlc-titlebar.desktop <type>`. `inode/directory` and the video types are left
+alone on purpose: as the default for folders VLC would open every time a folder
+is opened in the file manager. The previous default (`xdg-mime query default`,
+which also reports fallbacks) is stored per type in the state file.
+
+**State and undo.** `~/.local/state/titlebar-vlc-skin/linux-setup.state`
+(`flavor`, `rc`, `rc_created`, `desktop`, `lua`, `mime` and `pin` lines) records
+what was changed. `--uninstall` refuses while VLC runs, then: saves the current
+`vlcrc` as `vlcrc.titlebar-removed` and restores `vlcrc.before-titlebar` byte
+for byte (when there was no `vlcrc` before the setup, the current one is moved
+to `.titlebar-removed` and VLC makes a new one); puts each audio type back to
+its recorded default, or removes our line from `mimeapps.list`, if the default
+is still ours (this runs before the launcher is deleted, because `xdg-mime`
+only reports a default whose file exists); removes the launcher and the Lua
+files; runs `titlebar-pin.py --uninstall-autostart`.
+
+**Start pinned.** If `linux/titlebar-pin.py` exists the setup asks (or
+`--pin-autostart` / `--no-pin-autostart`; `--yes` means yes) and runs
+`python3 linux/titlebar-pin.py --install-autostart`. The autostart entry points
+at that file's real path, so the setup must be run again after the folder is
+moved. The setup neither copies nor edits that script.
+
+**Lua extras.** If `lua/intf/titlebar.lua` exists, all `lua/intf/*.lua` are
+copied to the flavor's Lua dir, `luaintf` is merged into `extraintf` and
+`lua-intf=titlebar` is set (section `lua`). `lua/vlcrc-keys.txt`, if it exists,
+is read line by line (blank lines and lines starting with `#` are skipped);
+the format is
+
+```
+<section> <key>=<value>
+```
+
+Section, whitespace, key, `=`, and the rest of the line is the value (leading
+and trailing spaces trimmed). A key is written only when `vlcrc` has no active,
+non-empty value for it, so user choices stay and commented defaults count as
+unset. Lines without `=` are reported and skipped. Example:
+`core key-play-pause=space`.
+
+**Testing it** (no sudo, see [tools/README.md](../tools/README.md)): start the
+harness once so Xvfb runs, run `linux/setup.sh --yes --ignore-running` with
+`HOME`, `XDG_CONFIG_HOME` and `XDG_DATA_HOME` pointing into the harness home
+(`<cache>/run-<instance>/home`, and `<cache>/root/usr/bin` in `PATH`) and
+`XDG_DATA_DIRS` pointing at a folder that has a `vlc.desktop` whose `Exec`
+runs the harness's `vlc`. Then, inside `dbus-run-session`, run the generated
+launcher's `Exec` (plus `--aout dummy --no-video`) with one file, screenshot,
+and run it again with a second file: the second process exits and the playlist
+grows. Never run it against your real home unless you want the changes.
+
 ## The Windows helper (`taskbar/`)
 
-- `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): `intf=skins2`,
-  `skins2-last`, `one-instance=1`, `one-instance-when-started-from-file=1`,
-  `playlist-enqueue=0`, `media-library=0`, `skins2-taskbar`, and the control
-  channel's `extraintf` (`http`, merged into the colon-separated list with
-  `Set-VlcModule`), `http-host=127.0.0.1`, `http-port=48080` (both `[core]`) and
-  a random `http-password` (`[lua]`, kept if already set). It rewrites every
-  line of a key (vlcrc can hold a commented default and an active line).
-  Optionally it creates a Startup shortcut running the helper with `-Watch`
-  (and `-NoDock`).
+- `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): the keys of the
+  table [vlcrc keys](#vlcrc-keys-what-both-setups-write), with `Set-VlcOption`
+  and `Set-VlcModule`. Optionally it creates a Startup shortcut running the
+  helper with `-Watch` (and `-NoDock`).
 - `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
   windows), reads the main window's region (`GetWindowRgn`): if the visible
   box reaches the window bottom, the bar is at the bottom; a pixel test at the
@@ -226,7 +362,8 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
   (`src/libvlc.c`), so it runs next to skins2 and has its own hidden window.
 - Linux needs none of this for media controls: the `vlc` launcher always adds
   `--dbus` (and `--media-library`, which overrides `media-library=0` in
-  vlcrc; `bin/vlc.c`), so MPRIS is on. Tested with the skin.
+  vlcrc; `bin/vlc.c`), so MPRIS is on. Tested with the skin. Linux setup:
+  [The Linux setup](#the-linux-setup-linuxsetupsh).
 - Control channel: `VlcRemote` (end of `VlcDock.cs`) talks to VLC's Lua web
   interface. The script reads port and password from vlcrc (`Get-VlcRemote`;
   off, silently, when `extraintf` has no `http` or no password is set) and
