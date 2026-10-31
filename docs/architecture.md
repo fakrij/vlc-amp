@@ -211,10 +211,22 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
 
 ## Rendering notes
 
-- X11 draws bitmaps without alpha blending; Windows uses `AlphaBlend`. Semi
-  transparent pixels look black on Linux. Window outlines use hard alpha
-  (`Canvas.done(hard_edges=True)`), small text is drawn on opaque crops of
-  the background (`label_on`), and the progress fill frames have hard edges.
+- Read in VLC 3.0.x `modules/gui/skins2`: `FileBitmap` premultiplies every PNG on
+  load (`b * a / 255`). Windows `drawBitmap` ignores the `blend` flag and
+  always uses `AlphaBlend` with `AC_SRC_ALPHA` (premultiplied, so right); X11 only
+  blends when `blend` is true (`CtrlText` does; buttons, checkboxes, thumbs and images do not). The window
+  shape is every pixel with alpha > 0 on both (`a > 0` in both `drawBitmap`s, then
+  `SetWindowRgn` / XShape). Buttons are drawn into a blank `OSGraphics`
+  (`createOSGraphics`), then copied with `drawGraphics` (BitBlt / XCopyArea, no
+  blending). So a pixel with alpha 1..254 is opaque and darker on Linux, and on
+  Windows it is the premultiplied colour plus the blank bitmap's start content
+  (`CreateCompatibleBitmap`, not guaranteed black): bright dots at button corners
+  if it is not. `solid()` in the generator composites such bitmaps over the panel
+  colour (flat style), so every platform gets the same pixels:
+  `tools/windows-sim.py` writes the comparison to `docs/img/windows-sim/`. Window
+  outlines use hard alpha (`Canvas.done(hard_edges=True)`), small text is drawn on
+  opaque crops of the background (`label_on`), and the LCD progress fill frames
+  have hard edges.
 - An `<Image>`'s size in the default layout is its bitmap's size; stretching
   only comes from `lefttop` / `rightbottom` anchors. That is why stretch pieces
   (`hslice`, `nslice`) are full width and cannot be shrunk to a 1 px column.

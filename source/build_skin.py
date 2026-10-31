@@ -313,6 +313,28 @@ class Canvas:
         return out
 
 
+def solid(im, bg=None):
+    """Flat style: give a bitmap that sits on a plain panel colour no partly transparent pixels.
+    skins2 premultiplies every bitmap when it loads it, draws buttons, thumbs and similar into
+    a blank graphic without blending (the corner pixels come out darker than the panel) and
+    copies that over the window. Windows (Win32Graphics::drawBitmap) alpha-blends it onto a
+    blank bitmap whose start content nobody guarantees. Compositing the bitmap over the colour
+    it will sit on (BG_TOP: every flat panel has it) gives the same pixels everywhere and keeps
+    the smooth corners. Classic style has gradient panels, so it is left alone."""
+    if not FLAT:
+        return im
+    return Image.alpha_composite(Image.new("RGBA", im.size, H(bg or BG_TOP)), im.convert("RGBA"))
+
+
+def resize_handle(c, x, y, h):
+    """Grip for the right edge (the resizeE zone): a 9 px wide tab in the button colour with three
+    light ribs, so it reads as something to grab. x = its left edge in logical px (W - 10)."""
+    pad = BTN["up"][0]
+    c.rrect(x, y, 9, h, 2, pad)
+    for rx in (x + 2, x + 4, x + 6):
+        c.rrect(rx, y + 3, 1, h - 6, 0, mix(pad, ICON["up"], 0.6))
+
+
 # ---------------------------------------------------------------- primitives
 def panel_bg(c, x, y, w, h, r, flat=False):
     c.rrect(x, y, w, h, r, OUTLINE)
@@ -578,7 +600,7 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
             icon(c, icon_name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, ICON[st])
         if label:
             c.text(w / 2, h / 2 + 0.5, label, 8, ICON[st], anchor="mm")
-        skin.add("%s_%s" % (base, st), c.done())
+        skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
 
@@ -601,7 +623,7 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
                     c.text(w / 2 + 3, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
                 else:
                     c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
-            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), c.done())
+            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
@@ -641,7 +663,7 @@ def make_mode_toggle(skin, base, w, h):
             c.rrect(cx - 2.5, cy - 0.5, 5, 1, 0, col)
             if not on:
                 c.rrect(cx - 0.5, cy - 2.5, 1, 5, 0, col)
-            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), c.done())
+            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
@@ -659,21 +681,21 @@ def make_progress_frames(skin, bid, w, h, n, color):
     return bid
 
 
-def make_thumb(skin, bid, w, h):
+def make_thumb(skin, bid, w, h, bg=None):
     for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
         c.rrect(0, 0, w, h, 2, BTN_BORDER)
         c.grad(1, 1, w - 2, h - 2, 1, t, b)
-        skin.add("%s_%s" % (bid, st), c.done())
+        skin.add("%s_%s" % (bid, st), solid(c.done(), bg))
     return bid
 
 
 def make_eq_thumb(skin, bid, w, h):
-    """EQ slider knob: a flat accent-coloured pill."""
+    """EQ slider knob: a flat accent-coloured pill (on the LCD)."""
     for st, col in (("up", CYAN), ("over", LCD_HI)):
         c = Canvas(w, h)
         c.rrect(0, 0, w, h, h / 2, col)
-        skin.add("%s_%s" % (bid, st), c.done())
+        skin.add("%s_%s" % (bid, st), solid(c.done(), LCD_BG))
     return bid
 
 
@@ -688,7 +710,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
         if frac > 0:
             c.rrect(0, track_y, max(track_h, w * frac), track_h, track_h / 2, CYAN)
         sheet.paste(c.done(), (0, P(h) * i))
-    skin.add(bid, sheet)
+    skin.add(bid, solid(sheet))
     return bid
 
 
@@ -740,7 +762,7 @@ def build(skin, W, BH=BAR_DEFAULT):
     skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
     PW = P(W)
     tr = dict(lt="righttop", rb="righttop")
-    sw = W - 16                       # seek bar width
+    sw = W - 20                       # seek bar width (full player; ends 12 px from the edge)
 
     def make_bitmaps():
         """All bitmaps of the current theme (skin.prefix namespaces them)."""
@@ -774,7 +796,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_thumb(skin, "thumb_s", 8, 12)
         make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
         make_eq_thumb(skin, "thumb_eq", 12, 6)
-        make_thumb(skin, "thumb_pl", 6, 22)
+        make_thumb(skin, "thumb_pl", 6, 22, SCROLL_TRACK)
         make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
         make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
         make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
@@ -782,11 +804,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
         c = Canvas(12, 12)
         icon(c, "speaker", 0, 0, 12, LABEL)
-        skin.add("ic_speaker", c.done())
+        skin.add("ic_speaker", solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
         lcd(c, 0, 0, TW, BT)
-        skin.add("c_time_s", c.done())
+        skin.add("c_time_s", solid(c.done()))
         make_mode_toggle(skin, "c_mode", TIME_ZONE, BT)
         make_progress_frames(skin, "vol_fill", TW - TIME_ZONE - 1, BT - 2, FILL_FRAMES, TITLE_FILL)
         c = Canvas(142, 44)
@@ -803,7 +825,7 @@ def build(skin, W, BH=BAR_DEFAULT):
             c.circle(9, 6, 4.4, ICON[st])
             c.circle(9, 6, 3.3, BG_BOT)
             c.circle(9, 6, 2.5 if st != "down" else 2.0, CYAN)
-            skin.add("b_theme_" + st, c.done())
+            skin.add("b_theme_" + st, solid(c.done()))
 
     def panel_toggles(lay, pl_base, eq_base, x_pl, x_eq, y):
         lay.checkbox(pl_base, x_pl, y, PL_ON, "plflag.show()", "plflag.hide()",
@@ -823,8 +845,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         panel_bg(c, 0, 0, W, BH, 4)
         rows = M["grip_rows"]
         grip_dots(c, 4, BH / 2 - 3 - 2 * (rows - 1), rows)
-        for gx in (W - 7, W - 5):  # resize grip
-            c.rrect(gx, (BH - M["grip_h"]) // 2, 1, M["grip_h"], 0, GRIP)
+        resize_handle(c, W - 10, 3, BH - 6)   # same 10 px as the right cap; the pin ends 12 px from the edge
         hslice(skin, lay, "strip_bg", c.done(hard_edges=True), 0, 0, 14, 10, right_action="resizeE")
         lay.button("b_expand", P(16), P(3), "main.setLayout(full-%s)" % d, "Expand to full player")
         lay.button("b_prev", P(44), P(3), "playlist.previous()", "Previous")
@@ -833,7 +854,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         dx, dw = 124, W - (TW + 100) - 124   # slower / faster live in the full player only
         c = Canvas(dw, BT)
         lcd(c, 0, 0, dw, BT)
-        hslice(skin, lay, "strip_lcd", c.done(), P(dx), P(3), 4, 4)
+        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(3), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
@@ -869,9 +890,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         c = Canvas(W, FH)
         panel_bg(c, 0, 0, W, FH, 6)
         grip_dots(c, 4, 4)
-        c.rrect(W - 3, 30, 1, 46, 0, GRIP)  # resize grip in the 4 px right margin
+        resize_handle(c, W - 10, 33, 56)   # right edge column (10 px): LCD, seek bar and the bottom row stay clear of it
         bg = c.done(hard_edges=True)
-        hslice(skin, lay, "full_bg", bg, 0, 0, 14, 8, right_action="resizeE")
+        hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, right_action="resizeE")
         # theme button, left of the menu button: steps to the next theme (none with one theme)
         nxt = (cur["theme"] + 1) % len(THEMES)
         if nxt != cur["theme"]:
@@ -884,10 +905,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.button("b_min", F(42), P(5), "vlc.minimize()", "Minimize", **tr)
         lay.button("b_close", F(22), P(5), "vlc.quit()", "Quit VLC", **tr)
         # LCD: left column = time (wide enough for -1:23:45), right column = title, info, toggles
-        c = Canvas(W - 8, 54)
-        lcd(c, 0, 0, W - 8, 54, 3)
+        c = Canvas(W - 16, 54)
+        lcd(c, 0, 0, W - 16, 54, 3)
         c.rrect(150, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
-        hslice(skin, lay, "full_lcd", c.done(), P(4), P(20), 154, 6)
+        hslice(skin, lay, "full_lcd", solid(c.done()), P(4), P(20), 154, 6)
         time_toggle(lay, "c_time_f", P(8), P(22))
         # big = elapsed or time left (click switches), small = total only: VLC truncates time and
         # length to seconds separately, so "time left" next to "elapsed" would tick at a different
@@ -898,9 +919,9 @@ def build(skin, W, BH=BAR_DEFAULT):
                      focus=False).vis = vis_and(lay.theme_vis, vis)
             lay.text(P(18), P(56), P(128), "lcd10", small, CYAN2, scrolling="none", sample=s2,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        lay.text(P(162), P(24), P(W - 174), "lcd14", "$N", CYAN_TXT, rb="righttop",
+        lay.text(P(162), P(24), P(W - 180), "lcd14", "$N", CYAN_TXT, rb="righttop",
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        lay.text(P(162), P(43), P(W - 174), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
+        lay.text(P(162), P(43), P(W - 180), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
                  scrolling="none", sample="320 kbps  44.1 kHz")
         lay.checkbox("l_shuf", P(162), P(58), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
@@ -908,7 +929,7 @@ def build(skin, W, BH=BAR_DEFAULT):
                      "playlist.setLoop(false)", "Loop playlist: off", "Loop playlist: on")
         lay.checkbox("l_rep", P(234), P(58), "playlist.isRepeat", "playlist.setRepeat(true)",
                      "playlist.setRepeat(false)", "Repeat one: off", "Repeat one: on")
-        lay.text(F(84), P(58), P(72), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
+        lay.text(F(90), P(58), P(72), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
                  sample="SPEED 1x", **tr)
         # seek bar (stretches; the fill frames scale with it)
         lay.slider("s_seek_" + lay.id, P(8), P(78), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
@@ -920,10 +941,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox("ft_play", P(68), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("fb_faster", P(104), P(ty), "vlc.faster()", "Faster")
         lay.button("fb_next", P(134), P(ty), "playlist.next()", "Next")
-        lay.image("ic_speaker", F(180), P(ty + 5), lt="righttop", rb="righttop", action="move")
-        lay.slider("s_vol_" + lay.id, F(164), P(ty + 7), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
+        lay.image("ic_speaker", F(186), P(ty + 5), lt="righttop", rb="righttop", action="move")
+        lay.slider("s_vol_" + lay.id, F(170), P(ty + 7), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
                    "volume", "Volume $V%", bg="vol90", nbvert=P(90), **tr)
-        panel_toggles(lay, "ft_pl", "ft_eq", F(66), F(34), P(ty))
+        panel_toggles(lay, "ft_pl", "ft_eq", F(72), F(40), P(ty))   # 6 px left of the old place: the edge column is free
 
     def flip_button(lay, mode, d, x, y):
         other = "up" if d == "dn" else "dn"
@@ -934,17 +955,17 @@ def build(skin, W, BH=BAR_DEFAULT):
     def add_eq(lay, mode, d, sfx):
         c = Canvas(W, EH)
         panel_bg(c, 0, 0, W, EH, 4)
-        c.rrect(W - 3, 40, 1, 40, 0, GRIP)  # resize grip in the right margin
+        resize_handle(c, W - 10, 44, 56)   # right edge column (10 px), below the header buttons
         bg = c.done(hard_edges=True)
-        hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 8, right_action="resizeE")
+        hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 10, right_action="resizeE")
         label_on(skin, "lbl_eq", bg, 8, 4, 70, 12, "EQUALIZER")
         lay.image("lbl_eq", P(8), P(4), action="move")
         flip_button(lay, mode, d, PW - P(68), P(4))
         lay.checkbox("t_eqon", PW - P(46), P(4), "equalizer.isEnabled", "equalizer.enable()",
                      "equalizer.disable()", "Equalizer is off", "Equalizer is on", **tr)
-        c = Canvas(W - 12, 90)
-        lcd(c, 0, 0, W - 12, 90, 3)
-        hslice(skin, lay, "eq_lcd", c.done(), P(6), P(19), 6, 6)
+        c = Canvas(W - 18, 90)
+        lcd(c, 0, 0, W - 18, 90, 3)
+        hslice(skin, lay, "eq_lcd", solid(c.done()), P(6), P(19), 6, 6)
         # band block: fixed 400 px, kept centered when the window is resized
         BW = 400
         names = ["PRE", "60", "170", "310", "600", "1K", "3K", "6K", "12K", "14K", "16K"]
@@ -974,19 +995,19 @@ def build(skin, W, BH=BAR_DEFAULT):
     def add_pl(lay, mode, d, sfx):
         c = Canvas(W, LH)
         panel_bg(c, 0, 0, W, LH, 4, flat=True)
-        c.rrect(W - 3, 60, 1, 60, 0, GRIP)  # resize grip in the right margin
+        resize_handle(c, W - 10, 71, 56)   # right edge column (10 px)
         bg = c.done(hard_edges=True)
         nslice(skin, lay, "pl_bg", bg, 0, 0, 12, actions={"mr": "resizeE"})
         label_on(skin, "lbl_pl", bg, 8, 4, 60, 12, "PLAYLIST")
         lay.image("lbl_pl", P(8), P(4), action="move")
         flip_button(lay, mode, d, PW - P(26), P(4))
-        c = Canvas(W - 12, 154)
-        lcd(c, 0, 0, W - 12, 154, 3)
-        c.rrect(W - 12 - 16, 3, 8, 148, 3, SCROLL_TRACK)  # scroll track (inside right edge)
-        nslice(skin, lay, "pl_lcd", c.done(), P(6), P(19), 18, actions={k: "none" for k in
+        c = Canvas(W - 18, 154)
+        lcd(c, 0, 0, W - 18, 154, 3)
+        c.rrect(W - 18 - 16, 3, 8, 148, 3, SCROLL_TRACK)  # scroll track (inside right edge)
+        nslice(skin, lay, "pl_lcd", solid(c.done()), P(6), P(19), 18, actions={k: "none" for k in
                ("tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br")})
-        lay.playtree(P(10), P(23), P(W - 36), P(146), "lcd11",
-                     dict(x=PW - P(22), y=P(23), points="(%d,%d),(%d,%d)" % (P(4), P(135), P(4), P(11)),
+        lay.playtree(P(10), P(23), P(W - 42), P(146), "lcd11",
+                     dict(x=PW - P(28), y=P(23), points="(%d,%d),(%d,%d)" % (P(4), P(135), P(4), P(11)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),
                                              ("rem", "playlist.del()", "Remove selected"),
