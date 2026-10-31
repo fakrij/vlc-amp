@@ -56,7 +56,7 @@ Lua version: `share/lua/README.txt:8` says "VLC uses Lua 5.1". Which Lua the Deb
 - `key-action` is one slot. Two different keys within one poll period overwrite each other. Keep the poll short (50-100 ms) and say so in the docs. The poll interval was not measured.
 - Only keys that VLC maps to an action reach the script. Those are the ones in Preferences > Hotkeys, plus global hotkeys if they are bound. There is no way for Lua to define a new key.
 - The script cannot add an action. It can only reuse an existing ID from the table in `src/misc/actions.c:264-378`. Each reused ID still runs its normal core handler in `hotkeys.c` (for example `set-bookmark1` stores a bookmark). A reused ID must be checked case by case in `PutAction`. That check was not done here.
-- Keyboard tests in the skin depend on Qt (see the inference above). The T1 package list has no Qt, so T6 keyboard tests may not reach `key-action` at all. Test first with `xdotool` on a Qt-enabled VLC, or drive `key-action` directly for a test.
+- Keyboard tests in the skin depend on Qt (see the inference above). The harness tree has the Qt plugin, so keyboard tests reach `key-action`. Drive `key-action` directly when a test does not need the keyboard path.
 - Reverse direction (not tested): `vlc.var.set(libvlc, "key-action", id)` makes the hotkey executor run that core action, because `hotkeys.c:318` listens on that variable. IDs come from `vlc.misc.action_id("key-...")` (see Q5). This could drive core actions such as play/pause from Lua. It does not give any A-B, folder or EQ action, because none exist in the core (`actions.c:264-378`).
 
 ---
@@ -180,9 +180,9 @@ end
 
 ---
 
-## Where BACKLOG.md disagrees with the source
+## Where BACKLOG.md disagreed with the source
 
-Not edited, as instructed. Corrections for whoever updates the backlog:
+Mostly applied in BACKLOG.md (section 2 A and the evaluation table). Item 8 is settled by the harness check:
 
 1. **Section 2 A, "Hotkeys":** `vlc.var.add_callback` is listed as *unverified*. It does not exist in 3.0.x. A Lua script can only poll `key-pressed` or `key-action`. The sentence "A Lua interface that adds a callback to `key-pressed` could implement custom hotkeys" is not possible in 3.0.x.
 2. **Section 2 A, "Hotkeys":** "libvlc exposes ... `key-pressed` and `key-action` (verified in `src/misc/actions.c`)" is correct but incomplete. `key-action` is the bus that the core hotkey executor reads (`modules/control/hotkeys.c:318`). `key-pressed` is written by the video output, Qt, xcb and macOS, not by skins2 directly. Skin keys reach it only through the Qt dialogs provider (`dialogs.cpp:355`, `qt/dialogs_provider.cpp:880`).
@@ -191,7 +191,7 @@ Not edited, as instructed. Corrections for whoever updates the backlog:
 5. **Section 2 and item 2:** "Lua has an equalizer library in 3.0.x (API details *unverified*)". Now verified. The library exists, and it can set presets and bands live.
 6. **Item 4, "Qt's A-B is implemented in the Qt GUI, not in the core":** not supported by the 3.0.x source. A grep of the whole tree (`modules/`, `src/`, `include/`) for A-B loop code found nothing. `modules/gui/qt` has only `LOOP_BUTTON` (`controller.cpp:448`), which is the playlist repeat. Either the claim comes from a later VLC or it is wrong; in either case it does not help the 3.0.20 target.
 7. **Item 5, "(`vlc.playlist.goto`)":** the name is `gotoitem` in 3.0.x. `goto` exists only as a Lua 5.1 alias (`playlist.c:426-428`).
-8. **T1 package list (BACKLOG section 5, T1):** it installs no Qt plugin. By the Q1 inference, skin key presses then never reach `key-pressed` or `key-action`. Keyboard tests of T6 would fail for that reason, not because of the script. Install Qt for the test, or test with `key-action` set directly. This needs a run to confirm.
+8. **T1 package list (BACKLOG section 5, T1):** the explicit list has no Qt package, but the extracted harness tree has `libqt_plugin.so` (from the recursive dependencies, under `<cache>/root/usr/lib/x86_64-linux-gnu/vlc/plugins/gui/`). So skin key presses can reach `key-action` in the harness, as the xdotool tests in architecture.md show.
 9. **Section 2 B (extensions):** consistent with the source. `modules/lua/extension.c:120` listens on `dialog-event`, and the only "dialogs provider" in the tree is Qt (`modules/gui/qt/qt.cpp:330`). Not a T5 question, so not checked further.
 
 ## Not determined from source, or to test

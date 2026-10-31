@@ -88,8 +88,9 @@ or be deleted: `libwin10smtc_plugin.dll` in VLC's `plugins\misc` folder. `%APPDA
 ### Linux (any distro)
 
 Works with VLC from your distro's package, Flatpak (`org.videolan.VLC`) or
-Snap, on any desktop; Wayland sessions run the skin through XWayland. The
-script needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
+Snap, on any desktop. Tested on X11 with a distro package (VLC 3.0.20 under
+Xvfb); Flatpak, Snap and Wayland (XWayland) are not tested yet. The script
+needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
 
 1. Copy this folder somewhere permanent, for example `~/VLC-skin` (the setup
    points VLC at the skin file in it; for a Snap VLC it must be under your home
@@ -169,37 +170,6 @@ Display: large time (click to switch elapsed / time left), the track length
 under it ("of 5:16"), title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
 speed. Then the seek bar, transport, volume, PL and EQ.
 
-### More themes
-
-The generator has 10 more themes: dark Ember (amber), Forest (mint), Nord
-(frost blue), Dusk (pink), Carbon (red); light Paper (white / grey, blue), Sand
-(teal on cream), Sage (green), Rose (raspberry); and **Custom**, dark in any
-colour you choose.
-Each adds about 10 MB of VLC memory at 100 % scaling (20 MB at 150 %) and some
-start-up time, so build only the ones you want (the first is the default):
-
-```bash
-python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Nord,Custom" --custom "#33ff99"
-```
-
-`--themes all` builds every theme (about 240 MB of VLC memory at 100 %).
-
-**Custom colour.** A skin that contains Custom (built with it, as above) can
-be recoloured later without the generator: the tool in `custom-colour/`
-rewrites the `.vlt` files in this folder (close VLC first; it reads them at
-start). Then restart VLC and pick Custom with the theme button.
-
-- **Windows**: double-click **`custom-colour\Custom colour.cmd`**. A colour
-  dialog opens (starting at the current accent), then every `Titlebar-*.vlt`
-  next to the `custom-colour` folder is rewritten. Needs Windows 10 1803 or
-  later (`tar.exe`); no admin rights.
-- **Linux** (any distro, Python 3 only, nothing else to install):
-  `python3 custom-colour/custom-colour.py` opens `zenity`, `kdialog`, `yad` or
-  tkinter's colour chooser, whichever exists, else asks in the terminal.
-  `python3 custom-colour/custom-colour.py "#33ff99"` skips the dialog;
-  `--reset` returns to the default accent (`#b48cff`); more arguments are
-  `.vlt` files to change instead of the default ones.
-
 ### Playlist and equalizer
 
 - Playlist: double-click a track to play it; ADD, REM (remove selected), SORT,
@@ -216,110 +186,9 @@ VLC's own shortcuts work while the player has focus, for example Space
 (play / pause), Shift / Alt / Ctrl + arrow keys (jump 3 s / 10 s / 1 min),
 Ctrl + up / down (volume).
 
-## Taskbar mode
+## Extras
 
-Windows 11 has no API to put a player *into* the taskbar, so a small helper
-(`taskbar\`, PowerShell + C#) keeps VLC's strip positioned over it.
-
-1. Free the space left of Start: Settings > Personalization > Taskbar >
-   **Widgets: Off**.
-2. Either run `Setup.cmd` and answer Yes to both questions (the helper starts
-   with Windows and docks VLC whenever it runs, also when started from a
-   file), or close VLC and double-click **`taskbar\VLC in taskbar.cmd`**
-   (VLC with the skin, docked, for this session). A console window flashes
-   briefly: that is PowerShell starting.
-3. Flip the panels to open **above** once (arrow on the PL / EQ header).
-
-**Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
-there.
-
-![The taller strip](docs/img/strip-taskbar.png)
- The folder has a second set of files, `Titlebar-taskbar-100/125/150/200.vlt`,
-with a 36 px strip (bigger buttons, text and volume slider; same width layout,
-the full player, EQ and playlist are unchanged). When you answer Yes to "dock in
-the taskbar", Setup picks this file, and so does `VLC in taskbar.cmd`; without
-docking (and for a title bar) the normal 24 px file is used. The helper reads
-the strip height from the file name (`taskbar` = 36, `bar40` = 40) and
-positions the strip and its pin click with it. For another height, build it
-(32-40 is sensible, the taskbar is 48):
-
-```bash
-python3 source/build_skin.py --scale 1.5 --bar-height 40     # Titlebar-bar40-150.vlt
-```
-
-copy the file (from `source/dist`) next to the other `.vlt` files, set `$Skin = "Titlebar-bar40-150.vlt"` at the top of `taskbar\vlc-taskbar.ps1`
-(the file name tells the helper the height; `auto` only looks for the 36 px
-`Titlebar-taskbar-NNN.vlt`) and run Setup again.
-
-What the helper does:
-
-- Puts the strip in the taskbar, vertically centred, 8 px left of Start, and
-  follows Start when taskbar icons shift. The full player sits just above
-  the taskbar; PL / EQ stick out above.
-- Pins VLC on top after it starts (it clicks the skin's pin, so the pin
-  lights up; VLC itself always starts unpinned).
-- Keeps the player above the taskbar after you click the taskbar, steps
-  behind full-screen apps and comes back after.
-- Tray icon (dark square with a cyan bar) with a right-click menu: **Dock in
-  taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Playback**
-  (A-B loop, next / previous folder, next EQ preset; see [Lua extras](#lua-extras)),
-  **Open debug log** (when the log is on), **Quit helper**. Windows may hide the
-  icon under the `^` overflow until you drag it out.
-- **Taskbar button** for VLC (needs the web interface that Setup turns on):
-  hovering it shows **previous, play / pause and next** buttons and a preview
-  with title, artist and time; the button fills green with the track's
-  progress (yellow while paused); clicking it brings the player to the front,
-  also back from minimized; "Close window" quits VLC. VLC's own button
-  (which has none of this) is hidden. It belongs to the helper, so it is gone
-  while the helper is not running. Off: `$TaskbarButton = $false`, then run
-  Setup again.
-- Quits when VLC quits, except when started with Windows: then it waits for
-  the next VLC.
-
-Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
-by display scaling, and the taller taskbar build when docking), dock position
-(`start`, `left`, `right` = next to the tray icons), gap, vertical nudge, start
-pinned, tray icon, taskbar button (and its taskbar group, `$TaskbarAppId`),
-debug log.
-
-## Linux: pin on start
-
-VLC never remembers "always on top", so it starts unpinned. On Linux a small
-script does what the Windows helper does: it clicks the skin's own pin button
-once after VLC's window appears, so the pin lights up. It needs only
-`python3` (standard library; it talks to X11 through libX11, which VLC's skin
-needs anyway), no `xdotool`. It does not move your mouse pointer.
-
-```bash
-linux/titlebar-pin.py                        # once: wait for VLC's window, pin it, exit
-linux/titlebar-pin.py --watch &              # stay in the background, pin every new VLC
-linux/titlebar-pin.py --install-autostart    # run --watch at every login
-linux/titlebar-pin.py --uninstall-autostart  # undo that
-```
-
-`--install-autostart` writes `~/.config/autostart/titlebar-pin.desktop`
-(XDG autostart: GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt and others). The
-entry points at the script where it is now, so run it again if you move the
-folder. The watcher looks at the process list every 2 seconds, opens no
-connection to the display while VLC is not running, and pins each VLC start
-once; a pin you remove by hand stays removed. Options: `-v` (say what it does),
-`--dry-run` (print where the pin is, do not click), `--timeout`, `--scale`,
-`--display`.
-
-It works with the player collapsed or open, the bar at the top or bottom, and
-every shipped scaling. On Wayland, VLC's skin runs through XWayland and the
-script talks to that X server, so it should work the same (tested only on X11
-so far, see the Wayland checklist in [BACKLOG.md](BACKLOG.md)); it never places
-or moves windows (Wayland does not allow that for other programs).
-
-Whether the desktop keeps the player above other windows once pinned depends on
-the window manager honouring `_NET_WM_STATE_ABOVE`, as most X11 window managers
-do (the Wayland compositors' XWayland support is in the same checklist).
-Without one the pin lights up but nothing stacks differently.
-If the pin does not light, run the script with
-`-v` and see [docs/architecture.md](docs/architecture.md#linux-pin-on-start).
-
-## Lua extras
+### Lua extras
 
 VLC's skin engine cannot give a skin these features, so a small Lua script,
 `lua/intf/titlebar.lua`, runs inside VLC next to the skin (Windows and Linux).
@@ -327,7 +196,8 @@ Windows: `Setup.cmd` installs it. Linux and by hand: copy it to
 `~/.local/share/vlc/lua/intf/` (Windows: `%APPDATA%\vlc\lua\intf\`) and add
 `luaintf` to `extraintf` and `lua-intf=titlebar` to `vlcrc` (details in
 [docs/architecture.md](docs/architecture.md#lua-interface-luaintftitlebarlua)).
-VLC must have its Lua support (the normal Windows and distribution builds do).
+VLC must have its Lua support (the Windows build and the Ubuntu 24.04 package
+do; other distributions are not checked).
 
 | Feature | Default key (player has focus) | Tray menu (Windows) |
 |---|---|---|
@@ -359,7 +229,112 @@ VLC must have its Lua support (the normal Windows and distribution builds do).
 - Keys in the skin need VLC's Qt plugin (standard on Windows and in the
   normal Linux packages).
 
-## Media controls
+### Taskbar mode
+
+Windows 11 has no API to put a player *into* the taskbar, so a small helper
+(`taskbar\`, PowerShell + C#) keeps VLC's strip positioned over it.
+
+1. Free the space left of Start: Settings > Personalization > Taskbar >
+   **Widgets: Off**.
+2. Either run `Setup.cmd` and answer Yes to both questions (the helper starts
+   with Windows and docks VLC whenever it runs, also when started from a
+   file), or close VLC and double-click **`taskbar\VLC in taskbar.cmd`**
+   (VLC with the skin, docked, for this session). A console window flashes
+   briefly: that is PowerShell starting.
+3. Flip the panels to open **above** once (arrow on the PL / EQ header).
+
+**Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
+there.
+
+![The taller strip](docs/img/strip-taskbar.png)
+
+The folder has a second set of files, `Titlebar-taskbar-100/125/150/200.vlt`,
+with a 36 px strip (bigger buttons, text and volume slider; same width layout,
+the full player, EQ and playlist are unchanged). When you answer Yes to "dock in
+the taskbar", Setup picks this file, and so does `VLC in taskbar.cmd`; without
+docking (and for a title bar) the normal 24 px file is used. The helper reads
+the strip height from the file name (`taskbar` = 36, `bar40` = 40) and
+positions the strip and its pin click with it. For another height, build it
+(32-40 is sensible, the taskbar is 48):
+
+```bash
+python3 source/build_skin.py --scale 1.5 --bar-height 40     # Titlebar-bar40-150.vlt
+```
+
+copy the file (from `source/dist`) next to the other `.vlt` files, set `$Skin = "Titlebar-bar40-150.vlt"` at the top of `taskbar\vlc-taskbar.ps1`
+(the file name tells the helper the height; `auto` only looks for the 36 px
+`Titlebar-taskbar-NNN.vlt`) and run Setup again.
+
+What the helper does:
+
+- Puts the strip in the taskbar, vertically centred, 8 px left of Start, and
+  follows Start when taskbar icons shift. The full player sits just above
+  the taskbar; PL / EQ stick out above.
+- Pins VLC on top after it starts (it clicks the skin's pin, so the pin
+  lights up; VLC itself always starts unpinned).
+- Keeps the player above the taskbar after you click the taskbar, steps
+  behind full-screen apps and comes back after.
+- Tray icon (dark square with a cyan bar) with a right-click menu: **Dock in
+  taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Play /
+  pause** and **Playback** (A-B loop, next / previous folder, next EQ preset;
+  see [Lua extras](#lua-extras); the last two need the web interface),
+  **Open debug log** (when the log is on), **Quit helper**. Windows may hide the
+  icon under the `^` overflow until you drag it out.
+- **Taskbar button** for VLC (needs the web interface that Setup turns on):
+  hovering it shows **previous, play / pause and next** buttons and a preview
+  with title, artist and time; the button fills green with the track's
+  progress (yellow while paused); clicking it brings the player to the front,
+  also back from minimized; "Close window" quits VLC. VLC's own button
+  (which has none of this) is hidden. It belongs to the helper, so it is gone
+  while the helper is not running. Off: `$TaskbarButton = $false`, then run
+  Setup again.
+- Quits when VLC quits, except when started with Windows: then it waits for
+  the next VLC.
+
+Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
+by display scaling, and the taller taskbar build when docking), dock position
+(`start`, `left`, `right` = next to the tray icons), gap, vertical nudge, start
+pinned, tray icon, taskbar button (and its taskbar group, `$TaskbarAppId`),
+debug log.
+
+### Linux: pin on start
+
+VLC never remembers "always on top", so it starts unpinned. On Linux a small
+script does what the Windows helper does: it clicks the skin's own pin button
+once after VLC's window appears, so the pin lights up. It needs only
+`python3` (standard library; it talks to X11 through libX11, which VLC's skin
+needs anyway), no `xdotool`. It does not move your mouse pointer.
+
+```bash
+linux/titlebar-pin.py                        # once: wait for VLC's window, pin it, exit
+linux/titlebar-pin.py --watch &              # stay in the background, pin every new VLC
+linux/titlebar-pin.py --install-autostart    # run --watch at every login
+linux/titlebar-pin.py --uninstall-autostart  # undo that
+```
+
+`--install-autostart` writes `~/.config/autostart/titlebar-pin.desktop`
+(XDG autostart: GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt and others). The
+entry points at the script where it is now, so run it again if you move the
+folder. The watcher looks at the process list every 2 seconds, opens no
+connection to the display while VLC is not running, and pins each VLC start
+once; a pin you remove by hand stays removed. Options: `-v` (say what it does),
+`--dry-run` (print where the pin is, do not click), `--timeout`, `--scale`,
+`--display`.
+
+It works with the player collapsed or open, the bar at the top or bottom, and
+every shipped scaling (tested under Xvfb so far, not on a real desktop). On Wayland, VLC's skin runs through XWayland and the
+script talks to that X server, so it should work the same (tested only on X11
+so far, see the Wayland checklist in [BACKLOG.md](BACKLOG.md)); it never places
+or moves windows (Wayland does not allow that for other programs).
+
+Whether the desktop keeps the player above other windows once pinned depends on
+the window manager honouring `_NET_WM_STATE_ABOVE`, as most X11 window managers
+do (the Wayland compositors' XWayland support is in the same checklist).
+Without one the pin lights up but nothing stacks differently.
+If the pin does not light, run the script with
+`-v` and see [docs/architecture.md](docs/architecture.md#linux-pin-on-start).
+
+### Media controls
 
 **Windows.** VLC 3 does not talk to Windows' media controls by itself. Setup
 can add the free third-party plugin
@@ -384,6 +359,37 @@ Interface > Control interfaces > tick **Windows SMTC integration** > Save.
 desktop's media widget, media keys and `playerctl` control the skinned player.
 Tested with this skin.
 
+### More themes
+
+The generator has 10 more themes: dark Ember (amber), Forest (mint), Nord
+(frost blue), Dusk (pink), Carbon (red); light Paper (white / grey, blue), Sand
+(teal on cream), Sage (green), Rose (raspberry); and **Custom**, dark in any
+colour you choose.
+Each adds about 10 MB of VLC memory at 100 % scaling (20 MB at 150 %) and some
+start-up time, so build only the ones you want (the first is the default):
+
+```bash
+python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Nord,Custom" --custom "#33ff99"
+```
+
+`--themes all` builds every theme (about 240 MB of VLC memory at 100 %).
+
+**Custom colour.** A skin that contains Custom (built with it, as above) can
+be recoloured later without the generator: the tool in `custom-colour/`
+rewrites the `.vlt` files in this folder (close VLC first; it reads them at
+start). Then restart VLC and pick Custom with the theme button.
+
+- **Windows**: double-click **`custom-colour\Custom colour.cmd`**. A colour
+  dialog opens (starting at the current accent), then every `Titlebar-*.vlt`
+  next to the `custom-colour` folder is rewritten. Needs Windows 10 1803 or
+  later (`tar.exe`); no admin rights.
+- **Linux** (any distro, Python 3 only, nothing else to install):
+  `python3 custom-colour/custom-colour.py` opens `zenity`, `kdialog`, `yad` or
+  tkinter's colour chooser, whichever exists, else asks in the terminal.
+  `python3 custom-colour/custom-colour.py "#33ff99"` skips the dialog;
+  `--reset` returns to the default accent (`#b48cff`); more arguments are
+  `.vlt` files to change instead of the default ones.
+
 ## Troubleshooting
 
 | Problem | What to do |
@@ -397,7 +403,8 @@ Tested with this skin.
 | Linux: opening a file starts a second VLC | Run `linux/setup.sh` (VLC closed); one instance works over D-Bus, so it needs a desktop session. |
 | Linux: the skin is too small / too big | `linux/setup.sh --scale 150` (100, 125, 150 or 200). |
 | No VLC button in the taskbar | The button comes from the helper: check that it runs (tray icon) and that Setup has been run (the button needs VLC's web interface). Without the helper, set `$TaskbarButton = $false` and run Setup again to get VLC's own button back. |
-| Two VLC buttons in the taskbar | Run Setup again (VLC closed); it sets `skins2-taskbar=0`. |
+| Two VLC buttons in the taskbar | Run Setup again (VLC closed). It turns VLC's own button off when the helper starts with Windows or docks VLC. |
+| I want the normal VLC look back | Use native style (see [Manual install](#manual-any-os)), or the Undo steps above. |
 | The VLC button does not join my pinned VLC icon | Turn the log on and find `taskbar button: created ... app id "..."`. In PowerShell run `Get-StartApps \| Where-Object AppID -like '*vlc*'`. If the AppIDs differ, put the one from `Get-StartApps` into `$TaskbarAppId` in `vlc-taskbar.ps1`. |
 
 ### Testing the taskbar button (Windows)
@@ -438,7 +445,6 @@ on, `%TEMP%\titlebar-helper.log`):
     then steps 2 to 4.
 13. `$TaskbarButton = $false`, run Setup again: no helper button, VLC's own
     button is back (unless docked).
-| Back to the normal VLC look | Menu (≡) > Interface > Preferences > Use native style, or the Undo steps above. |
 
 ## Limits
 
@@ -457,7 +463,7 @@ These come from VLC's skin engine (skins2); details in
   150 %), see [More themes](#more-themes).
 - Windows only: the taskbar helper and the media-controls plugin (Linux has
   MPRIS built in). On Linux the strip floats: no docking into a panel (GNOME
-  has none; backlog 22c). Wayland runs through XWayland and is untested.
+  has none; BACKLOG item 22c). Wayland runs through XWayland and is untested.
 
 ## Project files
 
@@ -481,10 +487,10 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (min 420), `--bar-height` the strip height in logical
+width in logical pixels (min 420; 430 with `--bar-height 36`), `--bar-height` the strip height in logical
 pixels (default 24; 36 for the taskbar build, written as
 `Titlebar-taskbar-NNN.vlt`, other heights as `Titlebar-bar<N>-NNN.vlt`; the
-minimum width grows a little with it), `--out` the output folder (default
+minimum width grows with it), `--out` the output folder (default
 `source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
 the themes (comma-separated, the first one is the default; `all` = every
 theme; default `Midnight`), and

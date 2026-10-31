@@ -20,7 +20,7 @@ Last updated 2026-10-31. Status key:
 
 | # | Item | Status | Approach / workaround | Effort |
 |---|------|--------|-----------------------|--------|
-| 7 | PL / EQ attached to the bar, same width | **DONE** | Panels are now part of the main window's layouts (8 layouts: strip/full x EQ x PL). | done |
+| 7 | PL / EQ attached to the bar, same width | **DONE** | Panels are now part of the main window's layouts (4 layouts: strip / full x panels below / above; PL and EQ are shown inside them). | done |
 | 7a | Taskbar mode with panels open | **DONE (skin) / helper untested on Windows** | Panels open above or below the bar, chosen with the arrow on the panel header (one skin file, no separate taskbar build). The helper reads the window region (`GetWindowRgn`) to see whether the bar is at the top or bottom and whether the strip or full player is showing. Rule checked against real VLC window shapes at 100 % and 150 %; compiled with Mono (C# 5). Placement itself still needs a run on Windows. | done |
 | 7b / 13 | Same width with playlist open / closed | **DONE** | All 4 layouts (strip / full x panels below / above) have the same size, so VLC carries the dragged width between them (verified in `setActiveLayout`). Unused space is transparent and click-through (window region). PL / EQ are shown / hidden inside the layout via invisible 1x1 "flag" windows whose visibility VLC saves. Tested in VLC: drag +120 px, open PL+EQ, expand, flip, collapse, quit, restart: width, panels, side and time mode all restored. Cost: playlist height is fixed. | done |
 | 14 | Choose where PL / EQ open (above / below), bar must not move | **DONE** | Arrow on the PL / EQ header flips both panels to the other side; remembered across restarts. The bar no longer moves when panels open or close. Flipping itself moves the bar to the other end of the window (one-time re-drag). Both panels share the side; a per-panel side would need 4 more layouts. | done |
@@ -31,16 +31,16 @@ Last updated 2026-10-31. Status key:
 | 6 | Odd button resize on mouse-over (screenshot) | **DONE (needs a check on Windows)** | Cause: strip and full player bitmaps had ids differing only by case (`b_slower` / `B_slower`, `t_play` / `T_play` ...). VLC unpacks the .vlt to disk, and on Windows (case-insensitive) one PNG overwrote the other, so strip buttons showed the full player's larger images. Renamed to `fb_*` / `ft_*`; the build now fails on any case-only collision. Linux never showed it. | done |
 | 8 | Playlist: show duration, optional columns | **BLOCKED** | The skins2 Playtree control draws one text column (verified: no column support in `ctrl_tree`). Workarounds: (a) accept; (b) a Lua *playlist rename* that appends the duration to item titles (changes titles, clunky); (c) PATCH: add a column renderer to the Playtree control (large). | L / XL |
 | 9 | Empty space in the full player LCD, meaning of the numbers | **DONE** | Big number = time left, `12:22 / 18:34` = elapsed / total, `SPEED 1x` = playback speed. Full player is now 122 px (was 146): toggles and speed share one row under the bitrate line, empty boxes gone. Tested in VLC. | done |
-| 10 | Timer wider than 59:59 (hours) | **DONE** | Strip time box 50 -> 64 px (title field 14 px shorter, min strip width 428 -> 442); full player time column widened to 126 px. Tested with a 63-minute track in VLC: `-1:03:16` fits both. Tracks of 10 h+ would still overflow. | done |
+| 10 | Timer wider than 59:59 (hours) | **DONE** | Strip time box 50 -> 64 px (title field 14 px shorter; the minimum strip width is now 420, item 5); full player time column widened to 126 px. Tested with a 63-minute track in VLC: `-1:03:16` fits both. Tracks of 10 h+ would still overflow. | done |
 | N2 | Playlist stretch only from the bottom-left corner | **Superseded by 13** (playlist height is now fixed; width follows the bar) | skins2 only has `resizeS`, `resizeE`, `resizeSE` (verified in the builder): **no west or south-west resize**, so a bottom-left handle cannot resize leftwards. Options: (a) one grip in the bottom-*right* corner, height only; (b) bottom-left grip that uses `resizeSE` (drag right/down, feels wrong); (c) PATCH: add `resizeSW`. Also decide: should the playlist ever change width on its own, or only follow the bar? Proposed default: remove the right and bottom edge handles, keep a single bottom-corner grip that changes the height only. | S |
 | N3 | "Knihovna medii" (Media Library) node does nothing | **DONE (untested on Windows)** | Setup writes `media-library=0` (verified in VLC: the node disappears). | done |
 | N1 | Start pinned to top (always on top) | **DONE (untested on Windows)** | Option (b): the helper posts a mouse click to the skin's own pin button 1.5 s after VLC's window appears, once per VLC start, so VLC's state and the lit pin agree. Pin positions checked by clicking in VLC at 150 %. Setup can start the helper with Windows in watch mode (`-Watch`, waits for VLC, also when VLC is started from a file), with or without docking (`-NoDock`). Untested: that skins2 on Windows accepts the posted messages (the source handles WM_MOUSEMOVE / WM_LBUTTONDOWN / UP from the message queue, so it should). | done |
 | 2 | EQ presets | **DONE (Linux-tested via harness; Windows untested)** | Same script: Ctrl+Shift+Up / Down (`viewpoint-fov-in` / `-out`), tray menu Playback > Next EQ preset. Cycles VLC's 18 presets, re-applies on new tracks; the skin's EQ panel follows. Bonus: bitrate for FLAC and other lossless files (the script sets the input's `bit-rate` variable). The sample rate stays whole kHz (skins2 limit). | done |
 | 15 | Clicking the taskbar hides the player even when pinned | **HELPER, needs info** | Windows behaviour: when the taskbar is clicked it moves itself to the top of the "always on top" group, so any pinned window lying over it is covered. VLC's pin (`vlc.onTop`) sets topmost once and never re-asserts it, so without the helper this is expected. The helper re-asserts topmost when the taskbar is above VLC (on every foreground change and every 250 ms), so with the helper the player should come back within a fraction of a second. If it does not: (a) check the helper is running (started via `VLC in taskbar.cmd`); (b) debug the z-order check on Windows. Stronger fix: (c) re-parent the strip into the taskbar window (`SetParent` onto `Shell_TrayWnd`, the technique TrafficMonitor uses on Windows 11), so the taskbar can never cover it. Cost: only while the bare strip shows (a child window is clipped to the taskbar, so panels / full player need it un-parented again), plus the cross-process input coupling risks of SetParent. Questions: helper running? Gone for good or back after a moment? Clicked an empty taskbar spot, an app icon, or VLC's own taskbar button (that one minimizes)? | S-M |
 | 16 | Project under version control | **DONE** | Git repository in `Titlebar-VLC-skin/`, first commit = state before the launcher setup. | done |
-| 17 | Seek from the strip (no rewind / fast-forward before) | **DONE** | The strip's title window is a seek slider over the song name: the played part fills it (201 frames plus a play-head line), a click jumps to that point and can drag, the mouse wheel steps 5 %. The title text uses `focus="false"` so the click reaches the slider. Verified in source (`CtrlSliderBg`: click = jump, wheel = variable step 0.05) and in VLC: a click at 50 % went to 1:41 of 3:20, at 25 % on a wider strip to 0:51. Keyboard also works: VLC's hotkeys (Shift / Alt / Ctrl + arrow keys) jump 3 s / 10 s / 1 min while the player has focus. | done |
-| 18 | Light / dark theme + 3 colours each, switch in the full player title bar; then (6th list) one button only, more coordinated variations, own colour; then (7th list) minimal: keep the dark blue one | **DONE** | **Release skins now carry only Midnight** (user's choice; `DEFAULT_THEMES`; measured on Linux at 100 %: Midnight alone 136 MB RSS, + Paper 146 MB, all 11 240 MB, VLC's default skin 131 MB; at 150 %: 146 / 167 / 360 MB; start-up 1.7 / 1.7 / 4.6 s). The other themes stay in the generator (`--themes`, README "More themes"). Before that: 10 coordinated themes (6 dark, 4 light, each with its own tinted base, accent and LED) + Custom, rendered into the same layouts, shown via flag windows `th0..th10`; one button in the full player's title bar steps to the next theme (tooltip: current / next). Custom: any accent, recoloured exactly from a red reference (item 23). Memory now ~190 MB at 100 %, ~310 MB at 150 % (fill frames cut from 101 to 51 to keep it there); `--themes` builds a lighter subset. Earlier: 6 themes, sun / moon + dots. Needed two fixes found in VLC's source: explicit ids for every element (generated ids repeat after 999 and crash VLC) and bitmap atlases (`<SubBitmap>`: startup 12 s -> 1.5 s). Cost: ~150 MB RSS at 100 %, 240 MB at 150 %. Tested in VLC: switching, persistence, panels in all themes. | done |
-| 11 | Tray icon for the helper (replace the Ctrl+Alt+Shift+V hotkey) | **DONE (T7, untested on Windows)** | NotifyIcon with Dock / Pin now / Open debug log / Quit; compile-checked. | done |
+| 17 | Seek from the strip (no rewind / fast-forward before) | **DONE** | The strip's title window is a seek slider over the song name: the played part fills it (51 frames, `FILL_FRAMES`, plus a play-head line), a click jumps to that point and can drag, the mouse wheel steps 5 %. The title text uses `focus="false"` so the click reaches the slider. Verified in source (`CtrlSliderBg`: click = jump, wheel = variable step 0.05) and in VLC: a click at 50 % went to 1:41 of 3:20, at 25 % on a wider strip to 0:51. Keyboard also works: VLC's hotkeys (Shift / Alt / Ctrl + arrow keys) jump 3 s / 10 s / 1 min while the player has focus. | done |
+| 18 | Light / dark theme + 3 colours each, switch in the full player title bar; then (6th list) one button only, more coordinated variations, own colour; then (7th list) minimal: keep the dark blue one | **DONE** | **Release skins carry only Midnight** (`DEFAULT_THEMES`, the user's choice). The generator builds 10 themes plus Custom (`--themes`, README "More themes"): each theme is a full set of controls in the same 4 layouts, shown by its own flag window (`th0`, `th1`, ...). The full player's title bar has one theme button that steps to the next theme (tooltip: current / next); it is left out when one theme is built. Memory and start-up figures: [architecture.md](docs/architecture.md#bitmaps-atlases) and README Limits. Custom: any accent, recoloured exactly from a red reference (item 23). Tested in VLC: switching, persistence, panels in all themes. | done |
+| 11 | Tray icon for the helper (replace the Ctrl+Alt+Shift+V hotkey) | **DONE (T7, untested on Windows)** | NotifyIcon with Dock / Pin now / Play / pause / Playback (A-B, folder jump, EQ preset) / Open debug log / Quit; compile-checked. | done |
 | 12 | Taller strip for the taskbar (36 px) | **DONE (skin) / helper untested on Windows** | Generator `--bar-height N` (default 24, 36 = taskbar build); release files `Titlebar-taskbar-{100,125,150,200}.vlt` (36 px; naming `Titlebar-taskbar-NNN` / `Titlebar-bar<N>-NNN`). Widths and right-edge offsets unchanged (min width 430); window height is the same for all 4 layouts. Setup and the helper prefer the taskbar file when docking and read the bar height from the file name (`VlcDock.BarHeight` replaces `P(24)` in ReadShape / Place / ClickPin). Tested in VLC at 100 % and 150 % (shape rule, clicks, panels above / below); the Windows placement is untested. Pin stays (the helper clicks it). | done |
 | 19 | Play / pause / prev / next when hovering VLC's taskbar button (Windows) | **DONE (untested on Windows)** (T12; end of `VlcDock.cs`, `$TaskbarButton` in `vlc-taskbar.ps1`) | skins2's taskbar button belongs to its hidden 0 x 0 root window and Windows sends thumbnail clicks only to the owning window, so the helper shows its **own** button (invisible `WS_EX_APPWINDOW` window: layered alpha 0, click-through, off-screen) and VLC's is hidden (`skins2-taskbar=0` from Setup when the helper starts with Windows, `--no-skins2-taskbar` from the launcher; a leftover VLC button is removed with `DeleteTab`). Built: 3 thumbnail buttons (icons drawn at runtime, follow Windows dark / light), progress in the button (green / yellow paused / none; interpolated from 21's 500 ms polls), hover preview card (title, artist, time; `DwmSetIconicThumbnail`), title "Artist - Title", VLC's icon. Click = VLC to the front (restored if minimized, `SC_RESTORE` to skins2's root window); "Close window" = `SC_CLOSE` = VLC quits normally. App id: VLC 3 sets none, so the helper uses the id Windows derives from vlc.exe's path plus relaunch properties (`$TaskbarAppId` overrides). Mono compile (strict) + unit tests of layouts / GUIDs / drawing. *Unverified:* everything at runtime; 13-step checklist in README. | L |
 | 20 | Windows media integration: media flyout (volume / media keys), Quick Settings media card, lock screen, hardware media keys | **DONE in Setup (T13, untested on Windows)** | Setup asks, finds VLC's architecture from vlc.exe's PE header, offers the VC++ runtime (Microsoft download, Authenticode checked), downloads the pinned v5.0.0 zip (SHA-256 = GitHub's release digests), copies the DLL (one UAC prompt; none for a writable portable VLC) and adds `win10smtc` to `extraintf` (module name from `plugin.h`, `PLUGIN_SHORTNAME`; `extraintf` is the option behind Qt's "Control interfaces" box). This is the "integrate it into Windows" option (System Media Transport Controls, SMTC). VLC 3 has none. The community plugin [vlc-win10smtc](https://github.com/spmn/vlc-win10smtc) adds it: GPL-3.0, maintained (v5.0.0, 2026-09-08, supports VLC 3.0.x and 4), Windows 10 1607+ / 11, x64 / x86 / ARM64 builds. It needs the Visual C++ 2022 redistributable matching VLC's architecture (VLC's, not Windows'). Install: copy `libwin10smtc_plugin.dll` to `<VLC>\plugins\misc` (Program Files, so admin once), then Advanced Preferences > Interface > Control interfaces > "Windows SMTC integration". It is a control interface, so it runs next to skins2: VLC starts `extraintf` / `control` modules whatever the main interface is (verified, `src/libvlc.c`). It creates its own hidden window, so it does not depend on the skin. The exact `extraintf` value (expected `win10smtc`) and the behaviour with skins2 are *unverified* until tested on Windows. Covers most of what 19 asks for in Windows' own UI; 19 adds the buttons on the taskbar hover itself. | M |
@@ -102,7 +102,7 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 |---------|:-----:|:-----:|:-------:|:--------:|----------|
 | A-B loop | yes (logic) | no | yes | yes (via A) | C for a button, A + hotkey for a quick version |
 | Next/prev folder | yes (logic) | no | yes | yes (via A) | same |
-| EQ presets | yes (*unverified API*) | no | yes | yes (via A) | same |
+| EQ presets | yes (API verified, T5) | no | yes | yes (via A) | same |
 | Start on top | no | no | yes | yes | D |
 | Playlist columns | no | no | yes (large) | no | accept or C |
 | West / SW resize | no | no | yes | no | C or accept |
@@ -117,23 +117,36 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 ## 3. Suggested order
 
 Docs: user guide in README.md, internals in [docs/architecture.md](docs/architecture.md).
+Most items are built. What is left needs a Windows machine, the user's answers, or phase 2.
 
-1. **Windows test of the setup:** run `Setup.cmd`, then open a file from Explorer: skin, single window, Media Library gone, player pinned (pin lit).
-2. **Fix 15** (taskbar click hides the player): needs the answers to its questions.
-3. **Strip layout:** move slower / faster to the full player (part of 5). That frees 48 px in the strip for the title or for the folder buttons later.
-4. **Decision point:** features 4, 5, 2 (A-B loop, folder jump, EQ presets). Choose between A + D (Lua script + hotkeys / tray menu, no skin buttons) and C (patched skins2 plugin with real buttons).
-5. **Playlist columns (8):** only if C is chosen.
-6. **Windows integration:** SMTC plugin in Setup (20, T13) first: it is cheap and covers media keys, the flyout and the lock screen. Then the control channel (21, T11), then the taskbar hover buttons (19, T12).
-7. **Linux:** after your answers to question 3: setup script (22a, T14), MPRIS docs (22b, T15), then pin / panel docking and the Wayland check (22c, 22d, T16).
+1. **Windows test (next):** run `taskbar\Setup.cmd`, then open a file from Explorer: skin, one
+   window, no Media Library entry, player pinned (pin lit). Then the 13-step taskbar button
+   checklist in README ("Testing the taskbar button"). Record the results in the *untested* marks
+   of items 1, 7a, 11, 12, 15, 19, 20, 21 and 23.
+2. **T9 (fix 15, taskbar click hides the player):** needs the user's answers to item 15 and the
+   helper's debug log (T3) from that Windows run. Decide from the log; do not guess.
+3. **Phase 2:** T17 (online configurator, item 24), then T18 (follow the system light / dark, item 25;
+   needs T17 step 4 and the Linux launcher from T14).
+
+Waiting on the user, no code: the Wayland and real window manager checklist (item 22d).
+Parked: T10 (patched skins2), only if the user chooses option C in section 2.
 
 Agent-sized work packages for these steps are in section 5.
 
 ## 4. Open questions
 
-1. ~~Items 4, 5, 2~~ **Answered 2026-10-31:** the Lua route (A + D: Lua interface script, hotkeys, helper tray menu). T6 started.
-2. Item 15: is the helper running, does the player come back after a moment, and what exactly was clicked?
-3. ~~Linux (22)~~ **Answered 2026-10-31:** distro unknown, make it universal; floating + pinned first, no panel docking.
-4. ~~Item 20~~ **Answered 2026-10-31:** yes, Setup downloads and installs the SMTC plugin.
+1. Item 15: the answers from the Windows run. Was the helper running? Does the player come back
+   after a moment? What exactly was clicked? Needed for T9, together with the debug log.
+2. Item 22d: the Wayland and window manager checklist (GNOME, KDE, XFCE, tiling WMs, Flatpak and
+   Snap VLC). Record the results in item 22d.
+
+Answered (for the record):
+
+- Items 4, 5, 2 (2026-10-31): the Lua route, A + D (Lua interface script, hotkeys, helper tray menu).
+  Built as T6.
+- Item 20 (2026-10-31): yes, Setup downloads and installs the SMTC plugin (T13).
+- Item 22 (2026-10-31): distro unknown, so it must be universal. Floating and pinned first, no panel
+  docking.
 
 ---
 
@@ -147,11 +160,11 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 - **Opus**: open-ended design, root-cause work on unclear bugs, or large, risky spikes.
 
 **Rules for every agent**
-- Read `README.md` and this file first. The generator is `source/build_skin.py`; built skins are `Titlebar-{100,125,150,200}.vlt` in the repo root (rebuild all four with `--scale 1 / 1.25 / 1.5 / 2`, `--out` to a temp folder, then copy the `.vlt` files and `preview-100.png` -> `preview.png`).
+- Read `README.md` and this file first. The generator is `source/build_skin.py`. Release skins are `Titlebar-{100,125,150,200}.vlt` (24 px) and `Titlebar-taskbar-{100,125,150,200}.vlt` (36 px) in the repo root. Rebuild them with `--scale 1 / 1.25 / 1.5 / 2` (add `--bar-height 36` for the taskbar set), `--out` to a temp folder, then copy the `.vlt` files and `preview-100.png` -> `preview.png`.
 - skins2 limits are listed in items 7b/13, 3, and section 2. Check the VLC 3.0.x source (github.com/videolan/vlc, branch `3.0.x`, `modules/gui/skins2`) before relying on any skins2 behaviour; do not guess.
 - Windows scripts keep CRLF line endings and plain ASCII. `VlcDock.cs` must stay C# 5 (Windows PowerShell 5.1 `Add-Type`).
 - Never `pkill vlc` / `killall`: kill only PIDs you started. No `sudo`.
-- Do not commit; leave changes in the working tree for review. Update this backlog's item row when done.
+- Commit on your own worktree branch, with the attribution line. Never commit to the main branch, never push, and do not merge: whoever integrates the branches does that. Update this backlog's item row when done.
 
 | ID | Task | Model | Depends on | Size |
 |----|------|-------|------------|------|
@@ -202,8 +215,10 @@ For item 15. Nobody can watch the helper on Windows, so give it an opt-in log.
 - Compile-check with Mono (`mcs -langversion:5`, stub the UIA types as in the existing stubs; see the memory note or T1). Document the switch in the README.
 
 ### T4 - Docs consistency pass (Haiku)
-- Read README.md and BACKLOG.md against the code. Fix outdated statements: `--full-width` and the `Titlebar-taskbar-*` files no longer exist; there are 4 layouts of equal size; PL/EQ state lives in flag windows; Setup.cmd exists. Also fix broken numbering and duplicated sentences.
-- Do not change any behaviour or code. Keep the item numbers stable.
+Done (2026-10-31): README, this file, `docs/` and `tools/README.md` checked against the code. Stale
+numbers, duplicate sections and broken links fixed. For the next pass: check each claim against
+`source/build_skin.py`, `taskbar/`, `linux/`, `lua/` and `tools/`; keep one section per topic and
+link to it from elsewhere; do not change behaviour or code; keep the item numbers stable.
 
 ### T5 - Lua API fact check (Haiku)
 Answer from the VLC 3.0.x source (`modules/lua/libs/*.c`, `share/lua/intf/*.lua`, `share/lua/README.txt`), with file:line references:

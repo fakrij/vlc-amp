@@ -41,8 +41,8 @@ which it reads from `Titlebar-<n>.vlt` on VLC's command line (else `TB_SCALE`,
 default 100). `shape` and `quit` also read the strip height from the file name
 (`Titlebar-taskbar-<n>.vlt` = 36, `Titlebar-bar<h>-<n>.vlt` = h, else 24; `skin_bar`).
 With a taller strip, the strip's buttons are centred at `bar / 2` (bar at the top)
-or `window height - bar / 2` (panels above); x positions do not change. If the layout of the strip or full player changes, update the
-numbers in `cmd_quit`.
+or `window height - bar / 2` (panels above); x positions do not change. If the layout of the strip or full player changes,
+update the numbers in `cmd_quit`.
 
 ## Environment variables
 
@@ -74,6 +74,8 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
   by both scripts).
 - `xshape.py`: reads the X11 shape (used by `shape` and `quit`).
 - `doc-shots.sh`: regenerates the screenshots in `docs/img` from real VLC.
+
+The extracted tree has the Qt plugin (`libqt_plugin.so`), which skin keyboard input needs.
 
 ## Gotchas (all handled by the scripts)
 

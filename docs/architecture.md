@@ -13,7 +13,7 @@ behaviour**; several "obvious" assumptions turned out wrong (see
 ## Overview
 
 ```
-source/build_skin.py  --(Pillow)-->  Titlebar-NNN.vlt  (tar.gz: theme.xml + img/*.png + fonts/)
+source/build_skin.py  --(Pillow)-->  Titlebar-NNN.vlt  (tar.gz: theme.xml + img/*.png + fonts/; custom-ref/ when Custom is built)
                                           |
                     VLC skins2 interface  <--  vlcrc (intf=skins2, skins2-last=...)  <--  taskbar/Setup.cmd (Windows)
                                                               linux/setup.sh (Linux)
@@ -82,7 +82,8 @@ and `Setup` / the helper pick the `taskbar` file when docking if it exists
 
 Opening PL / EQ, the time mode and the theme are not layouts (that would
 multiply them). They are **tiny 1 x 1 windows** with no visible pixels:
-`eqflag`, `plflag`, `tflag`, `th0` ... `th5`. Shown = on.
+`eqflag`, `plflag`, `tflag`, and one `th<i>` per theme built (`th0`, `th1`, ...;
+the release skins have `th0` only). Shown = on.
 
 - Controls test them with `visible="plflag.isVisible and not eqflag.isVisible"`
   (skins2 supports `and`, `or`, `not`; no parentheses; `not` binds tightest).
@@ -103,8 +104,8 @@ neutral colours** (black, white, grey); the Custom theme depends on that (see
 below). `apply_theme(i)` sets the module-level colour names (`CYAN*` are the
 accent colours, named after the default theme). `--themes` builds a subset
 (`set_themes`); the release skins use `DEFAULT_THEMES` (Midnight only), and
-with a single theme the theme button is left out. The generator renders the whole skin once per theme, into the
-same 4 layouts:
+with a single theme the theme button is left out. The generator renders the
+whole skin once per theme, into the same 4 layouts:
 
 - bitmap ids get the prefix `t<i>_` (`Skin.prefix`, applied by `Skin.add` and
   the `Layout` methods);
@@ -115,7 +116,7 @@ same 4 layouts:
   around) with `th<i+1>.show();th<j>.hide();...` (shows first, so something is
   always drawn).
 
-Cost: about 2400 bitmaps and 4000 controls with 11 themes. See the next sections for what
+Cost: about 2400 bitmaps and 4000 controls with all 11 themes. See the next sections for what
 that broke and how it is handled.
 
 ### Custom theme
@@ -170,8 +171,8 @@ themes 240 MB (150 %: 146 / 167 / 360 MB). About 100 MB is VLC and its
 libraries, shared with any skin; each theme adds ~10 MB at 100 %. Most of the per-theme cost is the fill frame
 sheets (`title_fill`, `seek`, volume): `CtrlSliderBg` copies its whole frame
 sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
-Hence `FILL_FRAMES = 51` (2 % steps; 101 frames cost 80 MB more at 150 %).
-Start-up grows by roughly 0.4 s per theme (measured under Xvfb).
+Hence `FILL_FRAMES = 51` (2 % steps); the earlier 101-frame sheets cost about 80 MB more at 150 %.
+Start-up: 1.7 s with Midnight alone, 4.6 s with all 11 themes (under Xvfb).
 
 ## Element ids
 
@@ -239,13 +240,12 @@ when no line exists. Colon lists are merged, never replaced.
 | `one-instance-when-started-from-file` | core | `1` | yes | yes | Same, for launches with `--started-from-file` (what the launchers pass) |
 | `playlist-enqueue` | core | `0` | yes | yes | ...and the file starts playing |
 | `media-library` | core | `0` | yes | yes | No "Media Library" node in the playlist. **On Linux the `vlc` program overrides it**, so the Linux setup also writes a launcher with `--no-media-library` |
-| `skins2-taskbar` | skins2 | `1`, or `0` when docked | yes | no | Windows-only option (it does not exist in VLC's Linux build) |
+| `skins2-taskbar` | skins2 | `0` when the helper docks VLC or starts with Windows (it has its own button), else `1` | yes | no | Windows-only option (it does not exist in VLC's Linux build) |
 | `extraintf` | core | colon list: `http`, `luaintf` (when `lua/intf/titlebar.lua` exists), plus `win10smtc` (Windows, media controls) | yes | yes | Control interfaces started next to skins2 |
 | `http-host` | core | `127.0.0.1` | yes | yes | Web interface for this computer only |
 | `http-port` | core | `48080` | yes | yes | An unusual port |
 | `http-password` | lua | random, 24 letters and digits; kept if already set | yes | yes | Locks the web interface. Windows: the helper's control channel uses it. Linux: nothing uses it yet, it is there for later helpers (`--no-web` skips the three web keys) |
 | `lua-intf` | lua | `titlebar` | yes | yes | Which script the `luaintf` interface runs (`modules/lua/vlc.c`: `lua-intf` and `lua-config` belong to the primary `lua` module) |
-
 | `key-subsync-markaudio` ... `key-viewpoint-fov-out` | core | the five lines of `lua/vlcrc-keys.txt` | yes | yes | Default keys of the Lua extras; written only when unset |
 
 Both setups read `lua/vlcrc-keys.txt` (`<section> <key>=<value>`), so more
@@ -552,21 +552,11 @@ only. The script needs a VLC with Lua (the Windows build and the Ubuntu 24.04
 packages used by the harness have it; other distributions: not checked). It also works with Lua 5.1
 (Windows) and 5.2 (the Ubuntu 24.04 build used by the harness).
 
-vlcrc lines, exactly (same as `lua/vlcrc-keys.txt` plus the two lines the setups handle themselves; the `[lua]` and `[core]` section headers only matter for
-a file that does not have the option yet; VLC reads these keys from any
-section):
-
-```
-[core]
-extraintf=http:luaintf
-key-subsync-markaudio=Ctrl+Shift+a
-key-viewpoint-roll-clock=Ctrl+Shift+Right
-key-viewpoint-roll-anticlock=Ctrl+Shift+Left
-key-viewpoint-fov-in=Ctrl+Shift+Up
-key-viewpoint-fov-out=Ctrl+Shift+Down
-[lua]
-lua-intf=titlebar
-```
+The setups write `extraintf` (with `luaintf` added), `lua-intf=titlebar` and the
+five `key-...` lines of `lua/vlcrc-keys.txt` (the one list of default keys), as
+in the [vlcrc keys](#vlcrc-keys-what-both-setups-write) table. VLC reads these
+keys from any section; the section headers only matter when a key is added to
+a file that does not have it yet.
 
 ### The trigger bridge
 
@@ -683,8 +673,9 @@ tools/doc-shots.sh                                    # regenerate docs/img
 - [tools/README.md](../tools/README.md): the test harness.
 - The helper can only be compile-checked on Linux (Mono `mcs -langversion:5`
   with small stubs for the UI Automation types); behaviour needs Windows.
-- Release: build all four scales (`--scale 1 / 1.25 / 1.5 / 2`), copy the
-  `.vlt` files to the repo root, run `tools/doc-shots.sh` if the look changed.
+- Release: build all four scales (`--scale 1 / 1.25 / 1.5 / 2`) twice, the 24 px
+  set and the taskbar set (`--bar-height 36`, `Titlebar-taskbar-NNN.vlt`), copy
+  the `.vlt` files to the repo root, run `tools/doc-shots.sh` if the look changed.
 
 ## skins2 pitfalls we hit
 
