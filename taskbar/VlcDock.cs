@@ -29,6 +29,7 @@ public static class VlcDock
 {
     // ---- settings (set from PowerShell before Run)
     public static double Scale = 1.0;      // skin build scale: 1.0 = Titlebar-100.vlt
+    public static double BarHeight = 24;   // strip height in logical px: 24, or 36 for Titlebar-taskbar-NNN.vlt (generator --bar-height)
     public static string DockTo = "start"; // "start" | "left" | "right"
     public static int Gap = 8;             // px between strip and Start button / taskbar edge
     public static int OffsetY = 0;         // fine-tune vertical position of the strip
@@ -144,7 +145,7 @@ public static class VlcDock
         lastVlcSeen = DateTime.Now;
         Remote = new VlcRemote("127.0.0.1", RemotePort, RemotePassword);
         Remote.Logger = Log;
-        Log("helper started: scale=" + Scale + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
+        Log("helper started: scale=" + Scale + " barHeight=" + BarHeight + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
             " dock=" + Dock + " startPinned=" + StartPinned + " exitWithVlc=" + ExitWithVlc +
             " remote=" + (Remote.Configured ? "port " + RemotePort : "off"));
         StartRemote();
@@ -337,7 +338,7 @@ public static class VlcDock
             // "dn" layouts have the bar at the top; only full player + EQ + playlist reach the bottom
             barAtBottom = box.Bottom >= hh - 1;
             // the strip's corner is rounded (transparent); the full player's edge there is not
-            full = PtInRegion(rgn, 0, barAtBottom ? hh - P(24) : P(24));
+            full = PtInRegion(rgn, 0, barAtBottom ? hh - P(BarHeight) : P(BarHeight));
         }
         finally
         {
@@ -560,10 +561,10 @@ public static class VlcDock
             x = W(r) - P(82) + P(9);
             y = (barAtBottom ? hh - P(122) : 0) + P(11);
         }
-        else        // strip: pin 34 px from the right edge
+        else        // strip: pin 34 px from the right edge, centred in the bar
         {
             x = W(r) - P(34) + P(11);
-            y = (barAtBottom ? hh - P(24) : 0) + P(12);
+            y = (barAtBottom ? hh - P(BarHeight) : 0) + P(BarHeight / 2);
         }
         Log("PinOnce: click at " + x + "," + y + " in " + Describe(main) + " (full=" + full + " barAtBottom=" + barAtBottom +
             " windowW=" + W(r) + " windowH=" + hh + ")");
@@ -654,8 +655,8 @@ public static class VlcDock
         int mainY;
         if (!full)
         {
-            int barTop = tb.Top + (H(tb) - P(24)) / 2 + OffsetY;
-            mainY = barAtBottom ? barTop - (hh - P(24)) : barTop;
+            int barTop = tb.Top + (H(tb) - P(BarHeight)) / 2 + OffsetY;
+            mainY = barAtBottom ? barTop - (hh - P(BarHeight)) : barTop;
         }
         else
             mainY = atBottom ? tb.Top - box.Bottom : tb.Bottom - box.Top;

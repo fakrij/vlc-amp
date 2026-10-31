@@ -54,7 +54,9 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 1. Copy this folder somewhere permanent, for example `Documents\VLC-skin`.
    The setup points VLC at the skin file in it.
 2. Close VLC and double-click **`taskbar\Setup.cmd`**. It:
-   - picks the skin file for your display scaling (`Titlebar-100/125/150/200.vlt`);
+   - picks the skin file for your display scaling (`Titlebar-100/125/150/200.vlt`;
+     if you let the helper dock the player in the taskbar, the taller
+     `Titlebar-taskbar-NNN.vlt`, see [Taskbar mode](#taskbar-mode));
    - makes VLC use the skin also when you double-click a file or folder in
      Explorer;
    - sends files you open to the running player (no second VLC window);
@@ -174,6 +176,27 @@ Windows 11 has no API to put a player *into* the taskbar, so a small helper
    briefly: that is PowerShell starting.
 3. Flip the panels to open **above** once (arrow on the PL / EQ header).
 
+**Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
+there.
+
+![The taller strip](docs/img/strip-taskbar.png)
+ The folder has a second set of files, `Titlebar-taskbar-100/125/150/200.vlt`,
+with a 36 px strip (bigger buttons, text and volume slider; same width layout,
+the full player, EQ and playlist are unchanged). When you answer Yes to "dock in
+the taskbar", Setup picks this file, and so does `VLC in taskbar.cmd`; without
+docking (and for a title bar) the normal 24 px file is used. The helper reads
+the strip height from the file name (`taskbar` = 36, `bar40` = 40) and
+positions the strip and its pin click with it. For another height, build it
+(32-40 is sensible, the taskbar is 48):
+
+```bash
+python3 source/build_skin.py --scale 1.5 --bar-height 40     # Titlebar-bar40-150.vlt
+```
+
+copy the file (from `source/dist`) next to the other `.vlt` files, set `$Skin = "Titlebar-bar40-150.vlt"` at the top of `taskbar\vlc-taskbar.ps1`
+(the file name tells the helper the height; `auto` only looks for the 36 px
+`Titlebar-taskbar-NNN.vlt`) and run Setup again.
+
 What the helper does:
 
 - Puts the strip in the taskbar, vertically centred, 8 px left of Start, and
@@ -191,7 +214,7 @@ What the helper does:
   the next VLC.
 
 Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
-by display scaling), dock position (`start`, `left`, `right` = next to the
+by display scaling, and the taller taskbar build when docking), dock position (`start`, `left`, `right` = next to the
 tray icons), gap, vertical nudge, start pinned, tray icon, debug log.
 
 ## Media controls
@@ -250,7 +273,7 @@ These come from VLC's skin engine (skins2); details in
 
 | Path | What |
 |---|---|
-| `Titlebar-*.vlt` | The skin, one file per display scaling |
+| `Titlebar-*.vlt` | The skin, one file per display scaling; `Titlebar-taskbar-*.vlt` the same with a taller strip for the taskbar |
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs` |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
@@ -266,7 +289,10 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (min 420), `--out` the output folder (default
+width in logical pixels (min 420), `--bar-height` the strip height in logical
+pixels (default 24; 36 for the taskbar build, written as
+`Titlebar-taskbar-NNN.vlt`, other heights as `Titlebar-bar<N>-NNN.vlt`; the
+minimum width grows a little with it), `--out` the output folder (default
 `source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
 the themes (comma-separated, the first one is the default; `all` = every
 theme; default `Midnight`), and
