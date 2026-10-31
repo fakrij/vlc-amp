@@ -265,6 +265,122 @@ function Set-VlcDefaults([System.Collections.Generic.List[string]]$lines, $file)
     }
 }
 
+# ---- Media Library: --no-media-library for double-clicks in Explorer ----
+# VLC's launcher (bin/winvlc.c) starts libvlc with "--media-library --no-ignore-config" in front of the
+# command line, so media-library=0 in vlcrc loses; a later --no-media-library on the command line wins.
+# Files opened from Explorer start VLC with the command in the registry (VLC's installer writes it under
+# HKLM\SOFTWARE\Classes: ProgIDs "VLC.<ext>", "VLC.OPENFolder" ..., "Applications\vlc.exe", plus the verbs
+# PlayWithVLC / AddToPlaylistVLC under "Directory", "AudioCD" and "DVD"; every command is
+# "<dir>\vlc.exe" --started-from-file ... "%1"). Per-user keys under HKCU\Software\Classes win over HKLM,
+# so Setup writes the same command with the flag after vlc.exe there (no admin needed) and lists the keys in
+# file-associations.txt; uninstall.ps1 removes exactly those. Windows' own "default app" choice (UserChoice)
+# is not touched: it names a ProgID, and only the VLC ProgIDs are changed.
+$NoMediaLibrary = "--no-media-library"
+$AssocFile = Join-Path $env:LOCALAPPDATA "Titlebar-VLC-skin\file-associations.txt"
+
+# HKLM\SOFTWARE\Classes in the 64-bit and the 32-bit registry view (VLC 64-bit writes to the first,
+# VLC 32-bit on 64-bit Windows may use the second; on 32-bit Windows both are the same key)
+function Get-HklmClassesRoots {
+    $roots = @()
+    foreach ($view in 'Registry64', 'Registry32') {
+        try {
+            $base = [Microsoft.Win32.RegistryKey]::OpenBaseKey('LocalMachine', $view)
+            $k = $base.OpenSubKey('SOFTWARE\Classes')
+            if ($k) { $roots += $k }
+        } catch { }
+    }
+    return $roots
+}
+
+# '"C:\x\vlc.exe" --a "%1"' -> @{ Exe = 'C:\x\vlc.exe'; Rest = ' --a "%1"'; Quote = '"' }, or $null
+function Split-ShellCommand($cmd) {
+    if ($cmd -match '^\s*"([^"]+)"(.*)$') { return @{ Exe = $Matches[1]; Rest = $Matches[2]; Quote = '"' } }
+    if ($cmd -match '^\s*(\S+)(.*)$')     { return @{ Exe = $Matches[1]; Rest = $Matches[2]; Quote = '' } }
+    return $null
+}
+
+function Test-SameFile($a, $b) {
+    try { return [string]::Equals([IO.Path]::GetFullPath($a), [IO.Path]::GetFullPath($b), 'OrdinalIgnoreCase') }
+    catch { return $false }
+}
+
+function Test-HasNoMediaLibrary($cmd) { return [bool]($cmd -match '(^|\s)--no-media-library(\s|$)') }
+
+# The shell commands VLC's installer registered for this vlc.exe, as @{ Rel = 'VLC.mp3\shell\Open\command';
+# New = '<same command with the flag after vlc.exe>' }. Only commands that run $vlcExe with --started-from-file
+# and have no flag yet (so other programs' verbs, VLC's skin file types and a flag we added are skipped).
+function Get-VlcShellCommands($vlcExe) {
+    $seen = @{}
+    $out = New-Object System.Collections.ArrayList
+    foreach ($root in (Get-HklmClassesRoots)) {
+        $progs = New-Object 'System.Collections.Generic.List[string]'
+        foreach ($n in $root.GetSubKeyNames()) { if ($n -like 'VLC.*') { $progs.Add($n) } }
+        foreach ($n in 'Applications\vlc.exe', 'Directory', 'AudioCD', 'DVD') { $progs.Add($n) }
+        foreach ($prog in $progs) {
+            try {
+                $shell = $root.OpenSubKey("$prog\shell")
+                if (-not $shell) { continue }
+                foreach ($verb in $shell.GetSubKeyNames()) {
+                    $rel = "$prog\shell\$verb\command"
+                    if ($seen.ContainsKey($rel.ToLowerInvariant())) { continue }
+                    $ck = $shell.OpenSubKey("$verb\command")
+                    if (-not $ck) { continue }
+                    $cmd = [string]$ck.GetValue('')
+                    $ck.Close()
+                    $seen[$rel.ToLowerInvariant()] = $true
+                    if ($cmd -notlike '*--started-from-file*' -or (Test-HasNoMediaLibrary $cmd)) { continue }
+                    $parts = Split-ShellCommand $cmd
+                    if (-not $parts -or -not (Test-SameFile $parts.Exe $vlcExe)) { continue }
+                    $new = $parts.Quote + $parts.Exe + $parts.Quote + " $NoMediaLibrary" + $parts.Rest
+                    [void]$out.Add(@{ Rel = $rel; New = $new })
+                }
+            } catch { }
+        }
+    }
+    return $out
+}
+
+# Write the per-user overrides; returns how many keys are listed in file-associations.txt afterwards.
+# Setup can run again: the same commands are written again, the flag is never added twice, and a key
+# the user changed to something else (no flag) is left alone.
+function Set-VlcFileAssociations($vlcExe) {
+    $hkcu = [Microsoft.Win32.RegistryKey]::OpenBaseKey('CurrentUser', 'Registry64')
+    $done = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($e in (Get-VlcShellCommands $vlcExe)) {
+        $path = "Software\Classes\" + $e.Rel
+        try {
+            $cur = $hkcu.OpenSubKey($path)
+            if ($cur) {
+                $old = [string]$cur.GetValue('')
+                $cur.Close()
+                # an existing user command: ours (has the flag; refreshed in case VLC moved) or the user's own (left alone)
+                if ($old -and -not (Test-HasNoMediaLibrary $old)) { continue }
+            }
+            $k = $hkcu.CreateSubKey($path)
+            $k.SetValue('', $e.New, [Microsoft.Win32.RegistryValueKind]::String)
+            $k.Close()
+            $done.Add($path)
+        } catch { }
+    }
+    # the list: what was there before (a second Setup, or keys of an earlier VLC) plus what was written now
+    $all = New-Object 'System.Collections.Generic.List[string]'
+    if (Test-Path -LiteralPath $AssocFile) {
+        foreach ($l in [IO.File]::ReadAllLines($AssocFile)) {
+            $t = $l.Trim()
+            if ($t -and -not $t.StartsWith('#') -and -not $all.Contains($t)) { $all.Add($t) }
+        }
+    }
+    foreach ($p in $done) { if (-not $all.Contains($p)) { $all.Add($p) } }
+    if ($all.Count -gt 0) {
+        $lines = New-Object 'System.Collections.Generic.List[string]'
+        $lines.Add('# HKCU keys written by the Titlebar skin setup (--no-media-library). The uninstaller removes these, only if they still have the flag.')
+        $lines.AddRange($all)
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $AssocFile) | Out-Null
+        [IO.File]::WriteAllLines($AssocFile, $lines, (New-Object System.Text.UTF8Encoding $false))
+    }
+    return $all.Count
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
@@ -312,7 +428,8 @@ function Invoke-Setup {
     Set-VlcOption $lines "core"   "one-instance" "1"                           # files opened from Explorer go to the
     Set-VlcOption $lines "core"   "one-instance-when-started-from-file" "1"    # running player, no second window
     Set-VlcOption $lines "core"   "playlist-enqueue" "0"                       # ... and start playing
-    Set-VlcOption $lines "core"   "media-library" "0"                          # no "Media Library" entry in the playlist
+    Set-VlcOption $lines "core"   "media-library" "0"                          # no "Media Library" entry in the playlist (VLC's
+                                                                               # launcher overrides this: see the file associations below)
     # VLC's own taskbar button: off when docked, or when the helper (started with Windows) shows its own
     # button with the hover controls; else on, so a minimized VLC can still be brought back
     $helperButton = $autostart -and $TaskbarButton -and $VlcControl
@@ -342,6 +459,10 @@ function Invoke-Setup {
     }
     [IO.File]::WriteAllLines($rc, $lines, (New-Object System.Text.UTF8Encoding $false))  # vlcrc: UTF-8 without BOM
 
+    # Explorer double-clicks: VLC's launcher forces --media-library, so the registry commands get --no-media-library
+    $assoc = 0
+    if ($vlcExe) { try { $assoc = Set-VlcFileAssociations $vlcExe } catch { } }
+
     # a helper that is already running read the old settings: stop it (a new one starts below)
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
         Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*vlc-taskbar.ps1*" -and $_.CommandLine -notlike "*-Setup*" } |
@@ -369,6 +490,10 @@ function Invoke-Setup {
         $extra += "Extra keys (while the player has focus): Ctrl+Shift+A = A-B loop, Ctrl+Shift+Left / Right = previous / next folder, " +
             "Ctrl+Shift+Up / Down = next / previous equalizer preset. The helper's tray menu has them too.`n`n"
     }
+    if ($assoc -gt 0) {
+        $extra += "Files and folders opened from Explorer start VLC without the Media Library entry ($assoc per-user file association entries, removed by the uninstaller). " +
+            "VLC's own Start menu entry and a pinned VLC taskbar icon still show it; use Start menu > Titlebar VLC skin > VLC (Titlebar).`n`n"
+    }
     Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" + $extra +
         "VLC's web interface is on for this computer only (127.0.0.1, port 48080, password in vlcrc); the helper uses it.`n`n" +
         "To undo: Start menu > Titlebar VLC skin > Uninstall (or Uninstall.cmd).") | Out-Null
@@ -393,7 +518,7 @@ if ($StartVlc -and -not $Watch -and -not (Get-Process vlc -ErrorAction SilentlyC
         Show-Msg "VLC was not found. Install VLC or set its path in vlc-taskbar.ps1." | Out-Null
         exit 1
     }
-    $vlcArgs = @('--intf', 'skins2', "--skins2-last=`"$skinPath`"")
+    $vlcArgs = @('--intf', 'skins2', $NoMediaLibrary, "--skins2-last=`"$skinPath`"")   # the flag beats the launcher's --media-library
     # no VLC taskbar button when docked, or when the helper shows its own (it needs the web interface)
     if (($HideVlcTaskbarButton -and -not $NoDock) -or ($TaskbarButton -and $remote)) { $vlcArgs += '--no-skins2-taskbar' }
     Start-Process -FilePath $exe -ArgumentList $vlcArgs

@@ -239,7 +239,7 @@ when no line exists. Colon lists are merged, never replaced.
 | `one-instance` | core | `1` | yes | yes | Files opened from the file manager go to the running player (Windows: window message; Linux: D-Bus, see below) |
 | `one-instance-when-started-from-file` | core | `1` | yes | yes | Same, for launches with `--started-from-file` (what the launchers pass) |
 | `playlist-enqueue` | core | `0` | yes | yes | ...and the file starts playing |
-| `media-library` | core | `0` | yes | yes | No "Media Library" node in the playlist. **On Linux the `vlc` program overrides it**, so the Linux setup also writes a launcher with `--no-media-library` |
+| `media-library` | core | `0` | yes | yes | No "Media Library" node in the playlist. **VLC's launcher overrides it on both systems** (`bin/vlc.c`, `bin/winvlc.c`): Linux setup writes a launcher with `--no-media-library`, Windows setup adds the flag to the file association commands, the helper's VLC start and a Start menu shortcut (see "File associations") |
 | `skins2-taskbar` | skins2 | `0` when the helper docks VLC or starts with Windows (it has its own button), else `1` | yes | no | Windows-only option (it does not exist in VLC's Linux build) |
 | `extraintf` | core | colon list: `http`, `luaintf` (when `lua/intf/titlebar.lua` exists), plus `win10smtc` (Windows, media controls) | yes | yes | Control interfaces started next to skins2 |
 | `http-host` | core | `127.0.0.1` | yes | yes | Web interface for this computer only |
@@ -290,8 +290,9 @@ under XWayland with compositor scaling is unverified.
 
 **Media Library gotcha.** The Linux `vlc` program (`bin/vlc.c`) builds its
 argument list as `--no-ignore-config --media-library [--dbus] <your arguments>`
-(`--dbus` when built with D-Bus; Windows' `winvlc.c` adds none of them), so
-`media-library=0` in `vlcrc` loses. A later `--no-media-library` on the command
+(`--dbus` when built with D-Bus; Windows' `winvlc.c` has the same
+`--media-library --no-ignore-config` and no `--dbus`, see "File associations"
+in the Windows section), so `media-library=0` in `vlcrc` loses. A later `--no-media-library` on the command
 line wins over the earlier `--media-library`. Hence the launcher
 `~/.local/share/applications/vlc-titlebar.desktop`: a copy of the system
 launcher (`vlc.desktop`, Flatpak's `org.videolan.VLC.desktop`, Snap's
@@ -467,6 +468,59 @@ grows. Never run it against your real home unless you want the changes.
   through skins2's own tray icon (`skins2-systray`, on by default,
   `src/skin_main.cpp`; double-click restores). That is why Setup turns VLC's
   button off only when the helper starts with Windows.
+
+**File associations (Media Library on Windows).** `bin/winvlc.c` (3.0.x) builds
+libvlc's argument list as `--media-library --no-ignore-config <your
+arguments>` (`argv[j++] = FromWide(L"--media-library")` and
+`L"--no-ignore-config"` come first, then the command line), so
+`media-library=0` in `vlcrc` loses, exactly as on Linux; a later
+`--no-media-library` wins. VLC's NSIS installer
+(`extras/package/win32/NSIS/vlc.win32.nsi.in`, `helpers/extensions.nsh`) writes
+under `HKLM\SOFTWARE\Classes`:
+
+- one ProgID per extension, named `VLC` + extension, so `VLC.mp3`, `VLC.flac`
+  ..., with `shell\Open\command` = `"<dir>\vlc.exe" --started-from-file "%1"`
+  and, with the context menu option, the verbs `shell\PlayWithVLC\command`
+  (`... --started-from-file --no-playlist-enqueue "%1"`) and
+  `shell\AddToPlaylistVLC\command` (`... --playlist-enqueue "%1"`);
+- the same two verbs under `Directory`, and `PlayWithVLC` under `AudioCD` and
+  `DVD` (`... --started-from-file cdda:///%1`);
+- `Applications\vlc.exe\shell\Open\command` ("Open with"), and the
+  AutoPlay ProgIDs `VLC.DVDMovie`, `VLC.CDAudio`, `VLC.VCDMovie`,
+  `VLC.SVCDMovie`, `VLC.OPENFolder`, `VLC.Bluray`;
+- the skin file types `VLC.vlt` / `VLC.wsz` (`-Iskins --skins2-last "%1"`),
+  which Setup skips because the command has no `--started-from-file`.
+
+Setup (`Set-VlcFileAssociations`) reads those keys (`Get-HklmClassesRoots`
+opens both the 64-bit and the 32-bit registry view with
+`RegistryKey.OpenBaseKey`; a 64-bit VLC writes to the 64-bit one) and, for
+every `shell\<verb>\command` of `VLC.*`, `Applications\vlc.exe`, `Directory`,
+`AudioCD` and `DVD` that runs this `vlc.exe` with `--started-from-file` and has
+no flag yet, writes the same command with ` --no-media-library` inserted after
+`vlc.exe` to `HKCU\Software\Classes\<same path>` (default value, `REG_SZ`).
+`HKCU` wins over `HKLM` in the merged `HKCR`, needs no admin, and the verb's
+label and icon still come from `HKLM`. The paths written go, one per line
+relative to `HKCU`, into `%LOCALAPPDATA%\Titlebar-VLC-skin\file-associations.txt`
+(`install.ps1` keeps it when it mirrors the package folder: `robocopy /XF`).
+A second Setup writes identical values (the flag is never doubled: the source
+is the `HKLM` command, and a key that already has the flag is refreshed, one
+without it that is already in `HKCU` is the user's own and is left alone).
+Windows' "default app" (`UserChoice` under
+`HKCU\...\FileExts\<ext>`) is never read or written: it names a ProgID, and
+if that is another program's, files open its way. `uninstall.ps1` deletes
+exactly the listed keys, only if the command still contains
+`--no-media-library`, then the verb, `shell` and ProgID keys if they are empty.
+`HKLM` is never written.
+
+The other ways VLC starts: the helper's own start passes `--no-media-library`
+(`$vlcArgs` in `vlc-taskbar.ps1`); `install.ps1` adds the Start menu shortcut
+"VLC (Titlebar)" (`vlc.exe --no-media-library`, in the Titlebar VLC skin
+folder). Not covered: VLC's own Start menu shortcuts and desktop icon (all-users
+folders, admin needed to edit) and a VLC icon pinned to the taskbar (a copy of
+the shortcut in `User Pinned\TaskBar`; rewriting those pins is not safe, so
+the user can unpin it and pin "VLC (Titlebar)" instead). *Unverified on
+Windows*: the whole path was written from VLC's installer source and could
+not be run (no Windows here).
 
 ### Linux: pin on start
 

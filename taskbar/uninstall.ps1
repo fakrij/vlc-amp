@@ -2,6 +2,8 @@
 #
 #   restores VLC's settings from vlcrc.before-titlebar (the current file is kept as vlcrc.titlebar-removed),
 #   stops the helper, removes its Startup shortcut, the Lua extras, the Start menu entries,
+#   the per-user file association overrides listed in file-associations.txt (only keys that still have
+#   --no-media-library),
 #   optionally the media controls plugin, and the installed folder %LOCALAPPDATA%\Titlebar-VLC-skin.
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -35,6 +37,44 @@ if (Test-Path $backup) {
 } elseif (Test-Path $rc) {
     Remove-Item $rc      # there was no vlcrc before the setup: VLC starts with its defaults
     Write-Host "   vlcrc removed (there was none before the setup); VLC starts with its defaults"
+}
+
+Step "Removing the file association overrides (--no-media-library)"
+# Setup wrote HKCU\Software\Classes\<ProgID>\shell\<verb>\command for the VLC ProgIDs and listed them, one
+# path under HKCU per line, in file-associations.txt. Remove exactly those keys, and only when the command
+# still has our flag (otherwise the user or another program changed it). Then the verb, shell and ProgID keys
+# if they are empty now. HKLM (VLC's own entries) is never touched.
+function Remove-EmptyKey($hive, $path) {
+    $k = $hive.OpenSubKey($path)
+    if (-not $k) { return $false }
+    $empty = ($k.SubKeyCount -eq 0 -and $k.ValueCount -eq 0)
+    $k.Close()
+    if ($empty) { $hive.DeleteSubKey($path, $false) }
+    return $empty
+}
+$assocFile = Join-Path $dest "file-associations.txt"
+if (Test-Path -LiteralPath $assocFile) {
+    $hkcu = [Microsoft.Win32.RegistryKey]::OpenBaseKey('CurrentUser', 'Registry64')
+    $removed = 0
+    foreach ($line in [IO.File]::ReadAllLines($assocFile)) {
+        $rel = $line.Trim()
+        if (-not $rel -or $rel.StartsWith('#')) { continue }
+        if ($rel -notmatch '^Software\\Classes\\.+\\shell\\[^\\]+\\command$') { continue }   # only keys of this kind
+        try {
+            $k = $hkcu.OpenSubKey($rel)
+            if (-not $k) { continue }
+            $cmd = [string]$k.GetValue('')
+            $k.Close()
+            if ($cmd -notmatch '(^|\s)--no-media-library(\s|$)') { continue }
+            $hkcu.DeleteSubKeyTree($rel, $false)
+            $removed++
+            $verbKey  = $rel.Substring(0, $rel.LastIndexOf('\'))
+            $shellKey = $verbKey.Substring(0, $verbKey.LastIndexOf('\'))
+            $progKey  = $shellKey.Substring(0, $shellKey.LastIndexOf('\'))
+            foreach ($up in $verbKey, $shellKey, $progKey) { if (-not (Remove-EmptyKey $hkcu $up)) { break } }
+        } catch { }
+    }
+    Write-Host "   $removed registry key(s) removed"
 }
 
 Step "Removing the Startup shortcut, Lua extras and Start menu entries"
