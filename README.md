@@ -194,6 +194,43 @@ Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
 by display scaling), dock position (`start`, `left`, `right` = next to the
 tray icons), gap, vertical nudge, start pinned, tray icon, debug log.
 
+## Linux: pin on start
+
+VLC never remembers "always on top", so it starts unpinned. On Linux a small
+script does what the Windows helper does: it clicks the skin's own pin button
+once after VLC's window appears, so the pin lights up. It needs only
+`python3` (standard library; it talks to X11 through libX11, which VLC's skin
+needs anyway), no `xdotool`. It does not move your mouse pointer.
+
+```bash
+linux/titlebar-pin.py                        # once: wait for VLC's window, pin it, exit
+linux/titlebar-pin.py --watch &              # stay in the background, pin every new VLC
+linux/titlebar-pin.py --install-autostart    # run --watch at every login
+linux/titlebar-pin.py --uninstall-autostart  # undo that
+```
+
+`--install-autostart` writes `~/.config/autostart/titlebar-pin.desktop`
+(XDG autostart: GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt and others). The
+entry points at the script where it is now, so run it again if you move the
+folder. The watcher looks at the process list every 2 seconds, opens no
+connection to the display while VLC is not running, and pins each VLC start
+once; a pin you remove by hand stays removed. Options: `-v` (say what it does),
+`--dry-run` (print where the pin is, do not click), `--timeout`, `--scale`,
+`--display`.
+
+It works with the player collapsed or open, the bar at the top or bottom, and
+every shipped scaling. On Wayland, VLC's skin runs through XWayland and the
+script talks to that X server, so it should work the same (tested only on X11
+so far, see the Wayland checklist in [BACKLOG.md](BACKLOG.md)); it never places
+or moves windows (Wayland does not allow that for other programs).
+
+Whether the desktop keeps the player above other windows once pinned depends on
+the window manager honouring `_NET_WM_STATE_ABOVE`, as most X11 window managers
+do (the Wayland compositors' XWayland support is in the same checklist).
+Without one the pin lights up but nothing stacks differently.
+If the pin does not light, run the script with
+`-v` and see [docs/architecture.md](docs/architecture.md#linux-pin-on-start).
+
 ## Media controls
 
 **Windows.** VLC 3 does not talk to Windows' media controls by itself. Setup
@@ -254,6 +291,7 @@ These come from VLC's skin engine (skins2); details in
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs` |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
+| `linux/` | Linux: `titlebar-pin.py` (pin on start, autostart) |
 | `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
 | `tools/` | Test harness: real VLC under Xvfb, screenshots ([tools/README.md](tools/README.md)) |
 | `docs/` | [Architecture](docs/architecture.md), [Lua API notes](docs/lua-api-notes.md), screenshots |
