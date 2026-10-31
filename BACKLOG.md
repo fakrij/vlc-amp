@@ -6,6 +6,8 @@ Last updated 2026-10-31. Status key:
 - **SKIN**: doable in the skin generator alone.
 - **CONFIG**: doable with VLC settings / launcher arguments, no code.
 - **HELPER**: needs the Windows dock helper (PowerShell/C#).
+- **PLUGIN**: needs a third-party VLC plugin (not ours, installed next to VLC).
+- **LINUX**: Linux-specific work (the skin itself already runs on Linux; all our tests run there).
 - **LUA**: needs a Lua interface script running next to the skin.
 - **PATCH**: needs a patched `libskins2_plugin` (own build of VLC's skin engine).
 - **BLOCKED**: not possible with any of the above without a trade-off (see notes).
@@ -40,8 +42,16 @@ Last updated 2026-10-31. Status key:
 | 18 | Light / dark theme + 3 colours each, switch in the full player title bar | **DONE** | 6 themes rendered into the same layouts, shown via flag windows `th0..th5`; sun / moon toggles light / dark, dots pick the accent. Needed two fixes found in VLC's source: explicit ids for every element (generated ids repeat after 999 and crash VLC) and bitmap atlases (`<SubBitmap>`: startup 12 s -> 1.5 s). Cost: ~150 MB RSS at 100 %, 240 MB at 150 %. Tested in VLC: switching, persistence, panels in all themes. | done |
 | 11 | Tray icon for the helper (replace the Ctrl+Alt+Shift+V hotkey) | **DONE (T7, untested on Windows)** | NotifyIcon with Dock / Pin now / Open debug log / Quit; compile-checked. | done |
 | 12 | Taller strip for the taskbar (e.g. 36 px), hide the pin in taskbar mode | **SKIN + HELPER** | Listed in the original open items. | S |
+| 19 | Play / pause / prev / next when hovering VLC's taskbar button (Windows) | **HELPER** (needs 21) | Verified in the 3.0.x source: VLC's normal (Qt) interface adds these buttons (`ThumbBarAddButtons` in `qt/main_interface_win32.cpp`); skins2 does not. With skins2, the taskbar button belongs to a hidden 0 x 0 window at -200,-200 (`skins2/win32/win32_factory.cpp`), so the hover preview is empty and nothing in VLC would handle button clicks. Windows sends a button click only to the window that owns the taskbar button, inside VLC's process, so the helper cannot add the buttons to VLC's own button. Plan: the helper shows its **own** taskbar button, and VLC's is hidden (`skins2-taskbar=0`, already a helper setting). It carries 3 thumbnail buttons, the track progress drawn in the taskbar button (`SetProgressValue`), a play / pause overlay icon, a custom hover preview (title + time, `DwmSetIconicThumbnail`) and VLC's icon. With VLC's app id set on the window, it groups with a pinned VLC icon. Clicking the button brings VLC forward. Commands go to VLC through 21. | L |
+| 20 | Windows media integration: media flyout (volume / media keys), Quick Settings media card, lock screen, hardware media keys | **PLUGIN** (+ Setup) | This is the "integrate it into Windows" option (System Media Transport Controls, SMTC). VLC 3 has none. The community plugin [vlc-win10smtc](https://github.com/spmn/vlc-win10smtc) adds it: GPL-3.0, maintained (v5.0.0, 2026-09-08, supports VLC 3.0.x and 4), Windows 10 1607+ / 11, x64 / x86 / ARM64 builds. It needs the Visual C++ 2022 redistributable matching VLC's architecture (VLC's, not Windows'). Install: copy `libwin10smtc_plugin.dll` to `<VLC>\plugins\misc` (Program Files, so admin once), then Advanced Preferences > Interface > Control interfaces > "Windows SMTC integration". It is a control interface, so it runs next to skins2: VLC starts `extraintf` / `control` modules whatever the main interface is (verified, `src/libvlc.c`). It creates its own hidden window, so it does not depend on the skin. The exact `extraintf` value (expected `win10smtc`) and the behaviour with skins2 are *unverified* until tested on Windows. Covers most of what 19 asks for in Windows' own UI; 19 adds the buttons on the taskbar hover itself. | M |
+| 21 | Control channel from the helper to VLC (prerequisite for 19, and for menu-style controls in section 2 D) | **CONFIG + HELPER** | VLC's built-in web interface on localhost: `extraintf=http`, `http-host=127.0.0.1`, a random `http-password` written by Setup. `requests/status.json` gives play state, time, length, title / artist and the art URL; commands like `?command=pl_pause` / `pl_next` / `pl_previous` / `seek`. Alternative: the `rc` interface over TCP (`liboldrc_plugin`): simpler, but without a password any local program can control VLC. Works the same on Linux, but Linux has MPRIS (22b) anyway. *Unverified*: Windows Firewall prompt for a loopback-only listener (expected none). | S-M |
+| 22 | Linux as a first-class platform (you use it on Linux too) | **LINUX** | The skin itself runs on Linux X11 today (every test and screenshot is from Linux VLC 3.0.20). Missing: setup, desktop integration, pin on start, and Wayland. Sub-items 22a-22d below. **Decided 2026-10-31:** distro unknown, so everything must be universal (any distro, any desktop, native / Flatpak / Snap VLC, X11 and Wayland via XWayland, only tools present everywhere). First goal: floating strip, pinned on start; no panel docking for now. | - |
+| 22a | Linux setup script | **LINUX** | `linux/setup.sh`, counterpart of `Setup.cmd`: writes `~/.config/vlc/vlcrc` (`intf=skins2`, `skins2-last`, `one-instance=1`, `one-instance-when-started-from-file=1`, `playlist-enqueue=0`) and picks the scale from `GDK_SCALE` / `Xft.dpi` / GNOME `scaling-factor`. **Verified gotcha:** the Linux `vlc` launcher always adds `--media-library` and `--dbus` before your arguments (`bin/vlc.c`; Windows' `winvlc.c` does not), so `media-library=0` in vlcrc is overridden. Fix: a user copy of `vlc.desktop` in `~/.local/share/applications/` with `--no-media-library` in `Exec`, set as default for audio types with `xdg-mime`. Flatpak / Snap keep vlcrc elsewhere (`~/.var/app/org.videolan.VLC/config/vlc/`, `~/snap/vlc/common/.config/vlc/`); detect them. On Linux, one-instance goes through D-Bus. | M |
+| 22b | Linux media controls (MPRIS): desktop media widget, media keys, lock screen, KDE taskbar hover buttons | **DONE in VLC (verified) / docs** | **Tested today with the skin:** VLC registers `org.mpris.MediaPlayer2.vlc` (the launcher forces `--dbus`), and `Next` and `PlayPause` sent over D-Bus worked. So GNOME's top-bar media card, KDE's media controller, `playerctl` and media keys work with no work from us. KDE Plasma's task manager also shows prev / play / next when hovering the app's taskbar entry, which is Linux's version of 19 (*unverified* that Plasma matches the skin window to the `vlc` desktop entry; check `WM_CLASS`). Metadata shows title / artist only for tagged files. To do: document it, and check the KDE hover on your machine. | XS |
+| 22c | Linux: start pinned and dock into a panel | **LINUX** | X11: VLC's pin works (tested in Xvfb). Start pinned needs a small helper, as on Windows, that clicks the skin's pin once VLC's window appears (`xdotool`, the same click our test harness does). Docking into a panel depends on the desktop (GNOME has none); **postponed** (decision 2026-10-31: floating + pin first). | M |
+| 22d | Wayland | **LINUX**, *unverified* | skins2 uses Xlib only, so on a Wayland session VLC's skin runs through XWayland. Expected to work: shaped (click-through) windows, moving the window, always-on-top on GNOME / KDE. Risks: fractional scaling (blurry or wrong size), "always on top" ignored by some compositors, a Linux helper unable to place windows outside XWayland. Needs a test on your machine. | ? |
 
-Numbers 1-10 follow your first list; N1-N3 your second list; 13-14 your third list (13 = width, 14 = panel side); 15 and 17 your fourth and fifth; 7a, 7b, 11, 12, 16 were added during analysis.
+Numbers 1-10 follow your first list; N1-N3 your second list; 13-14 your third list (13 = width, 14 = panel side); 15 and 17 your fourth and fifth; 18 the themes; 19-22 your sixth list (taskbar hover buttons, Windows integration, Linux); 7a, 7b, 11, 12, 16, 21 were added during analysis.
 
 ---
 
@@ -73,6 +83,12 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 - Gives menu-style controls, not buttons inside the skin. A second UI toolkit next to the skin is a design compromise, but it is the cheapest way to get the missing features on Windows.
 - Needs Lua interface A (or VLC's built-in `--extraintf http` / `rc` interface) as the receiving end.
 
+### F. Operating-system media integration (items 19-22)
+
+- **Windows:** the SMTC plugin (20) for the media flyout, lock screen and media keys, plus the helper's own taskbar button for the hover buttons (19). Both are outside the skin; the helper talks to VLC through 21.
+- **Linux:** VLC's built-in MPRIS (22b, verified with the skin) already does the desktop's part.
+- **Effect on the choice for 4 / 5 / 2:** Linux use favours A (Lua runs inside VLC on both systems) over D (the helper is Windows-only). C would need a build per platform: on Linux it must match your distro's VLC 3.0.x package, which is easier than the Windows cross-build.
+
 ### E. Own player on libvlc (outside the current scope)
 
 - A new app (C#/WPF or Qt) using libvlc, with its own title-bar strip, playlist with columns, A-B loop, presets, folder navigation, media keys. Removes every skins2 limit. It is a different project, not an upgrade of this skin. Mentioned only as the long-term clean option.
@@ -87,7 +103,11 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 | Start on top | no | no | yes | yes | D |
 | Playlist columns | no | no | yes (large) | no | accept or C |
 | West / SW resize | no | no | yes | no | C or accept |
-| Media Library node | n/a | n/a | n/a | n/a | CONFIG |
+| Media Library node | n/a | n/a | n/a | n/a | CONFIG (Linux: `.desktop` override, 22a) |
+| Taskbar hover buttons (Windows) | no | no | no (skins2 owns no real taskbar window) | yes (own taskbar button + 21) | D |
+| Windows media flyout / media keys | no | no | no | possible via WinRT, fiddly | third-party plugin (20) |
+| Linux media controls | n/a | n/a | n/a | n/a | built in (MPRIS, 22b) |
+| Runs on Linux | yes | - | yes (own build) | no | A |
 
 ---
 
@@ -100,6 +120,8 @@ Docs: user guide in README.md, internals in [docs/architecture.md](docs/architec
 3. **Strip layout:** move slower / faster to the full player (part of 5). That frees 48 px in the strip for the title or for the folder buttons later.
 4. **Decision point:** features 4, 5, 2 (A-B loop, folder jump, EQ presets). Choose between A + D (Lua script + hotkeys / tray menu, no skin buttons) and C (patched skins2 plugin with real buttons).
 5. **Playlist columns (8):** only if C is chosen.
+6. **Windows integration:** SMTC plugin in Setup (20, T13) first: it is cheap and covers media keys, the flyout and the lock screen. Then the control channel (21, T11), then the taskbar hover buttons (19, T12).
+7. **Linux:** after your answers to question 3: setup script (22a, T14), MPRIS docs (22b, T15), then pin / panel docking and the Wayland check (22c, 22d, T16).
 
 Agent-sized work packages for these steps are in section 5.
 
@@ -107,6 +129,8 @@ Agent-sized work packages for these steps are in section 5.
 
 1. Items 4, 5, 2: is a hotkey / tray-menu solution acceptable, or do you want real buttons in the skin (patched plugin)?
 2. Item 15: is the helper running, does the player come back after a moment, and what exactly was clicked?
+3. ~~Linux (22)~~ **Answered 2026-10-31:** distro unknown, make it universal; floating + pinned first, no panel docking.
+4. ~~Item 20~~ **Answered 2026-10-31:** yes, Setup downloads and installs the SMTC plugin.
 
 ---
 
@@ -138,6 +162,12 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T8 | Taller taskbar strip option (12) | Sonnet | T1 | M |
 | T9 | Fix 15 (taskbar click hides the player) | Opus | Windows answers + T3 log | M |
 | T10 | Patched skins2 feasibility spike (option C) | Opus | decision on 4/5/2 | XL |
+| T11 | Control channel: helper talks to VLC's web interface (21) | Sonnet (**running**) | T1 | S-M |
+| T12 | Helper's own taskbar button with hover buttons, progress, overlay (19) | Opus | T11 | L |
+| T13 | SMTC plugin install in Setup (20) | Opus (main session, **in progress**) | - | M |
+| T14 | Linux setup script (22a) | Sonnet | T1 | M |
+| T15 | Linux docs: MPRIS, setup, limits (22b) | Haiku | T14 | XS |
+| T16 | Linux pin on start + Wayland check (22c, 22d; docking postponed) | Opus (design), Sonnet (build) | T14 | M |
 
 ### T1 - Test harness in the repo (Sonnet)
 Goal: any agent can run real VLC 3.0.20 with the skin, click it and take screenshots, without sudo.
@@ -211,3 +241,43 @@ Only if the user chooses option C.
 - Find out whether a `libskins2_plugin.dll` built from 3.0.x sources with mingw-w64 loads in the official Windows VLC 3.0.x build (version and ABI match, plugin cache).
 - Add one trivial new action (for example `vlc.abLoop()`, implemented in the core input like Qt's A-B, or a log line) as the proof.
 - Report the build steps, size, time, and the risk on each VLC update. Do not start the full feature set.
+
+### T11 - Control channel to VLC (Sonnet)
+Item 21. Gives the helper a way to read VLC's state and send commands.
+- Setup (`vlc-taskbar.ps1 -Setup`): add `http` to `extraintf` without dropping existing entries (colon-separated, for example `win10smtc:http`), and set `http-host=127.0.0.1`, `http-port` (default 8080; pick a free one such as 48080 to avoid clashes) and a random `http-password` (store it only in vlcrc; the helper reads it from there).
+- `VlcDock.cs`: a small client class (`HttpWebRequest`, Basic auth with an empty user name, 1 s timeout). It polls `requests/status.json` every 500 ms while VLC runs, parses state / time / length / title / artist (no JSON library in C# 5 Add-Type: use `System.Web.Script.Serialization.JavaScriptSerializer` from System.Web.Extensions, or a minimal parser), and sends commands (`pl_pause`, `pl_next`, `pl_previous`, `seek`).
+- Verify on Linux with T1: start VLC with `--extraintf http --http-host 127.0.0.1 --http-password x` and the skin, then `curl` the same requests the C# client sends (status, pause, next). Check that the web interface's Lua files are in the test root (`share/vlc/lua/http`). Compile-check the C# with Mono.
+- Do not expose the interface beyond 127.0.0.1.
+
+### T12 - Helper's own taskbar button (Opus)
+Item 19. Needs T11. Untestable outside Windows, so design carefully and keep a kill switch (`$TaskbarButton = $true` in the ps1).
+- A helper window with `WS_EX_APPWINDOW`, VLC's icon (`ExtractIcon` from vlc.exe), title = current track. Set the window's AppUserModel ID to VLC's (`SHGetPropertyStoreForWindow`, `PKEY_AppUserModel_ID`, plus `RelaunchCommand` = vlc.exe), so it groups with a pinned VLC instead of PowerShell. Find VLC's actual app id on Windows first; do not guess it.
+- `ITaskbarList3` via COM interop (C# 5): after the registered `TaskbarButtonCreated` message, call `ThumbBarAddButtons` (prev, play / pause, next; icons drawn at runtime like the tray icon), `SetProgressState` / `SetProgressValue` from T11's time / length, `SetOverlayIcon` for play / pause. Handle `WM_COMMAND` + `THBN_CLICKED` and send T11 commands.
+- Hover preview: `DwmSetWindowAttribute(DWMWA_FORCE_ICONIC_REPRESENTATION, DWMWA_HAS_ICONIC_BITMAP)` and answer `WM_DWMSENDICONICTHUMBNAIL` with a rendered bitmap (title, artist, time, accent colour).
+- A click on the button activates VLC's main skin window (or restores it if minimized). Setup sets `skins2-taskbar=0` when this option is on, so there is a single VLC button.
+- Compile-check with Mono; write a Windows test checklist into the README troubleshooting section.
+
+### T13 - SMTC plugin in Setup (Sonnet)
+Item 20. Only after the user answers question 4.
+- `vlc-taskbar.ps1 -Setup`: optional step "Windows media controls". Find VLC's install folder (registry `HKLM\SOFTWARE\VideoLAN\VLC`, `InstallDir`) and its architecture (PE header of vlc.exe). Download `libwin10smtc_plugin_v5.0.0_<arch>.zip` from the GitHub release, check a SHA-256 pinned in the script, and copy the DLL to `plugins\misc` through one elevated PowerShell call. Check that the VC++ 2022 redistributable is installed (registry `HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\<arch>`); if not, tell the user where to get it, and do not install it silently.
+- Add the plugin's module to `extraintf`, merged with existing entries (shared helper with T11). Read the module name from the plugin source (`vlc-win10smtc/plugin.h`, `PLUGIN_SHORTNAME` / module name) and record it in the backlog.
+- Undo: `-Uninstall` removes the DLL (elevated) and the `extraintf` entry.
+- README: manual install steps as the alternative. The behaviour needs the user's Windows test (media keys, flyout with title, lock screen).
+
+### T14 - Linux setup script (Sonnet)
+Item 22a.
+- `linux/setup.sh` (POSIX sh or bash, no sudo): detect native / Flatpak / Snap VLC and the matching vlcrc path, back up vlcrc as `vlcrc.before-titlebar`, set the same keys as the Windows setup (shared list, documented in architecture.md), and pick `Titlebar-NNN.vlt` from `GDK_SCALE`, `Xft.dpi` (`xrdb -query`) or `gsettings get org.gnome.desktop.interface scaling-factor`.
+- Write `~/.local/share/applications/vlc-titlebar.desktop` (copy of the system `vlc.desktop` with `--no-media-library` added to `Exec`) and offer `xdg-mime default` for audio MIME types. Reason: the Linux launcher forces `--media-library` (`bin/vlc.c`), so vlcrc alone cannot remove the Media Library node.
+- `--uninstall` restores the backup and removes the desktop file.
+- Verify with T1: run the script against the harness's private HOME, start VLC the way the desktop file would (`--started-from-file`), and check that the skin loads, the Media Library node is gone, and a second start with a file reaches the first instance (`dbus-run-session`).
+
+### T15 - Linux docs (Haiku)
+Item 22b. After T14.
+- README: Linux install section (setup script and manual), a "Media controls" section (MPRIS: desktop media widget, media keys, `playerctl`; tested 2026-10-31 with the skin), Linux limits (X11 / XWayland, no helper yet). Update the "Windows only" line in Limits.
+- architecture.md: the `bin/vlc.c` gotcha (`--media-library`, `--dbus` forced) and MPRIS.
+
+### T16 - Linux pin on start, Wayland (Opus design, Sonnet build)
+Items 22c, 22d. Universal (any distro / desktop), floating only; panel docking is postponed.
+- Design: a Linux helper that waits for VLC's skin window and clicks the skin's pin once (same offsets as `PinOnce`), so the pin lights up. Must not need extra packages: `xdotool` and python-xlib are not installed everywhere. Preferred: `python3` with `ctypes` on `libX11` (present wherever VLC's skin runs), sending a synthetic `ButtonPress` / `ButtonRelease` with `XSendEvent` to the window, so the user's pointer does not move. Check first in skins2's X11 event loop (`x11/x11_loop.cpp`) that it does not ignore `send_event` events. Fallback when the click is ignored: `xdotool` if present.
+- Autostart via `~/.config/autostart/*.desktop`.
+- Wayland: write a checklist for the user (shape click-through, move, pin, scaling) and record the results in 22d. The helper may not be able to place windows on Wayland; say so instead of working around it.

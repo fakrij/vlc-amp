@@ -79,6 +79,19 @@ function Set-VlcOption([System.Collections.Generic.List[string]]$lines, $section
     $lines.Insert($end, "$key=$value")
 }
 
+# Add (or with -Remove take out) a module in a colon-separated vlcrc list such as
+# "extraintf=http:win10smtc", keeping the modules that are already there.
+function Set-VlcModule([System.Collections.Generic.List[string]]$lines, $section, $key, $module, [switch]$Remove) {
+    $mods = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($l in $lines) {
+        if ($l -match ('^\s*' + [regex]::Escape($key) + '=(.*)$')) {
+            foreach ($m in $Matches[1].Split(':')) { if ($m.Trim() -and -not $mods.Contains($m.Trim())) { $mods.Add($m.Trim()) } }
+        }
+    }
+    if ($Remove) { [void]$mods.Remove($module) } elseif (-not $mods.Contains($module)) { $mods.Add($module) }
+    Set-VlcOption $lines $section $key ($mods -join ':')
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
