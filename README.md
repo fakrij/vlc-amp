@@ -342,6 +342,36 @@ Without one the pin lights up but nothing stacks differently.
 If the pin does not light, run the script with
 `-v` and see [docs/architecture.md](docs/architecture.md#linux-pin-on-start).
 
+### Linux: follow the system's light / dark setting (prototype)
+
+For a skin built with two themes, one dark and one light (for example
+`python3 source/build_skin.py --themes midnight,paper --out /tmp/skin`),
+`linux/follow-system-theme.sh` starts VLC with the theme that matches the
+system's colour scheme. skins2 cannot read the setting itself, but VLC saves
+which theme is shown in the `skins2-config` line of `vlcrc` and reads it at
+start, so the script rewrites that (th0 / th1) **only while VLC is not
+running**, then starts VLC. It reads the setting from the XDG desktop portal
+(`gdbus call ... org.freedesktop.appearance color-scheme`), else
+`gsettings get org.gnome.desktop.interface color-scheme`; no answer or "no
+preference" counts as dark.
+
+```bash
+linux/follow-system-theme.sh [vlc arguments]   # set the theme, then run vlc
+linux/follow-system-theme.sh --install         # wrap the Exec lines of "VLC (Titlebar)" (made by linux/setup.sh)
+linux/follow-system-theme.sh --uninstall       # undo that
+linux/follow-system-theme.sh --check           # print dark or light
+```
+
+`--dark-theme N` / `--light-theme N` say which theme is which (default th0 =
+dark, th1 = light, the order of `--themes`). If VLC is already running (for
+example a file opened from the file manager goes to the running player) the
+script leaves the settings alone and just starts VLC; it never stops VLC. The
+theme is chosen at VLC's start: if the system switches while VLC runs, use the
+theme button, the next start follows the system. The very first start, before
+VLC has ever saved `skins2-config`, shows th0; quit VLC once. Moving the
+folder needs `--install` again. Tested under Xvfb with a stub `gdbus`; real
+portal and gsettings answers, Flatpak and Snap are not tested.
+
 ### Media controls
 
 **Windows.** VLC 3 does not talk to Windows' media controls by itself. Setup
