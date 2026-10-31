@@ -12,6 +12,7 @@ so the generator stays the single source of truth. The preview is the generator'
 - `build_skin.py` + `fonts/DejaVu*` - copies of `../source/` (run `./sync.sh` after the generator changes)
 - `fonts.json`, `fonts/` - the curated fonts and their licence texts
 - `test/node-build.mjs` - headless check: same staging as the worker, under node
+- `test/browser-test.mjs` - the page itself in Edge (puppeteer-core): single build, pair, own font
 
 `glue.py` holds the normalisations from `tools/pyodide-spike/README.md`: BASIC text layout (Pyodide's
 Pillow has no libraqm), zeroed and sorted tar / gzip metadata (reproducible `.vlt`), and it adds the
