@@ -249,7 +249,7 @@ there.
 ![The taller strip](docs/img/strip-taskbar.png)
 
 The folder has a second set of files, `Titlebar-taskbar-100/125/150/200.vlt`,
-with a 36 px strip (bigger buttons, text and volume slider; same width layout,
+with a 36 px strip (bigger buttons and text; same width layout,
 the full player, EQ and playlist are unchanged). When you answer Yes to "dock in
 the taskbar", Setup picks this file, and so does `VLC in taskbar.cmd`; without
 docking (and for a title bar) the normal 24 px file is used. The helper reads

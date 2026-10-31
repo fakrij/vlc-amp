@@ -166,8 +166,29 @@ def set_themes(names=None):
 set_themes(DEFAULT_THEMES)
 
 
+FLAT = True     # flat style (default): solid fills, no gradients / bevel lines / glow; --classic turns it off
+
+
+def flatten(pal):
+    """Flat style: every gradient pair collapses to its mean, button borders vanish into the fill."""
+    mid = lambda p: mix(p[0], p[1], 0.5)
+    pal["BG_TOP"] = pal["BG_BOT"] = mid((pal["BG_TOP"], pal["BG_BOT"]))
+    pal["PL_FLAT"] = pal["BG_TOP"]
+    pal["BTN"] = {k: (mid(v),) * 2 for k, v in pal["BTN"].items()}
+    pal["THUMB_UP"] = (pal["THUMB_UP"][0],) * 2
+    pal["THUMB_OVER"] = (pal["THUMB_OVER"][0],) * 2
+    pal["BTN_BORDER"] = pal["BTN"]["up"][0]
+    pal["HILITE"] = pal["BG_TOP"]
+    pal["BTN_HILITE"] = pal["BTN"]["up"][0]
+    pal["LCD_EDGE"] = pal["LCD_BG"]
+    pal["SHADOW"] = pal["SHADOW2"] = 0
+    return pal
+
+
 def apply_theme(i):
     pal = dict(THEMES[i][2])
+    if FLAT:
+        pal = flatten(pal)
     pal["ICON"] = {"up": pal.pop("ICON_UP"), "over": pal.pop("ICON_OVER"), "down": pal["CYAN"]}
     globals().update(pal)
 
@@ -295,6 +316,8 @@ class Canvas:
 # ---------------------------------------------------------------- primitives
 def panel_bg(c, x, y, w, h, r, flat=False):
     c.rrect(x, y, w, h, r, OUTLINE)
+    if FLAT:
+        r = min(r, 2)
     if flat:
         c.rrect(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), PL_FLAT)
     else:
@@ -321,14 +344,16 @@ def button_face(c, w, h, state):
     c.rrect(0, 0, w, h, 3, BTN_BORDER)
     c.grad(1, 1, w - 2, h - 2, 2, top, bot)
     if state == "down":
-        c.rrect(2, 1, w - 4, 1, 0, (0, 0, 0, 150))
-    else:
+        if not FLAT:
+            c.rrect(2, 1, w - 4, 1, 0, (0, 0, 0, 150))
+    elif not FLAT:
         c.rrect(2, 1, w - 4, 1, 0, BTN_HILITE)
 
 
 def led(c, cx, cy, on):
     if on:
-        c.circle(cx, cy, 3.2, H(AMBER, 70))
+        if not FLAT:
+            c.circle(cx, cy, 3.2, H(AMBER, 70))
         c.circle(cx, cy, 2, AMBER)
     else:
         c.circle(cx, cy, 2, AMBER_OFF)
@@ -360,10 +385,10 @@ def icon(c, name, ox, oy, size, color):
         c.poly(T([(7, 2), (9.4, 2), (9.4, 10), (7, 10)]), color)
     elif name in ("slower", "faster"):
         # small speedometer: half dial + needle pointing low (slower) or high (faster)
-        c.arc(ox + 6 * f, oy + 9.5 * f, 5 * f, 180, 360, color, 1.4 * f)
-        tip = (3.2, 6.6) if name == "slower" else (8.8, 6.6)
-        c.lines(T([(6, 9.5), tip]), color, 1.5 * f)
-        c.circle(ox + 6 * f, oy + 9.5 * f, 1.3 * f, color)
+        c.arc(ox + 6 * f, oy + 8 * f, 5 * f, 180, 360, color, 1.4 * f)
+        tip = (3.2, 5.1) if name == "slower" else (8.8, 5.1)
+        c.lines(T([(6, 8), tip]), color, 1.5 * f)
+        c.circle(ox + 6 * f, oy + 8 * f, 1.3 * f, color)
     elif name == "pin":
         w = 1.4 * f
         c.lines(T([(4.2, 1.5), (7.8, 1.5)]), color, w)
@@ -603,6 +628,23 @@ def plain_toggle(skin, base, im):
     return base
 
 
+def make_mode_toggle(skin, base, w, h):
+    """Left part of the strip's time box: "+" = elapsed time, "-" = time left; click switches."""
+    for on in (False, True):
+        for st in ("up", "over", "down"):
+            c = Canvas(w, h)
+            c.rrect(0, 0, w, h, 2, LCD_BG)
+            c.rrect(w - 3, 0, 3, h, 0, LCD_BG)           # square right side
+            c.rrect(w - 1, 2, 1, h - 4, 0, DIVIDER)
+            col = CYAN_TXT if st == "over" else CYAN_DIM
+            cx, cy = (w - 1) / 2, h / 2
+            c.rrect(cx - 2.5, cy - 0.5, 5, 1, 0, col)
+            if not on:
+                c.rrect(cx - 0.5, cy - 2.5, 1, 5, 0, col)
+            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), c.done())
+    return base
+
+
 def make_progress_frames(skin, bid, w, h, n, color):
     """Slider background drawn inside an LCD: frame i is filled to i/(n-1) from the left,
     the rest is fully transparent (the LCD shows through). Hard edges: X11 skins2 draws
@@ -626,6 +668,15 @@ def make_thumb(skin, bid, w, h):
     return bid
 
 
+def make_eq_thumb(skin, bid, w, h):
+    """EQ slider knob: a flat accent-coloured pill."""
+    for st, col in (("up", CYAN), ("over", LCD_HI)):
+        c = Canvas(w, h)
+        c.rrect(0, 0, w, h, h / 2, col)
+        skin.add("%s_%s" % (bid, st), c.done())
+    return bid
+
+
 def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
     """Slider background: n frames stacked vertically, frame i filled to i/(n-1)."""
     sheet = Image.new("RGBA", (P(w), P(h) * n), (0, 0, 0, 0))
@@ -643,6 +694,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
 
 # ---------------------------------------------------------------- windows
 MIN_W = 420   # narrowest strip: EQ band block (400 px) plus a 10 px margin each side; title window 62 px
+TIME_ZONE = 16   # width of the elapsed / countdown switch at the left of the strip's time box
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (Titlebar-taskbar-NNN.vlt); the helper assumes the same
 
@@ -652,10 +704,9 @@ def bar_metrics(bh):
     values (the normal skin must not change). Widths do not grow with the height, except the
     time box, which has to fit "-1:23:45" in the bigger strip font; MIN_W grows with it."""
     fs = 12 + (bh - 24) // 6                       # strip font (title, time), px
-    tw = max(64, math.ceil(8 * 0.602 * fs) + 6)    # time box width; DejaVu Sans Mono advance = 0.602 em
+    tw = TIME_ZONE + 12 + math.ceil(8 * 0.602 * fs)  # time box: mode zone + 4 px + text + 8 px margin; DejaVu Sans Mono advance = 0.602 em
     return dict(bh=bh, btn=bh - 6, icon=12 + (bh - 24) // 4, label=8 + (bh - 24) // 12, font=fs, tw=tw,
-                min_w=MIN_W + tw - 64, grip_rows=3 + (bh - 24) // 8, grip_h=10 + (bh - 24) // 2,
-                vol_track=4 + (bh - 24) // 6, thumb_w=7 + (bh - 24) // 6, thumb_h=13 + (bh - 24) // 2)
+                min_w=MIN_W, grip_rows=3 + (bh - 24) // 8, grip_h=10 + (bh - 24) // 2)
 
 
 def skin_name(bh, pct):
@@ -687,8 +738,6 @@ def build(skin, W, BH=BAR_DEFAULT):
     TW = M["tw"]                      # strip time box: fits "-1:23:45" (hours) in the strip font
     BT = M["btn"]                     # strip button height (3 px margin above and below)
     skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
-    vthumb = "thumb_v" if BH == BAR_DEFAULT else "thumb_vs"   # volume thumb of the strip
-    vh = 4 + M["vol_track"]           # strip volume slider bitmap height: track + 2 px above and below
     PW = P(W)
     tr = dict(lt="righttop", rb="righttop")
     sw = W - 16                       # seek bar width
@@ -704,10 +753,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_toggle(skin, "t_eq", 26, BT, label="EQ", use_led=True, label_size=lsz)
         make_toggle(skin, "t_top", 22, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
         make_thumb(skin, "thumb_v", 7, 13)
-        if BH != BAR_DEFAULT:
-            make_thumb(skin, "thumb_vs", M["thumb_w"], M["thumb_h"])
-        for st, col in (("up", CYAN), ("over", HEAD_OVER)):   # play head in the title window
-            skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(BT - 2)), H(col)))
+        for st, col in (("up", mix(CYAN, TITLE_FILL, 0.2)), ("over", CYAN)):   # play head in the title window
+            skin.add("thumb_title_" + st, Image.new("RGBA", (max(1, P(1)), P(BT - 6)), H(col)))
+        for st in ("up", "over"):   # volume bar in the strip's time box: the fill is the indicator, no knob
+            skin.add("thumb_none_" + st, Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
         make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
         make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
         make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
@@ -724,12 +773,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_toggle(skin, "ft_eq", 30, 22, label="EQ", use_led=True)
         make_thumb(skin, "thumb_s", 8, 12)
         make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
-        make_thumb(skin, "thumb_eq", 14, 6)
+        make_eq_thumb(skin, "thumb_eq", 12, 6)
         make_thumb(skin, "thumb_pl", 6, 22)
         make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
         make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
         make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
-        make_fill_frames(skin, "vol64", 64, vh, 2, M["vol_track"], P(64))
         make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
         make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
         c = Canvas(12, 12)
@@ -738,9 +786,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
         lcd(c, 0, 0, TW, BT)
-        plain_toggle(skin, "c_time_s", c.done())
-        c = Canvas(126, 44)
-        c.rrect(0, 0, 126, 44, 0, LCD_BG)
+        skin.add("c_time_s", c.done())
+        make_mode_toggle(skin, "c_mode", TIME_ZONE, BT)
+        make_progress_frames(skin, "vol_fill", TW - TIME_ZONE - 1, BT - 2, FILL_FRAMES, TITLE_FILL)
+        c = Canvas(142, 44)
+        c.rrect(0, 0, 142, 44, 0, LCD_BG)
         plain_toggle(skin, "c_time_f", c.done())
         for lbl in ("add", "rem", "sort", "load", "save"):
             make_button(skin, "b_pl_" + lbl, 32, 14, label=lbl.upper())
@@ -780,7 +830,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.button("b_prev", P(44), P(3), "playlist.previous()", "Previous")
         lay.checkbox("t_play", P(68), P(3), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("b_next", P(96), P(3), "playlist.next()", "Next")
-        dx, dw = 124, W - (TW + 170) - 124   # slower / faster live in the full player only
+        dx, dw = 124, W - (TW + 100) - 124   # slower / faster live in the full player only
         c = Canvas(dw, BT)
         lcd(c, 0, 0, dw, BT)
         hslice(skin, lay, "strip_lcd", c.done(), P(dx), P(3), 4, 4)
@@ -795,13 +845,20 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.text(P(dx + 5), P(ty), P(dw - 10), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         R = lambda v: PW - P(v)
-        tx = R(TW + 166)
-        time_toggle(lay, "c_time_s", tx, P(3), **tr)
+        tx = R(TW + 96)
+        # time box: left = switch elapsed <-> time left (remembered by VLC), right = volume bar
+        # filled from the left like the title's seek fill; click / drag / wheel sets the volume
+        lay.image("c_time_s", tx, P(3), action="move", **tr)
+        lay.checkbox("c_mode", tx, P(3), COUNTDOWN, "tflag.show()", "tflag.hide()",
+                     "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
+        vw, vfh = TW - TIME_ZONE - 1, BT - 2
+        lay.slider("s_vol_" + lay.id, tx + P(TIME_ZONE), P(4), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
+                   "thumb_none", "volume", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
+                   nbvert=FILL_FRAMES, **tr)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(3), P(ty), P(TW - 6), skin.strip_font[0], text, CYAN_TXT, lt="righttop", rb="righttop",
-                     align="right", scrolling="none", sample=sample, focus=False).vis = vis_and(lay.theme_vis, vis)
-        lay.slider("s_vol_" + lay.id, R(160), P((BH - vh) // 2), "(0,%d),(%d,%d)" % (P(vh) // 2, P(64) - 1, P(vh) // 2), vthumb,
-                   "volume", "Volume $V%", bg="vol64", nbvert=P(64), **tr)
+            lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
+                     lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
+                     focus=False).vis = vis_and(lay.theme_vis, vis)
         panel_toggles(lay, "t_pl", "t_eq", R(90), R(62), P(3))
         lay.checkbox("t_top", R(34), P(3), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
@@ -829,27 +886,27 @@ def build(skin, W, BH=BAR_DEFAULT):
         # LCD: left column = time (wide enough for -1:23:45), right column = title, info, toggles
         c = Canvas(W - 8, 54)
         lcd(c, 0, 0, W - 8, 54, 3)
-        c.rrect(134, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
-        hslice(skin, lay, "full_lcd", c.done(), P(4), P(20), 138, 6)
+        c.rrect(150, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
+        hslice(skin, lay, "full_lcd", c.done(), P(4), P(20), 154, 6)
         time_toggle(lay, "c_time_f", P(8), P(22))
         # big = elapsed or time left (click switches), small = total only: VLC truncates time and
         # length to seconds separately, so "time left" next to "elapsed" would tick at a different
         # moment and can disagree by a second (skins2 vars/time.cpp)
         for big, small, vis, s1, s2 in (("$t", "of $d", "not " + COUNTDOWN, "1:02", "of 4:12"),
                                         ("-$l", "of $d", COUNTDOWN, "-3:10", "of 4:12")):
-            lay.text(P(12), P(22), P(126), "lcd26", big, CYAN_TXT, scrolling="none", sample=s1,
+            lay.text(P(18), P(24), P(130), "lcd26", big, CYAN_TXT, scrolling="none", sample=s1,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-            lay.text(P(12), P(55), P(124), "lcd10", small, CYAN2, scrolling="none", sample=s2,
+            lay.text(P(18), P(56), P(128), "lcd10", small, CYAN2, scrolling="none", sample=s2,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        lay.text(P(146), P(24), P(W - 158), "lcd14", "$N", CYAN_TXT, rb="righttop",
+        lay.text(P(162), P(24), P(W - 174), "lcd14", "$N", CYAN_TXT, rb="righttop",
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        lay.text(P(146), P(43), P(W - 158), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
+        lay.text(P(162), P(43), P(W - 174), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
                  scrolling="none", sample="320 kbps  44.1 kHz")
-        lay.checkbox("l_shuf", P(146), P(58), "playlist.isRandom", "playlist.setRandom(true)",
+        lay.checkbox("l_shuf", P(162), P(58), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
-        lay.checkbox("l_loop", P(182), P(58), "playlist.isLoop", "playlist.setLoop(true)",
+        lay.checkbox("l_loop", P(198), P(58), "playlist.isLoop", "playlist.setLoop(true)",
                      "playlist.setLoop(false)", "Loop playlist: off", "Loop playlist: on")
-        lay.checkbox("l_rep", P(218), P(58), "playlist.isRepeat", "playlist.setRepeat(true)",
+        lay.checkbox("l_rep", P(234), P(58), "playlist.isRepeat", "playlist.setRepeat(true)",
                      "playlist.setRepeat(false)", "Repeat one: off", "Repeat one: on")
         lay.text(F(84), P(58), P(72), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
                  sample="SPEED 1x", **tr)
@@ -897,8 +954,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         for lbl, yy in (("+20", 11), ("0", 40), ("-20", 69)):
             c.text(22, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
         for i, cx in enumerate(cxs):
-            c.rrect(cx - 2, 10, 4, 60, 2, EQ_TRACK)
-            c.rrect(cx - 5, 39.5, 10, 1, 0, CYAN_DIM)
+            c.rrect(cx - 1, 10, 2, 60, 1, EQ_TRACK)
+            c.rrect(cx - 5, 39.5, 3, 1, 0, CYAN_DIM)          # 0 dB ticks either side of the track
+            c.rrect(cx + 2, 39.5, 3, 1, 0, CYAN_DIM)
             c.text(cx, 81, names[i], 8, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
         c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 78, 0, DIVIDER)
         skin.add("eq_bands", c.done())
@@ -907,8 +965,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
             value = "equalizer.preamp" if i == 0 else "equalizer.band(%d)" % (i - 1)
-            lay.slider("s_eq%d%s" % (i, sfx), P(cx - 7), P(8),
-                       "(%d,%d),(%d,%d)" % (P(7), P(61), P(7), P(3)), "thumb_eq", value, tips[i],
+            lay.slider("s_eq%d%s" % (i, sfx), P(cx - 6), P(8),
+                       "(%d,%d),(%d,%d)" % (P(6), P(61), P(6), P(3)), "thumb_eq", value, tips[i],
                        thickness=P(8))
         lay.panel_end()
 
@@ -1205,7 +1263,7 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 txt = Image.new("RGBA", (max(1, r - l), font_px[n.font] * 2), (0, 0, 0, 0))
                 dd = ImageDraw.Draw(txt)
                 tw = dd.textlength(n.sample, font=f)
-                tx = (r - l - tw) if n.align == "right" and tw < r - l else 0
+                tx = (r - l - tw) / (2 if n.align == "center" else 1) if n.align != "left" and tw < r - l else 0
                 dd.text((tx, 0), n.sample, font=f, fill=H(n.color), anchor="la")
                 out.alpha_composite(txt, (ox + l, oy + t))
             elif n.kind == "Playtree":
@@ -1281,11 +1339,14 @@ def main():
                     "sensible 32-40): a taller strip is written as Titlebar-taskbar-NNN.vlt" % BAR_TASKBAR)
     ap.add_argument("--out", default=os.path.join(HERE, "dist"))
     ap.add_argument("--preview", action="store_true")
+    ap.add_argument("--classic", action="store_true", help="old bevelled / gradient style instead of the flat one")
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
     ap.add_argument("--themes", default=",".join(DEFAULT_THEMES),
                     help="comma-separated theme names to build, or 'all' (default: %(default)s): " +
                     ", ".join(t[1] for t in THEME_SEEDS))
     a = ap.parse_args()
+    global FLAT
+    FLAT = not a.classic
     if a.themes.lower() == "all":
         set_themes()
     else:

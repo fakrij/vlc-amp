@@ -64,9 +64,9 @@ build is identical, member by member, to the one before the option existed):
 button height `bh - 6` (3 px margin), icon size `12 + (bh-24)//4`, PL / EQ label,
 LCD and title window height, the title window's play head, the strip font
 (`lcdbar`, `12 + (bh-24)//6`, only declared when it differs from `lcd12`; used
-for title and time), the volume slider (own bitmap and thumb `thumb_vs`), grip
+for title and time), grip
 rows and the resize grip. Widths do **not** grow, so the right-edge offsets
-(`R(34)` pin, `R(62)` / `R(90)` EQ / PL, `R(160)` volume) and the pin's x stay
+(`R(34)` pin, `R(62)` / `R(90)` EQ / PL, `R(96)` end of the time box) and the pin's x stay
 as they were; only the time box widens when the bigger font needs it
 (`tw`, 74 px at 36), which also raises `MIN_W` by the same amount (430).
 

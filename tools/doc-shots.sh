@@ -37,13 +37,13 @@ click() { $T click "$1" "$2" >/dev/null; sleep 0.6; }
 park() { $T park; sleep 1; }   # pointer off the skin, so no hover look and no tooltip
 
 # positions at 100 % (window 556 x 436), from build_skin.py:
-#   strip (bar at top):  expand 27,12  title 125..321  time 358,12  PL 479,12  EQ 507,12
+#   strip (bar at top):  expand 27,12  title 125..321  mode switch 382,12  PL 479,12  EQ 507,12
 #   EQ header flip: 497, EQ top + 10    full player: theme 434,11  collapse 503,11
 click 243 12                           # seek to ~60 % in the title window
 park; shot strip 0 0 $W 24
-click 358 12                           # time: countdown
+click 382 12                           # time: countdown
 park; shot strip-countdown 0 0 $W 24
-click 358 12                           # back to elapsed
+click 382 12                           # back to elapsed
 click 479 12; click 507 12             # PL, EQ (open below)
 park; shot panels-below 0 0 $W 338
 click 497 34                           # flip: panels above, bar at the bottom (y 412)

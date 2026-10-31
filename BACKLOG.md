@@ -306,3 +306,7 @@ Item 24. Output: one `.vlt` with exactly one theme.
 3. Page (GitHub Pages): size, font (curated OFL list with licences shipped in the `.vlt`), light / dark, primary and secondary pickers; live preview (`preview_layout`); download; a note on which `Titlebar-NNN.vlt` name to use so Setup picks it up.
 4. Light / dark pair (phase 2 option): the generator builds the same design twice (light and dark base, same primary / secondary colours, adjusted for contrast), theme button toggles them; checkbox "follow system setting" adds item 25 (helper on Windows, launcher wrapper on Linux).
 - Keep the generator the single source of truth; no second renderer in JS.
+
+### Flat style (default since 2026-10-31; `--classic` = old look)
+Flat = solid fills, no bevels / glow (preview in `flat-preview/`). Strip: no separate volume slider any more - the time box is `[+/- mode switch | volume fill]` (click / drag / wheel sets the volume; `thumb_none` = no knob).
+- Panning / balance in the EQ window: NOT possible in skins2 (no pan, balance or stereo-mode variable in `libskins2_plugin.so`; no custom actions). Would need a Lua extension or a VLC audio filter plus a separate UI.
