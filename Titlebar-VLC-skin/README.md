@@ -648,9 +648,8 @@ These come from VLC's skin engine (skins2); details in
   process uses **19 MB** of memory while VLC is closed and **44 MB** while it docks VLC, and about
   **0.04 %** / **0.25 %** of the CPU (averaged over all cores, 20 s); VLC itself was 123 MB and
   0.35 %. It wakes up four times a second (every 50 ms only while the mouse is over the player),
-  and asks VLC's local web interface for the play state twice a second while VLC runs. Start-up
-  compiles the helper once (a few seconds of CPU, cached for no later start, so it recurs at every
-  helper start). Quit the helper from its tray icon to free it; the skin itself needs no helper.
+  and asks VLC's local web interface for the play state twice a second while VLC runs. Every
+  helper start compiles its C# code (a few seconds of CPU; nothing is cached). Quit the helper from its tray icon to free it; the skin itself needs no helper.
 - Windows: VLC's own Start menu entry, desktop icon and pinned taskbar icon
   still show the "Media Library" node (VLC's launcher forces it on, and those
   shortcuts are in the all-users Start menu or pinned, so they cannot be
