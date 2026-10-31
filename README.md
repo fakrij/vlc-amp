@@ -258,7 +258,8 @@ Windows 11 has no API to put a player *into* the taskbar, so a small helper
    file), or close VLC and double-click **`taskbar\VLC in taskbar.cmd`**
    (VLC with the skin, docked, for this session). A console window flashes
    briefly: that is PowerShell starting.
-3. Flip the panels to open **above** once (arrow on the PL / EQ header).
+3. The panels (PL / EQ) open **above** the docked strip. If they are set to open
+   below (off the screen), the helper clicks the flip arrow on their header for you.
 
 **Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
 there.
@@ -290,7 +291,14 @@ What the helper does:
 - Pins VLC on top after it starts (it clicks the skin's pin, so the pin
   lights up; VLC itself always starts unpinned).
 - Keeps the player above the taskbar after you click the taskbar, steps
-  behind full-screen apps and comes back after.
+  behind full-screen apps and comes back after. The strip in the taskbar always
+  stays on top of the taskbar (else the taskbar would hide it); the pin decides
+  for the full player: unpinned, other windows can cover it.
+- Moves the player by dragging it by its grip, the way you would, so VLC knows
+  where it is and does not jump when you expand, collapse or resize it. It
+  never moves it while you hold a mouse button. Docked next to Start, the right
+  edge stays at Start: drag the right edge to make the strip wider, and when you
+  let go it slides left so the right edge is back next to Start.
 - Tray icon (dark square with a cyan bar) with a right-click menu: **Dock in
   taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Play /
   pause** and **Playback** (A-B loop, next / previous folder, next EQ preset;
@@ -311,7 +319,7 @@ What the helper does:
 Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
 by display scaling, and the taller taskbar build when docking), dock position
 (`start`, `left`, `right` = next to the tray icons), gap, vertical nudge, start
-pinned, tray icon, taskbar button (and its taskbar group, `$TaskbarAppId`),
+pinned, flipping the panels above the docked strip, tray icon, taskbar button (and its taskbar group, `$TaskbarAppId`),
 debug log.
 
 ### Linux: pin on start
@@ -493,6 +501,40 @@ on, `%TEMP%\titlebar-helper.log`):
     then steps 2 to 4.
 13. `$TaskbarButton = $false`, run Setup again: no helper button, VLC's own
     button is back (unless docked).
+
+### Second Windows test (docking)
+
+For the fixes after the first test (flashing, resizing, unpin, collapsing with
+PL / EQ open, taskbar click). Debug log on (`$DebugLog = $true`), helper restarted
+(tray menu > Quit helper, then `VLC in taskbar.cmd`, or sign out and in).
+
+1. The log's first line, `helper started: scale=1.5 barHeight=36 ...`, must
+   match the skin VLC shows (`Titlebar-taskbar-150.vlt` = 1.5 and 36; plain
+   `Titlebar-150.vlt` = 24). Note both if they differ.
+2. Docked strip, 30 s without touching it: no flashing. The log has
+   `shape: strip-...`, one `move (...) by a drag on VLC's grip` and
+   `move: done, VLC moved itself`, and then no more `move` lines.
+3. Expand and collapse five times: the player changes in place, no jump to
+   another part of the screen.
+4. From the docked strip open EQ, then PL: they open above the strip (if they
+   were set to open below, the log says `flip: ...`). Expand, then collapse
+   with EQ / PL still open: the strip goes back into the taskbar, panels above.
+5. Drag the strip's right edge to the right: it grows under the mouse; when you
+   let go it slides left until its right edge is next to Start again.
+6. Click the pin off and on, in the strip and in the full player. The log
+   says `z-order: VLC pin off (0 of N flag windows topmost)` / `pin ON (N of N ...)`.
+   Unpinned with the full player open, another window can cover it; the strip
+   stays visible in the taskbar.
+7. Pinned: click an empty spot of the taskbar, an app icon and the VLC
+   button. The player is back above the taskbar within a quarter second (log:
+   `z-order: raise VLC to topmost: the taskbar came above VLC`).
+8. A full-screen video in another app: the player steps behind it and comes
+   back after.
+9. Send `%TEMP%\titlebar-helper.log` (and `titlebar-helper.log.old`), and say which step
+   went wrong. Lines worth a look: `the drag ended at ... not ...` more than
+   twice in a row, `moving the window from outside from now on`,
+   `WARNING: raised VLC above the taskbar`, `Start button: lookup failed`,
+   `height fits a strip of N px, not the configured height`.
 
 ## Limits
 

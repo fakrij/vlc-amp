@@ -1,16 +1,19 @@
 // VlcDock - keeps the "Titlebar" VLC skin docked in the Windows taskbar.
 // Loaded by vlc-taskbar.ps1 (Windows PowerShell 5.1, C# 5 syntax).
 //
-// VLC's skin engine does not notice when another program moves its windows,
-// so this helper re-places them whenever they move (WinEvent hook) and on a
-// 250 ms timer. The skin has one main window (class "SkinWindowClass", owned by
+// The helper re-places VLC's main window whenever it moves (WinEvent hook) and on
+// a 250 ms timer. The skin has one main window (class "SkinWindowClass", owned by
 // vlc.exe). All its layouts have the same size; the parts without pixels are cut
-// out with a window region, so the helper reads that region to see what is showing:
+// out with a window region, so the helper reads that region to see what is showing
+// (DockShape.Classify, from the height of the visible part):
 //   bar at the bottom of the window = panels open above it ("up" layouts), else below
 //   strip  -> the strip sits inside the taskbar, left of Start (panels stick out)
 //   full   -> the visible part just above the taskbar
-// The skin also has 1x1 "flag" windows (no pixels); they and the video window
-// (WS_EX_APPWINDOW) are never touched.
+// VLC's skin engine keeps its own copy of the window position and does not notice
+// moves from outside, so the helper moves the window by letting VLC move itself (a
+// posted drag on the skin's grip, see MoveTo). The skin also has 1x1 "flag" windows
+// (no pixels); the helper never touches them, so their WS_EX_TOPMOST is VLC's own
+// "always on top" state (VlcPinState). The video window (WS_EX_APPWINDOW) is never touched.
 
 using System;
 using System.Collections.Generic;
@@ -36,6 +39,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     public static bool ExitWithVlc = true; // false = keep waiting for the next VLC (started with Windows)
     public static bool Dock = true;        // false = only StartPinned, no taskbar docking
     public static bool StartPinned = false;// click VLC's pin button once after each VLC start
+    public static bool FlipPanels = true;  // docked strip with PL / EQ open off the screen (below a bottom taskbar): click the flip arrow
     public static string LogPath = null;   // debug log file (null = no log)
     public static bool TrayIcon = true;    // notification-area icon with a menu (dock, pin now, quit)
     public static int RemotePort = 0;      // VLC web interface port (from vlcrc); 0 = no control channel
@@ -60,7 +64,26 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     static string lastLogText;             // last line written (without time stamp)
     static int logRepeats;                 // how many identical lines came after it
     static string lastShape;               // last ReadShape result logged
-    static int lastBelow = -1;             // last IsBelow(main, tray) logged: -1 unknown, 0 no, 1 yes
+    static bool lastBarAtBottom = true;    // direction of the last shape that showed it (see DockShape.Classify)
+    static Dictionary<string, string> logged = new Dictionary<string, string>();   // LogChange: last text per topic
+    static int startMisses;                // Start button lookups failed in a row (the last position is kept)
+    // moving: see MoveTo
+    static bool dragPending;               // a drag was posted to VLC and has not shown its effect yet
+    static DateTime dragAt;
+    static int dragFromX, dragFromY, dragToX, dragToY;
+    static int dragFails, dragMisses;      // in a row: VLC did not move / moved somewhere else
+    static bool dragOff;                   // drags do not work with this VLC: SetWindowPos from now on
+    static int lastTargetX = int.MinValue, lastTargetY = int.MinValue;
+    // z-order: see FixZOrder
+    static bool helperTop;                 // the main window is topmost because the helper made it so
+    static int lastMainTop = -1;           // main window's WS_EX_TOPMOST at the last tick (-1 unknown)
+    static int pinOddTicks;                // ticks in a row where VLC's own flag contradicts the flag windows
+    static bool pinFromMain;               // flag windows proved useless: VLC's pin = the main window's flag
+    static List<DateTime> raises = new List<DateTime>();   // re-raises above the taskbar in the last 10 s
+    static DateTime raiseWarnAt = DateTime.MinValue;
+    // panels flip: see FlipIfOffScreen
+    static DateTime lastFlipAt = DateTime.MinValue;
+    static int flipTries;
     static IntPtr locHook = IntPtr.Zero, fgHook = IntPtr.Zero;
     static WinEventProc winEventDelegate = OnWinEvent; // keep alive (GC)
     static TimerProc timerDelegate = OnTimer;
@@ -113,15 +136,16 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     [DllImport("user32.dll")] static extern int GetWindowRgn(IntPtr h, IntPtr rgn);
     [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr icon);
     [DllImport("gdi32.dll")] static extern IntPtr CreateRectRgn(int l, int t, int r, int b);
-    [DllImport("gdi32.dll")] static extern int GetRgnBox(IntPtr rgn, out RECT r);
-    [DllImport("gdi32.dll")] static extern bool PtInRegion(IntPtr rgn, int x, int y);
+    [DllImport("gdi32.dll")] static extern uint GetRegionData(IntPtr rgn, uint count, byte[] data);
     [DllImport("gdi32.dll")] static extern bool DeleteObject(IntPtr obj);
+    [DllImport("user32.dll")] static extern short GetAsyncKeyState(int vk);
 
     const int GWL_EXSTYLE = -20;
     const int WS_EX_TOOLWINDOW = 0x80, WS_EX_APPWINDOW = 0x40000, WS_EX_TOPMOST = 0x8;
-    const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10, SWP_NOOWNERZORDER = 0x200;
+    const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10, SWP_NOOWNERZORDER = 0x200;
     static readonly IntPtr HWND_TOPMOST = new IntPtr(-1), HWND_NOTOPMOST = new IntPtr(-2);
-    const uint GW_HWNDPREV = 3;
+    const uint GW_OWNER = 4, GW_HWNDPREV = 3;
+    const int VK_LBUTTON = 1, VK_RBUTTON = 2;
     const uint EVENT_SYSTEM_FOREGROUND = 0x3, EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
     const uint WINEVENT_OUTOFCONTEXT = 0, WM_HOTKEY = 0x312;
     const uint MOD_ALT = 1, MOD_CONTROL = 2, MOD_SHIFT = 4, MOD_NOREPEAT = 0x4000;
@@ -131,7 +155,6 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
 
     const long LogMaxBytes = 1000000;
 
-    static int P(double v) { return (int)Math.Round(v * Scale); }
     static int W(RECT r) { return r.Right - r.Left; }
     static int H(RECT r) { return r.Bottom - r.Top; }
 
@@ -209,9 +232,18 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         Log("hotkey: docking " + (enabled ? "on" : "off"));
         if (!enabled)
         {
-            // release the windows: normal z-order, freely movable again
-            foreach (IntPtr h in FindSkinWindows())
-                SetPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            // release the window: freely movable again, and "on top" exactly as VLC's pin says
+            IntPtr main;
+            RECT r;
+            if (FindMain(FindSkinWindows(), out main, out r))
+            {
+                string detail;
+                int pin = VlcPinState(main, out detail);
+                bool mainTop = IsTopmost(main);
+                if (pin == 0 && mainTop) SetPos(main, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                if (pin == 1 && !mainTop) SetPos(main, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                helperTop = false;
+            }
         }
         Tick();
     }
@@ -333,30 +365,43 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     }
 
     // ---------------------------------------------------------------- window region
-    // What is visible in VLC's main window, from the region skins2 sets on it.
-    static void ReadShape(IntPtr h, int hh, out RECT box, out bool barAtBottom, out bool full)
+    // What is visible in VLC's main window, from the region skins2 sets on it (SetWindowRgn
+    // with every pixel whose alpha is > 0, win32_graphics.cpp). The region's rectangles go
+    // to DockShape.Classify, which the tests also feed with the X11 shape of the same skin.
+    static ShapeInfo ReadShape(IntPtr h, int ww, int hh)
     {
-        box = new RECT(); box.Bottom = hh;
-        barAtBottom = true;
-        full = false;
+        List<RECT> rects = new List<RECT>();
         IntPtr rgn = CreateRectRgn(0, 0, 0, 0);
         try
         {
-            if (GetWindowRgn(h, rgn) <= NULLREGION || GetRgnBox(rgn, out box) <= NULLREGION)
+            if (GetWindowRgn(h, rgn) > NULLREGION)
             {
-                box = new RECT(); box.Bottom = hh;
-                return;
+                uint size = GetRegionData(rgn, 0, null);
+                if (size >= 32)
+                {
+                    byte[] data = new byte[size];
+                    if (GetRegionData(rgn, size, data) != 0)
+                    {
+                        // RGNDATAHEADER: dwSize, iType, nCount, nRgnSize, rcBound (32 bytes), then nCount RECTs
+                        int n = BitConverter.ToInt32(data, 8);
+                        for (int i = 0; i < n && 32 + 16 * i + 16 <= data.Length; i++)
+                        {
+                            RECT r;
+                            r.Left = BitConverter.ToInt32(data, 32 + 16 * i);
+                            r.Top = BitConverter.ToInt32(data, 32 + 16 * i + 4);
+                            r.Right = BitConverter.ToInt32(data, 32 + 16 * i + 8);
+                            r.Bottom = BitConverter.ToInt32(data, 32 + 16 * i + 12);
+                            rects.Add(r);
+                        }
+                    }
+                }
             }
-            // "dn" layouts have the bar at the top; only full player + EQ + playlist reach the bottom
-            barAtBottom = box.Bottom >= hh - 1;
-            // the strip's corner is rounded (transparent); the full player's edge there is not
-            full = PtInRegion(rgn, 0, barAtBottom ? hh - P(BarHeight) : P(BarHeight));
         }
-        finally
-        {
-            DeleteObject(rgn);
-            LogShape(box, hh, barAtBottom, full);
-        }
+        finally { DeleteObject(rgn); }
+        ShapeInfo s = DockShape.Classify(rects, ww, hh, Scale, BarHeight, lastBarAtBottom);
+        if (s.DirectionKnown) lastBarAtBottom = s.BarAtBottom;
+        LogShape(s, ww, hh);
+        return s;
     }
 
     // ---------------------------------------------------------------- debug log
@@ -405,15 +450,27 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         return "0x" + h.ToInt64().ToString("X") + " class=\"" + ClassOf(h) + "\"";
     }
 
-    static void LogShape(RECT box, int hh, bool barAtBottom, bool full)
+    static void LogShape(ShapeInfo s, int ww, int hh)
     {
         if (LogPath == null) return;
-        string s = "shape: box=" + box.Left + "," + box.Top + "," + box.Right + "," + box.Bottom +
-                   " windowH=" + hh + " barAtBottom=" + barAtBottom + " full=" + full;
-        if (s == lastShape) return;
-        lastShape = s;
-        Log(s);
+        string t = "shape: " + s.Describe() + " (window " + ww + "x" + hh + ", visible rows " + s.Top + ".." + s.Bottom +
+                   ", " + s.Rects.Count + " rects)";
+        if (t == lastShape) return;
+        lastShape = t;
+        Log(t);
     }
+
+    // Logs text when it differs from the last text logged for this topic (state changes only).
+    static void LogChange(string topic, string text)
+    {
+        if (LogPath == null) return;
+        string old;
+        if (logged.TryGetValue(topic, out old) && old == text) return;
+        logged[topic] = text;
+        Log(text);
+    }
+
+    static string Pt(int x, int y) { return x + "," + y; }
 
     // ---------------------------------------------------------------- VLC process
     static void CheckVlc()
@@ -434,6 +491,12 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             if (locHook != IntPtr.Zero) { UnhookWinEvent(locHook); locHook = IntPtr.Zero; }
             vlcPid = pid;
             mainSeenAt = DateTime.MinValue;
+            // per-VLC state of moving, z-order and flipping
+            dragPending = false; dragFails = 0; dragMisses = 0; dragOff = false;
+            lastTargetX = int.MinValue; lastTargetY = int.MinValue;
+            helperTop = false; lastMainTop = -1; pinOddTicks = 0; pinFromMain = false;
+            flipTries = 0;
+            logged.Clear();
             if (pid != 0)
                 locHook = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE, IntPtr.Zero,
                                           winEventDelegate, pid, 0, WINEVENT_OUTOFCONTEXT);
@@ -465,10 +528,13 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     }
 
     // ---------------------------------------------------------------- Start button (UI Automation)
+    // A failed lookup keeps the last position (up to 30 tries, about a minute): falling back to
+    // the taskbar's left end for one lookup would make the strip jump there and back.
     static void UpdateStartButton(IntPtr tray)
     {
         if ((DateTime.Now - lastStartLookup).TotalSeconds < 2) return;
         lastStartLookup = DateTime.Now;
+        string why = "not found";
         try
         {
             AutomationElement root = AutomationElement.FromHandle(tray);
@@ -477,10 +543,22 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             if (start != null)
             {
                 System.Windows.Rect r = start.Current.BoundingRectangle;
-                if (!r.IsEmpty && r.Width > 0) { startLeft = (int)r.Left; return; }
+                if (!r.IsEmpty && r.Width > 0)
+                {
+                    if (startMisses > 0) Log("Start button: found again after " + startMisses + " failed lookups");
+                    startMisses = 0;
+                    if ((int)r.Left != startLeft) Log("Start button: left edge at x=" + (int)r.Left + (startLeft == int.MinValue ? "" : " (was " + startLeft + ")"));
+                    startLeft = (int)r.Left;
+                    return;
+                }
+                why = "empty rectangle";
             }
         }
-        catch (Exception) { }
+        catch (Exception ex) { why = ex.GetType().Name + ": " + ex.Message; }
+        startMisses++;
+        if (startMisses == 1) Log("Start button: lookup failed (" + why + ")" + (startLeft != int.MinValue ? ", keeping x=" + startLeft : ""));
+        if (startLeft != int.MinValue && startMisses <= 30) return;
+        if (startLeft != int.MinValue) Log("Start button: lost, docking at the taskbar's left end");
         startLeft = int.MinValue;
     }
 
@@ -537,13 +615,231 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         return x;
     }
 
-    static void Move(IntPtr h, RECT cur, int x, int y, bool fixZ)
+    static bool IsTopmost(IntPtr h) { return (GetWindowLong(h, GWL_EXSTYLE) & WS_EX_TOPMOST) != 0; }
+
+    // A mouse button is held (physical buttons, so both: left-handed mice swap them). The user
+    // may be dragging or resizing VLC: moving the window now would fight the drag.
+    static bool MouseButtonDown()
     {
-        if (cur.Left == x && cur.Top == y && !fixZ) return;
-        uint flags = SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
-        IntPtr after = HWND_TOPMOST;
-        if (!fixZ) flags |= 0x4; // SWP_NOZORDER
-        SetPos(h, after, x, y, 0, 0, flags);
+        return (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0 || (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+    }
+
+    static IntPtr LParam(int x, int y) { return new IntPtr((y << 16) | (x & 0xFFFF)); }
+
+    // A click at client point x,y, as posted mouse messages (skins2 handles them like real ones;
+    // the move first, so the control under the point sees the mouse enter).
+    static void PostClick(IntPtr h, int x, int y)
+    {
+        IntPtr pos = LParam(x, y);
+        PostMessage(h, WM_MOUSEMOVE, IntPtr.Zero, pos);
+        PostMessage(h, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), pos);
+        PostMessage(h, WM_LBUTTONUP, IntPtr.Zero, pos);
+    }
+
+    // ---------------------------------------------------------------- VLC's pin ("always on top")
+    // skins2 pins with SetWindowPos(HWND_TOPMOST / HWND_NOTOPMOST) on every one of its top-level
+    // windows (WindowManager::setOnTop -> Win32Window::toggleOnTop), the hidden 1x1 flag windows
+    // (eqflag, plflag, tflag, th0, ...) as well. The helper never touches those, so their
+    // WS_EX_TOPMOST is VLC's own pin state even while the helper keeps the main window topmost.
+    //   1 = pinned, 0 = not pinned, -1 = no flag window found (another skin), -2 = mixed (VLC is
+    //   switching right now). pinFromMain: the flag windows turned out not to follow the pin.
+    static int VlcPinState(IntPtr main, out string detail)
+    {
+        if (pinFromMain)
+        {
+            detail = "from the main window's own flag";
+            return IsTopmost(main) ? 1 : 0;
+        }
+        int total = 0, top = 0;
+        uint pid = vlcPid;
+        EnumWindows(delegate (IntPtr h, IntPtr l)
+        {
+            uint p;
+            GetWindowThreadProcessId(h, out p);
+            if (p != pid || h == main || ClassOf(h) != "SkinWindowClass") return true;
+            if (GetWindow(h, GW_OWNER) == IntPtr.Zero) return true;   // skins2's root window
+            int ex = GetWindowLong(h, GWL_EXSTYLE);
+            if ((ex & (WS_EX_APPWINDOW | WS_EX_TOOLWINDOW)) != 0) return true;   // video, tooltip
+            RECT r;
+            if (!GetWindowRect(h, out r) || W(r) >= 8 || H(r) >= 8) return true;   // flag windows: 1x1 (0x0 until first shown)
+            total++;
+            if ((ex & WS_EX_TOPMOST) != 0) top++;
+            return true;
+        }, IntPtr.Zero);
+        detail = top + " of " + total + " flag windows topmost";
+        if (total == 0) return -1;
+        if (top == 0) return 0;
+        if (top == total) return 1;
+        return -2;
+    }
+
+    // ---------------------------------------------------------------- z-order
+    // The main window is topmost when VLC is pinned, and also while the strip sits in the
+    // taskbar: the taskbar is topmost itself, so a strip that is not would always be behind it,
+    // i.e. invisible. Unpinned and showing the full player, the helper takes back what it added,
+    // so "unpin" works as in VLC. While it should be on top, the helper raises it again when the
+    // taskbar came above it (a click on the taskbar raises the taskbar; item 15).
+    static void FixZOrder(IntPtr main, IntPtr tray, ShapeInfo s)
+    {
+        string detail;
+        int pin = VlcPinState(main, out detail);
+        bool mainTop = IsTopmost(main);
+        bool below = IsBelow(main, tray);
+        if (!mainTop) helperTop = false;
+
+        // the flag windows must change whenever VLC itself changes the main window's flag; if the
+        // main window turned topmost on its own (not the helper) and the flags still say "not
+        // pinned" a quarter second later, they do not show the pin: use the main window's flag
+        if (pin == 0 && mainTop && lastMainTop == 0 && !helperTop) pinOddTicks = 1;
+        else if (pin == 0 && mainTop && pinOddTicks > 0 && !helperTop) pinOddTicks++;
+        else pinOddTicks = 0;
+        if (pinOddTicks >= 2)
+        {
+            pinFromMain = true;
+            Log("z-order: VLC made its window topmost but its flag windows do not show it; reading the pin from the main window from now on");
+            pin = 1;
+        }
+        lastMainTop = mainTop ? 1 : 0;
+
+        LogChange("z", "z-order: VLC pin " + (pin == 1 ? "ON" : pin == 0 ? "off" : pin == -1 ? "unknown" : "changing") +
+                  " (" + detail + "), main window topmost=" + mainTop + (helperTop ? " (set by the helper)" : "") +
+                  ", taskbar above VLC=" + below + ", showing " + (s.Full ? "full player" : "strip"));
+        if (pin == -2) return;   // VLC is switching: look again next tick
+
+        bool pinned = pin == 1 || (pin == -1 && mainTop);
+        // without flag windows the helper cannot tell its own topmost from VLC's, so then it
+        // only keeps up what VLC set (never adds)
+        bool want = pinned || (!s.Full && pin != -1);
+        if (want && (!mainTop || below))
+        {
+            string why = !mainTop ? (pinned ? "VLC is pinned but its window is not topmost" :
+                                              "strip in the taskbar must be above it (VLC unpinned)") :
+                                    "the taskbar came above VLC";
+            Log("z-order: raise VLC to topmost: " + why);
+            SetPos(main, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+            if (!pinned) helperTop = true;
+            CountRaise();
+        }
+        else if (!want && mainTop && pin == 0)
+        {
+            Log("z-order: VLC is not pinned and shows the full player: topmost removed");
+            SetPos(main, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+            helperTop = false;
+        }
+    }
+
+    // More than 8 re-raises in 10 s: something keeps putting the taskbar back on top (a loop
+    // that would make the strip flicker). Logged, at most every 30 s.
+    static void CountRaise()
+    {
+        DateTime now = DateTime.Now;
+        raises.Add(now);
+        raises.RemoveAll(delegate (DateTime t) { return (now - t).TotalSeconds > 10; });
+        if (raises.Count > 8 && (now - raiseWarnAt).TotalSeconds > 30)
+        {
+            raiseWarnAt = now;
+            Log("z-order: WARNING: raised VLC above the taskbar " + raises.Count + " times in 10 s; the taskbar keeps coming back on top");
+        }
+    }
+
+    // ---------------------------------------------------------------- moving
+    // skins2 keeps its own copy of the window position (GenericWindow m_left / m_top) and never
+    // learns about moves from outside (win32_loop.cpp has no WM_MOVE / WM_WINDOWPOSCHANGED).
+    // Every move or resize it makes later starts from that stale copy (a layout switch or the
+    // resize grip: GenericWindow::resize -> MoveWindow(m_left, m_top, ...)), so a window moved
+    // with SetWindowPos jumps back to where VLC last put it, and the helper pulls it back:
+    // that flashes, and a resize drag computes the width from a window that keeps jumping.
+    // So the helper lets VLC move itself: a posted drag on the skin's grip (button down, mouse
+    // move by the offset, button up). skins2's CtrlMove moves the window by the mouse offset in
+    // client coordinates, from its own copy of the position, which it then updates. If that copy
+    // was off (the window was moved from outside before), the drag lands off by as much and the
+    // next one corrects it. SetWindowPos only when drags do not work (2 without effect, 4 misses).
+    static void MoveTo(IntPtr main, RECT r, ShapeInfo s, int x, int y, string why)
+    {
+        if (dragPending)
+        {
+            if (r.Left == dragFromX && r.Top == dragFromY)
+            {
+                if ((DateTime.Now - dragAt).TotalMilliseconds < 700) return;   // VLC has not handled it yet
+                dragPending = false;
+                dragFails++;
+                Log("move: VLC did not react to the drag (" + dragFails + " in a row)");
+                if (dragFails >= 2) DragOff("VLC does not move on posted drags");
+            }
+            else
+            {
+                dragPending = false;
+                if (r.Left == dragToX && r.Top == dragToY)
+                {
+                    dragFails = 0;
+                    dragMisses = 0;
+                    LogChange("drag", "move: done, VLC moved itself to " + Pt(r.Left, r.Top));
+                }
+                else
+                {
+                    dragMisses++;
+                    Log("move: the drag ended at " + Pt(r.Left, r.Top) + ", not " + Pt(dragToX, dragToY) +
+                        " (VLC's own idea of its position was off by " + Pt(r.Left - dragToX, r.Top - dragToY) +
+                        "; " + dragMisses + " in a row)");
+                    if (dragMisses >= 4) DragOff("drags keep missing (screen scaling?)");
+                }
+            }
+        }
+        if (r.Left == x && r.Top == y) return;
+
+        int dx = x - r.Left, dy = y - r.Top;
+        int gx = 0, gy = 0;
+        bool canDrag = !dragOff && DockShape.GripPoint(s, W(r), H(r), out gx, out gy) &&
+                       Math.Abs(gx + dx) < 30000 && Math.Abs(gy + dy) < 30000;
+        if (canDrag && !DockShape.Inside(s.Rects, gx, gy))
+        {
+            LogChange("grip", "move: the grip point " + Pt(gx, gy) + " is not visible in this layout, moving from outside");
+            canDrag = false;
+        }
+        Log("move (" + why + "): " + Pt(r.Left, r.Top) + " -> " + Pt(x, y) +
+            (canDrag ? ", by a drag on VLC's grip at " + Pt(gx, gy) : ", SetWindowPos" + (dragOff ? " (drags off)" : "")));
+        if (canDrag)
+        {
+            PostMessage(main, WM_MOUSEMOVE, IntPtr.Zero, LParam(gx, gy));
+            PostMessage(main, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), LParam(gx, gy));
+            PostMessage(main, WM_MOUSEMOVE, new IntPtr(MK_LBUTTON), LParam(gx + dx, gy + dy));
+            PostMessage(main, WM_LBUTTONUP, IntPtr.Zero, LParam(gx + dx, gy + dy));
+            dragPending = true;
+            dragAt = DateTime.Now;
+            dragFromX = r.Left; dragFromY = r.Top;
+            dragToX = x; dragToY = y;
+        }
+        else
+            SetPos(main, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    }
+
+    static void DragOff(string why)
+    {
+        dragOff = true;
+        Log("move: " + why + ": moving the window from outside from now on (VLC's own moves and resizes will jump back first)");
+    }
+
+    // ---------------------------------------------------------------- panels off the screen
+    // The docked strip with PL / EQ open on the side away from the screen (below a bottom
+    // taskbar: the "dn" layouts) would have them under the screen edge. Click the flip arrow
+    // on the panel next to the strip (at most 3 tries in a row, 1.5 s apart).
+    static bool FlipIfOffScreen(IntPtr main, ShapeInfo s, int ww, int hh, bool atBottom)
+    {
+        if (!FlipPanels || !DockShape.PanelsOffScreen(s, atBottom)) { flipTries = 0; return false; }
+        if (flipTries >= 3)
+        {
+            LogChange("flip", "flip: the panels stay off the screen after 3 clicks on the flip arrow; flip them by hand");
+            return false;
+        }
+        if ((DateTime.Now - lastFlipAt).TotalMilliseconds < 1500) return true;   // the last click may still be on its way
+        int fx, fy;
+        if (!DockShape.FlipPoint(s, ww, hh, out fx, out fy) || !DockShape.Inside(s.Rects, fx, fy)) return false;
+        flipTries++;
+        lastFlipAt = DateTime.Now;
+        Log("flip: " + (s.Eq ? "EQ" : "playlist") + " open " + (s.BarAtBottom ? "above" : "below") + " the docked strip, off the screen;" +
+            " clicking its flip arrow at " + Pt(fx, fy) + " (try " + flipTries + ")");
+        PostClick(main, fx, fy);
+        return true;
     }
 
     // ---------------------------------------------------------------- start pinned
@@ -555,6 +851,13 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         if (pinnedPid == vlcPid) return;
         if (mainSeenAt == DateTime.MinValue) { mainSeenAt = DateTime.Now; return; }
         if ((DateTime.Now - mainSeenAt).TotalMilliseconds < 1500) return;  // let the skin settle
+        string detail;
+        if (VlcPinState(main, out detail) == 1)
+        {
+            pinnedPid = vlcPid;
+            Log("PinOnce: VLC is pinned already (" + detail + "), no click");
+            return;
+        }
         ClickPin(main, r);
     }
 
@@ -562,28 +865,11 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     static void ClickPin(IntPtr main, RECT r)
     {
         pinnedPid = vlcPid;   // StartPinned must not click again for this VLC
-
-        int hh = H(r);
-        RECT box;
-        bool barAtBottom, full;
-        ReadShape(main, hh, out box, out barAtBottom, out full);
+        ShapeInfo s = ReadShape(main, W(r), H(r));
         int x, y;
-        if (full)   // full player: small pin, 82 px from the right edge, 5 px from its top
-        {
-            x = W(r) - P(82) + P(9);
-            y = (barAtBottom ? hh - P(122) : 0) + P(11);
-        }
-        else        // strip: pin 34 px from the right edge, centred in the bar
-        {
-            x = W(r) - P(34) + P(11);
-            y = (barAtBottom ? hh - P(BarHeight) : 0) + P(BarHeight / 2);
-        }
-        Log("PinOnce: click at " + x + "," + y + " in " + Describe(main) + " (full=" + full + " barAtBottom=" + barAtBottom +
-            " windowW=" + W(r) + " windowH=" + hh + ")");
-        IntPtr pos = new IntPtr((y << 16) | (x & 0xFFFF));
-        PostMessage(main, WM_MOUSEMOVE, IntPtr.Zero, pos);
-        PostMessage(main, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), pos);
-        PostMessage(main, WM_LBUTTONUP, IntPtr.Zero, pos);
+        DockShape.PinPoint(s, W(r), H(r), out x, out y);
+        Log("PinOnce: click at " + Pt(x, y) + " in " + Describe(main) + " (" + s.Describe() + ", window " + W(r) + "x" + H(r) + ")");
+        PostClick(main, x, y);
     }
 
     static bool FindMain(List<IntPtr> wins, out IntPtr main, out RECT rMain)
@@ -627,61 +913,270 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             if (!fullscreenMode)
             {
                 IntPtr fg = GetForegroundWindow();
-                Log("fullscreen mode: enter, foreground " + Describe(fg));
+                Log("fullscreen mode: enter, foreground " + Describe(fg) + " (VLC topmost=" + IsTopmost(main) + ")");
                 foreach (IntPtr h in wins)
                 {
-                    SetPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                    SetPos(h, fg, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    SetPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+                    SetPos(h, fg, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
                 }
                 fullscreenMode = true;
             }
             return;
         }
-        bool leavingFullscreen = fullscreenMode;
-        fullscreenMode = false;
-        if (leavingFullscreen) Log("fullscreen mode: leave");
+        if (fullscreenMode)
+        {
+            fullscreenMode = false;
+            Log("fullscreen mode: leave (z-order is set again from VLC's pin)");
+        }
 
         // horizontal anchor: right-aligned to the left of Start (or of the tray),
         // or left-aligned at the left end of the taskbar
         bool alignRight = false;
         int anchor = tb.Left + Gap;
+        string anchorWhy = "taskbar left end";
         if (DockTo == "right")
         {
             IntPtr notify = FindWindowEx(tray, IntPtr.Zero, "TrayNotifyWnd", null);
             RECT rn;
             anchor = ((notify != IntPtr.Zero && GetWindowRect(notify, out rn)) ? rn.Left : tb.Right) - Gap;
             alignRight = true;
+            anchorWhy = "right edge at the tray";
         }
         else if (DockTo == "start")
         {
             UpdateStartButton(tray);
-            if (startLeft != int.MinValue) { anchor = startLeft - Gap; alignRight = true; }
+            if (startLeft != int.MinValue) { anchor = startLeft - Gap; alignRight = true; anchorWhy = "right edge at Start"; }
         }
 
         // vertical placement: the strip inside the taskbar (panels stick out above or
         // below it); the full player's visible part right next to the taskbar
-        int hh = H(rMain);
-        RECT box;
-        bool barAtBottom, full;
-        ReadShape(main, hh, out box, out barAtBottom, out full);
-        int mainY;
-        if (!full)
+        int ww = W(rMain), hh = H(rMain);
+        ShapeInfo s = ReadShape(main, ww, hh);
+        int mainY = DockShape.TargetY(s, hh, tb.Top, tb.Bottom, atBottom, OffsetY);
+        int mainX = XFor(alignRight, anchor, ww, tb.Left + 2, mon.Right);
+
+        // z-order also while a button is held: a click on the taskbar raises it at once
+        FixZOrder(main, tray, s);
+
+        // the user may be dragging or resizing VLC: wait until the button is released. With
+        // DockTo=start the right edge then goes back to Start, so a wider strip grows to the left.
+        bool off = rMain.Left != mainX || rMain.Top != mainY;
+        if (MouseButtonDown())
         {
-            int barTop = tb.Top + (H(tb) - P(BarHeight)) / 2 + OffsetY;
-            mainY = barAtBottom ? barTop - (hh - P(BarHeight)) : barTop;
+            if (off) LogChange("mouse", "mouse button down: VLC stays at " + Pt(rMain.Left, rMain.Top) + " " + ww + "x" + hh +
+                               " until it is released (dock position " + Pt(mainX, mainY) + ")");
+            return;
+        }
+        string held;
+        if (logged.TryGetValue("mouse", out held))
+        {
+            logged.Remove("mouse");
+            Log("mouse button released: docking again");
+        }
+
+        if (FlipIfOffScreen(main, s, ww, hh, atBottom)) return;   // the layout changes: place it next tick
+
+        if (off)
+        {
+            string why = (s.Full ? "full player " + (atBottom ? "above" : "below") + " the taskbar" :
+                                   "strip in the taskbar, bar at the " + (s.BarAtBottom ? "bottom" : "top")) + ", " + anchorWhy;
+            why += (mainX != lastTargetX || mainY != lastTargetY) ? "; dock position changed" : "; window was moved away from it";
+            MoveTo(main, rMain, s, mainX, mainY, why);
+        }
+        else if (dragPending) MoveTo(main, rMain, s, mainX, mainY, "");   // only finishes the drag's bookkeeping
+        lastTargetX = mainX; lastTargetY = mainY;
+    }
+}
+
+// ---------------------------------------------------------------------------------------
+// What VLC's main window shows, read from its window region (VlcDock.ReadShape). Pure code,
+// no Win32: the tests feed it the X11 shapes of the real skin under Xvfb.
+//
+// The window is 436 logical px tall in every layout (full player 122 + EQ 116 + playlist 198),
+// the strip is BarHeight tall (24, 36 for the taskbar build). The visible height alone tells
+// strip from full player and which panels are open:
+//   strip  bar, bar + EQ, bar + PL, bar + EQ + PL
+//   full   122, 122 + EQ, 122 + PL, 122 + EQ + PL
+// and the visible part touches the window's top ("dn" layouts, bar at the top) or bottom
+// ("up", bar at the bottom); only the full player with both panels fills it all.
+// This does not depend on how the corners are drawn. It is ambiguous only for a strip height
+// that makes two sums equal (40: strip + PL = full + EQ); then, and for heights that fit
+// nothing, the old test decides: a pixel one bar height from the bar's outer edge is visible
+// in the full player and transparent at the rounded corner of a panel next to the strip.
+// A height that fits no strip of the configured height but a strip of 12 to 80 px is taken
+// as such a strip (wrong skin file in the settings; logged). The scale comes from the window
+// height when it does not match the configured one.
+// ---------------------------------------------------------------------------------------
+public sealed class ShapeInfo
+{
+    public List<VlcDock.RECT> Rects = new List<VlcDock.RECT>();   // visible rectangles, window coordinates
+    public int Top, Bottom;          // visible rows
+    public bool Full;                // full player (else the strip)
+    public bool BarAtBottom;         // "up" layouts: the panels open above the bar
+    public bool DirectionKnown = true;   // false: the full player with both panels (fills the window)
+    public bool Eq, Pl;              // panels open (as far as the height tells)
+    public int Bar;                  // strip height in px (configured, or read from the shape)
+    public double Scale;             // skin scale used
+    public string How = "";          // how it was decided (log)
+
+    public string Describe()
+    {
+        return (Full ? "full" : "strip") + "-" + (BarAtBottom ? "up" : "dn") + (DirectionKnown ? "" : "?") +
+               (Eq ? " +EQ" : "") + (Pl ? " +PL" : "") + " bar=" + Bar + "px scale=" + Scale + " [" + How + "]";
+    }
+}
+
+public static class DockShape
+{
+    public const int FullH = 122, EqH = 116, PlH = 198, WinH = 436;
+    const int Tol = 2;   // px: every part is rounded on its own at 125 % / 150 %
+
+    static int Px(double v, double scale) { return (int)Math.Round(v * scale); }
+
+    public static bool Inside(List<VlcDock.RECT> rects, int x, int y)
+    {
+        foreach (VlcDock.RECT r in rects)
+            if (x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom) return true;
+        return false;
+    }
+
+    // which of base, base+EQ, base+PL, base+EQ+PL the height h is; false if none
+    static bool Match(int h, int b, int e, int l, out bool eq, out bool pl)
+    {
+        eq = false; pl = false;
+        if (Math.Abs(h - b) <= Tol) return true;
+        if (Math.Abs(h - b - e) <= Tol) { eq = true; return true; }
+        if (Math.Abs(h - b - l) <= Tol) { pl = true; return true; }
+        if (Math.Abs(h - b - e - l) <= Tol) { eq = true; pl = true; return true; }
+        return false;
+    }
+
+    public static ShapeInfo Classify(List<VlcDock.RECT> rects, int ww, int hh, double scale, double barHeight, bool lastBarAtBottom)
+    {
+        ShapeInfo s = new ShapeInfo();
+        s.Scale = scale;
+        if (Math.Abs(hh - Px(WinH, scale)) > Tol && hh > 100)
+        {
+            s.Scale = Math.Round(hh * 100.0 / WinH) / 100;   // window height says another scale than the settings
+            s.How = "scale from window height; ";
+        }
+        double sc = s.Scale;
+        s.Bar = Px(barHeight, sc);
+        if (rects == null || rects.Count == 0)
+        {
+            // no region: the whole window shows (not this skin, or not drawn yet); as before
+            s.Top = 0; s.Bottom = hh; s.BarAtBottom = true; s.Full = false;
+            s.How += "no region";
+            return s;
+        }
+        s.Rects = rects;
+        int top = int.MaxValue, bottom = int.MinValue;
+        foreach (VlcDock.RECT r in rects) { top = Math.Min(top, r.Top); bottom = Math.Max(bottom, r.Bottom); }
+        s.Top = top; s.Bottom = bottom;
+        int h = bottom - top;
+
+        // direction: the visible part touches one end of the window
+        bool atTop = top <= Tol - 1, atEnd = bottom >= hh - Tol + 1;
+        if (atTop && !atEnd) s.BarAtBottom = false;
+        else if (atEnd && !atTop) s.BarAtBottom = true;
+        else { s.BarAtBottom = lastBarAtBottom; s.DirectionKnown = false; }
+
+        int f = Px(FullH, sc), e = Px(EqH, sc), l = Px(PlH, sc);
+        bool feq, fpl, seq, spl;
+        bool full = Match(h, f, e, l, out feq, out fpl);
+        bool strip = Match(h, s.Bar, e, l, out seq, out spl);
+        if (full && !strip) { s.Full = true; s.Eq = feq; s.Pl = fpl; s.How += "height fits the full player"; }
+        else if (strip && !full) { s.Eq = seq; s.Pl = spl; s.How += "height fits the strip"; }
+        else if (!full && !strip && InferBar(h, sc, e, l, s)) s.Full = false;
+        else
+        {
+            // ambiguous (or nothing fits): the pixel test at the bar's corner
+            int y = s.BarAtBottom ? hh - s.Bar : s.Bar;
+            s.Full = Inside(rects, 0, y);
+            if (s.Full) { s.Eq = feq; s.Pl = fpl; } else { s.Eq = seq; s.Pl = spl; }
+            s.How += (full ? "height fits both, " : "height fits nothing, ") + "corner pixel " + 0 + "," + y + (s.Full ? " visible" : " transparent");
+        }
+        return s;
+    }
+
+    // a strip of another height (the settings name another skin file than VLC uses)
+    static bool InferBar(int h, double sc, int e, int l, ShapeInfo s)
+    {
+        int[] add = { 0, e, l, e + l };
+        for (int i = 0; i < add.Length; i++)
+        {
+            int b = h - add[i];
+            if (b >= Px(12, sc) && b <= Px(80, sc))
+            {
+                s.Bar = b;
+                s.Eq = i == 1 || i == 3;
+                s.Pl = i == 2 || i == 3;
+                s.How += "height fits a strip of " + b + " px, not the configured height";
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Window y that docks it: the strip centred in the taskbar, or the visible part of the full
+    // player just above (bottom taskbar) or below (top taskbar) the taskbar.
+    public static int TargetY(ShapeInfo s, int hh, int tbTop, int tbBottom, bool atBottom, int offsetY)
+    {
+        if (!s.Full)
+        {
+            int barTop = tbTop + (tbBottom - tbTop - s.Bar) / 2 + offsetY;
+            return s.BarAtBottom ? barTop - (hh - s.Bar) : barTop;
+        }
+        return atBottom ? tbTop - s.Bottom : tbBottom - s.Top;
+    }
+
+    // Strip with panels open on the side away from the screen: below a bottom taskbar
+    // ("dn"), above a top one ("up").
+    public static bool PanelsOffScreen(ShapeInfo s, bool atBottom)
+    {
+        return !s.Full && (s.Eq || s.Pl) && s.DirectionKnown && (atBottom ? !s.BarAtBottom : s.BarAtBottom);
+    }
+
+    // Client point on the skin's move grip (the dots at the left end; build_skin.py: the
+    // strip's and the full player's background, action "move", 14 px left cap, the first
+    // control starts at x 16).
+    public static bool GripPoint(ShapeInfo s, int ww, int hh, out int x, out int y)
+    {
+        double sc = s.Scale;
+        x = Px(6, sc);
+        if (s.Full) y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(10, sc);
+        else y = (s.BarAtBottom ? hh - s.Bar : 0) + s.Bar / 2;
+        return ww > Px(16, sc);
+    }
+
+    // Client point of the flip arrow on the panel next to the strip: EQ (68 px from the right
+    // edge) when it is open, else the playlist (26 px); 18 x 12 buttons 4 px below the panel top.
+    public static bool FlipPoint(ShapeInfo s, int ww, int hh, out int x, out int y)
+    {
+        double sc = s.Scale;
+        x = y = 0;
+        if (s.Full || !(s.Eq || s.Pl)) return false;
+        x = ww - Px(s.Eq ? 68 : 26, sc) + Px(9, sc);
+        int panelTop = s.BarAtBottom ? hh - s.Bar - Px(s.Eq ? EqH : PlH, sc) : s.Bar;
+        y = panelTop + Px(10, sc);
+        return true;
+    }
+
+    // Client point of the pin button: full player 82 px from the right edge, 5 px from its top;
+    // strip 34 px from the right edge, centred in the bar.
+    public static void PinPoint(ShapeInfo s, int ww, int hh, out int x, out int y)
+    {
+        double sc = s.Scale;
+        if (s.Full)
+        {
+            x = ww - Px(82, sc) + Px(9, sc);
+            y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(11, sc);
         }
         else
-            mainY = atBottom ? tb.Top - box.Bottom : tb.Bottom - box.Top;
-        int mainX = XFor(alignRight, anchor, W(rMain), tb.Left + 2, mon.Right);
-
-        bool below = IsBelow(main, tray);
-        if (LogPath != null && lastBelow != (below ? 1 : 0))
         {
-            lastBelow = below ? 1 : 0;
-            Log("IsBelow(main, tray) = " + below + (below ? " (taskbar is above VLC)" : " (VLC is above the taskbar)"));
+            x = ww - Px(34, sc) + Px(11, sc);
+            y = (s.BarAtBottom ? hh - s.Bar : 0) + s.Bar / 2;
         }
-        bool fixMain = leavingFullscreen || below;
-        Move(main, rMain, mainX, mainY, fixMain);
     }
 }
 
