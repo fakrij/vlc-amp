@@ -112,3 +112,5 @@ tray icons), gap, vertical nudge, start pinned.
 It is still VLC's own window kept in place, not part of Explorer, so it
 cannot be pinned like an app icon. To start it with Windows, put a shortcut to
 `VLC in taskbar.cmd` in the Startup folder (Win+R, `shell:startup`).
+
+Testing with real VLC under Xvfb (no Windows needed): see `tools/README.md`.
