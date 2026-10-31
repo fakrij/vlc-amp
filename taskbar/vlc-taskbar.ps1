@@ -17,6 +17,7 @@ $OffsetY           = 0                  # nudge the strip up (-) or down (+) ins
 $HideVlcTaskbarButton = $true           # the player is in the taskbar already, so hide VLC's own taskbar button
 $StartVlc          = $true              # start VLC if it is not running (not in -Watch mode)
 $StartPinned       = $true              # pin VLC "always on top" each time it starts
+$TrayIcon          = $true              # notification-area icon with a menu (dock on / off, pin now, quit)
 # -----------------------------------------
 
 $ErrorActionPreference = "Stop"
@@ -151,10 +152,10 @@ if ($StartVlc -and -not $Watch -and -not (Get-Process vlc -ErrorAction SilentlyC
     Start-Process -FilePath $exe -ArgumentList $vlcArgs
 }
 
-# UI Automation is used to find the Start button
-Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, WindowsBase
+# UI Automation is used to find the Start button; Forms / Drawing for the tray icon
+Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, WindowsBase, System.Windows.Forms, System.Drawing
 $refs = [AppDomain]::CurrentDomain.GetAssemblies() |
-    Where-Object { $_.GetName().Name -in 'UIAutomationClient', 'UIAutomationTypes', 'WindowsBase' } |
+    Where-Object { $_.GetName().Name -in 'UIAutomationClient', 'UIAutomationTypes', 'WindowsBase', 'System.Windows.Forms', 'System.Drawing' } |
     ForEach-Object { $_.Location }
 
 if (-not ('VlcDock' -as [type])) {
@@ -167,5 +168,6 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::OffsetY     = $OffsetY
 [VlcDock]::Dock        = -not $NoDock
 [VlcDock]::StartPinned = $StartPinned
+[VlcDock]::TrayIcon    = $TrayIcon
 [VlcDock]::ExitWithVlc = -not $Watch
 [VlcDock]::Run()   # returns when VLC exits (not in -Watch mode)
