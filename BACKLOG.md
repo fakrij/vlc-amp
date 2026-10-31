@@ -130,7 +130,7 @@ Agent-sized work packages for these steps are in section 5.
 
 ## 4. Open questions
 
-1. Items 4, 5, 2: is a hotkey / tray-menu solution acceptable, or do you want real buttons in the skin (patched plugin)?
+1. ~~Items 4, 5, 2~~ **Answered 2026-10-31:** the Lua route (A + D: Lua interface script, hotkeys, helper tray menu). T6 started.
 2. Item 15: is the helper running, does the player come back after a moment, and what exactly was clicked?
 3. ~~Linux (22)~~ **Answered 2026-10-31:** distro unknown, make it universal; floating + pinned first, no panel docking.
 4. ~~Item 20~~ **Answered 2026-10-31:** yes, Setup downloads and installs the SMTC plugin.
@@ -160,7 +160,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T3 | Helper debug log (for 15) | **DONE** (merged) | - | S |
 | T4 | Docs consistency pass | Haiku | after others | XS |
 | T5 | Lua API fact check (for 4, 5, 2) | **DONE** (merged; `docs/lua-api-notes.md`) | - | S |
-| T6 | Lua interface prototype: A-B loop, folder jump, EQ presets via hotkeys | Sonnet | T1, T5, decision on 4/5/2 | L |
+| T6 | Lua interface prototype: A-B loop, folder jump, EQ presets via hotkeys | Sonnet (**running**) | T1, T5 | L |
 | T7 | Tray icon for the helper (11) | **DONE** (merged) | - | M |
 | T8 | Taller taskbar strip option (12) | Sonnet | T1 | M |
 | T9 | Fix 15 (taskbar click hides the player) | Opus | Windows answers + T3 log | M |
