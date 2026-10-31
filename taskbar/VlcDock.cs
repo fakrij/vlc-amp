@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Automation;
@@ -29,6 +30,7 @@ public static class VlcDock
     public static bool ExitWithVlc = true; // false = keep waiting for the next VLC (started with Windows)
     public static bool Dock = true;        // false = only StartPinned, no taskbar docking
     public static bool StartPinned = false;// click VLC's pin button once after each VLC start
+    public static string LogPath = null;   // debug log file (null = no log)
 
     // ---- state
     static bool enabled = true;
@@ -41,6 +43,10 @@ public static class VlcDock
     static int startLeft = int.MinValue;   // screen x of the Start button, if found
     static uint pinnedPid;                 // VLC process already pinned by StartPinned
     static DateTime mainSeenAt = DateTime.MinValue;
+    static string lastLogText;             // last line written (without time stamp)
+    static int logRepeats;                 // how many identical lines came after it
+    static string lastShape;               // last ReadShape result logged
+    static int lastBelow = -1;             // last IsBelow(main, tray) logged: -1 unknown, 0 no, 1 yes
     static IntPtr locHook = IntPtr.Zero, fgHook = IntPtr.Zero;
     static WinEventProc winEventDelegate = OnWinEvent; // keep alive (GC)
     static TimerProc timerDelegate = OnTimer;
@@ -65,7 +71,7 @@ public static class VlcDock
     [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
-    [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll", SetLastError = true)] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr FindWindow(string cls, string name);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string cls, string name);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
@@ -100,6 +106,8 @@ public static class VlcDock
     const uint WM_MOUSEMOVE = 0x200, WM_LBUTTONDOWN = 0x201, WM_LBUTTONUP = 0x202;
     const int MK_LBUTTON = 1;
 
+    const long LogMaxBytes = 1000000;
+
     static int P(double v) { return (int)Math.Round(v * Scale); }
     static int W(RECT r) { return r.Right - r.Left; }
     static int H(RECT r) { return r.Bottom - r.Top; }
@@ -113,6 +121,8 @@ public static class VlcDock
         // Ctrl+Alt+Shift+V: dock / undock
         RegisterHotKey(IntPtr.Zero, 1, MOD_CONTROL | MOD_ALT | MOD_SHIFT | MOD_NOREPEAT, 0x56);
         lastVlcSeen = DateTime.Now;
+        Log("helper started: scale=" + Scale + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
+            " dock=" + Dock + " startPinned=" + StartPinned + " exitWithVlc=" + ExitWithVlc);
 
         MSG msg;
         while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0)
@@ -129,11 +139,12 @@ public static class VlcDock
     static void Toggle()
     {
         enabled = !enabled;
+        Log("hotkey: docking " + (enabled ? "on" : "off"));
         if (!enabled)
         {
             // release the windows: normal z-order, freely movable again
             foreach (IntPtr h in FindSkinWindows())
-                SetWindowPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
         Tick();
     }
@@ -143,6 +154,8 @@ public static class VlcDock
     static void OnWinEvent(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
     {
         if (ev == EVENT_OBJECT_LOCATIONCHANGE && idObject != 0) return; // only whole windows
+        if (ev == EVENT_SYSTEM_FOREGROUND && LogPath != null)
+            Log("foreground: " + Describe(hwnd));
         Tick();
     }
 
@@ -166,7 +179,62 @@ public static class VlcDock
             // the strip's corner is rounded (transparent); the full player's edge there is not
             full = PtInRegion(rgn, 0, barAtBottom ? hh - P(24) : P(24));
         }
-        finally { DeleteObject(rgn); }
+        finally
+        {
+            DeleteObject(rgn);
+            LogShape(box, hh, barAtBottom, full);
+        }
+    }
+
+    // ---------------------------------------------------------------- debug log
+    // Only active when LogPath is set. Never throws: a log problem must not stop the helper.
+    // Identical consecutive lines are counted instead of repeated; at about 1 MB the file
+    // is moved to <log>.old (replacing the previous one) and a new file is started.
+    static void Log(string text)
+    {
+        string path = LogPath;
+        if (path == null) return;
+        try
+        {
+            if (text == lastLogText) { logRepeats++; return; }
+            string head = "";
+            if (logRepeats > 0) head = Stamp() + "  (previous line repeated " + logRepeats + " more times)\r\n";
+            lastLogText = text;
+            logRepeats = 0;
+            FileInfo fi = new FileInfo(path);
+            if (fi.Exists && fi.Length > LogMaxBytes)
+            {
+                if (File.Exists(path + ".old")) File.Delete(path + ".old");
+                File.Move(path, path + ".old");
+            }
+            File.AppendAllText(path, head + Stamp() + "  " + text + "\r\n");
+        }
+        catch (Exception) { }
+    }
+
+    static string Stamp() { return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"); }
+
+    static string ClassOf(IntPtr h)
+    {
+        StringBuilder sb = new StringBuilder(64);
+        if (h != IntPtr.Zero) GetClassName(h, sb, 64);
+        return sb.ToString();
+    }
+
+    static string Describe(IntPtr h)
+    {
+        if (h == IntPtr.Zero) return "none";
+        return "0x" + h.ToInt64().ToString("X") + " class=\"" + ClassOf(h) + "\"";
+    }
+
+    static void LogShape(RECT box, int hh, bool barAtBottom, bool full)
+    {
+        if (LogPath == null) return;
+        string s = "shape: box=" + box.Left + "," + box.Top + "," + box.Right + "," + box.Bottom +
+                   " windowH=" + hh + " barAtBottom=" + barAtBottom + " full=" + full;
+        if (s == lastShape) return;
+        lastShape = s;
+        Log(s);
     }
 
     // ---------------------------------------------------------------- VLC process
@@ -183,6 +251,8 @@ public static class VlcDock
         if (pid != 0) lastVlcSeen = DateTime.Now;
         if (pid != vlcPid)
         {
+            if (vlcPid != 0) Log("VLC lost: pid " + vlcPid);
+            if (pid != 0) Log("VLC found: pid " + pid);
             if (locHook != IntPtr.Zero) { UnhookWinEvent(locHook); locHook = IntPtr.Zero; }
             vlcPid = pid;
             mainSeenAt = DateTime.MinValue;
@@ -253,6 +323,17 @@ public static class VlcDock
         return false;
     }
 
+    // SetWindowPos with a log line (target, insert-after, position, flags, result)
+    static void SetPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags)
+    {
+        bool ok = SetWindowPos(h, after, x, y, cx, cy, flags);
+        if (LogPath == null) return;
+        int err = ok ? 0 : Marshal.GetLastWin32Error();
+        string a = after == HWND_TOPMOST ? "TOPMOST" : after == HWND_NOTOPMOST ? "NOTOPMOST" : Describe(after);
+        Log("SetWindowPos " + Describe(h) + " after=" + a + " x=" + x + " y=" + y + " cx=" + cx + " cy=" + cy +
+            " flags=0x" + flags.ToString("X") + (ok ? " ok" : " FAILED err=" + err));
+    }
+
     static bool ForegroundIsFullscreen(IntPtr tray, List<IntPtr> ours)
     {
         IntPtr fg = GetForegroundWindow();
@@ -284,7 +365,7 @@ public static class VlcDock
         uint flags = SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
         IntPtr after = HWND_TOPMOST;
         if (!fixZ) flags |= 0x4; // SWP_NOZORDER
-        SetWindowPos(h, after, x, y, 0, 0, flags);
+        SetPos(h, after, x, y, 0, 0, flags);
     }
 
     // ---------------------------------------------------------------- start pinned
@@ -313,6 +394,8 @@ public static class VlcDock
             x = W(r) - P(34) + P(11);
             y = (barAtBottom ? hh - P(24) : 0) + P(12);
         }
+        Log("PinOnce: click at " + x + "," + y + " in " + Describe(main) + " (full=" + full + " barAtBottom=" + barAtBottom +
+            " windowW=" + W(r) + " windowH=" + hh + ")");
         IntPtr pos = new IntPtr((y << 16) | (x & 0xFFFF));
         PostMessage(main, WM_MOUSEMOVE, IntPtr.Zero, pos);
         PostMessage(main, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), pos);
@@ -353,10 +436,11 @@ public static class VlcDock
             if (!fullscreenMode)
             {
                 IntPtr fg = GetForegroundWindow();
+                Log("fullscreen mode: enter, foreground " + Describe(fg));
                 foreach (IntPtr h in wins)
                 {
-                    SetWindowPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                    SetWindowPos(h, fg, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    SetPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    SetPos(h, fg, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
                 }
                 fullscreenMode = true;
             }
@@ -364,6 +448,7 @@ public static class VlcDock
         }
         bool leavingFullscreen = fullscreenMode;
         fullscreenMode = false;
+        if (leavingFullscreen) Log("fullscreen mode: leave");
 
         // horizontal anchor: right-aligned to the left of Start (or of the tray),
         // or left-aligned at the left end of the taskbar
@@ -398,7 +483,13 @@ public static class VlcDock
             mainY = atBottom ? tb.Top - box.Bottom : tb.Bottom - box.Top;
         int mainX = XFor(alignRight, anchor, W(rMain), tb.Left + 2, mon.Right);
 
-        bool fixMain = leavingFullscreen || IsBelow(main, tray);
+        bool below = IsBelow(main, tray);
+        if (LogPath != null && lastBelow != (below ? 1 : 0))
+        {
+            lastBelow = below ? 1 : 0;
+            Log("IsBelow(main, tray) = " + below + (below ? " (taskbar is above VLC)" : " (VLC is above the taskbar)"));
+        }
+        bool fixMain = leavingFullscreen || below;
         Move(main, rMain, mainX, mainY, fixMain);
     }
 }
