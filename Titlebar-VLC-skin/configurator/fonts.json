@@ -1,0 +1,10 @@
+[
+  {"id": "dejavu", "name": "DejaVu Sans Mono", "file": null, "licence": null,
+   "note": "Bitstream Vera licence; the generator ships it itself."},
+  {"id": "jetbrains", "name": "JetBrains Mono", "file": "fonts/JetBrainsMono-Regular.ttf",
+   "licence": "fonts/LICENSE-JetBrainsMono.txt", "note": "SIL OFL 1.1"},
+  {"id": "roboto", "name": "Roboto Mono", "file": "fonts/RobotoMono-VF.ttf",
+   "licence": "fonts/LICENSE-RobotoMono.txt", "note": "SIL OFL 1.1 (variable font, Regular instance)"},
+  {"id": "sourcecode", "name": "Source Code Pro", "file": "fonts/SourceCodePro-Regular.otf",
+   "licence": "fonts/LICENSE-SourceCodePro.md", "note": "SIL OFL 1.1, Reserved Font Name \"Source\": shipped unmodified"}
+]
