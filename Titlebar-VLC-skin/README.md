@@ -643,6 +643,14 @@ These come from VLC's skin engine (skins2); details in
   150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is
   VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
   150 %), see [More themes](#more-themes).
+- Windows helper (measured on Windows 11, 125 % scaling, one song playing, helper in `-Watch` mode
+  with docking, taskbar button, tray icon and light / dark following on): the helper's PowerShell
+  process uses **19 MB** of memory while VLC is closed and **44 MB** while it docks VLC, and about
+  **0.04 %** / **0.25 %** of the CPU (averaged over all cores, 20 s); VLC itself was 123 MB and
+  0.35 %. It wakes up four times a second (every 50 ms only while the mouse is over the player),
+  and asks VLC's local web interface for the play state twice a second while VLC runs. Start-up
+  compiles the helper once (a few seconds of CPU, cached for no later start, so it recurs at every
+  helper start). Quit the helper from its tray icon to free it; the skin itself needs no helper.
 - Windows: VLC's own Start menu entry, desktop icon and pinned taskbar icon
   still show the "Media Library" node (VLC's launcher forces it on, and those
   shortcuts are in the all-users Start menu or pinned, so they cannot be
