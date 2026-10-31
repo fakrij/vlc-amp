@@ -61,7 +61,8 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
    - removes the "Media Library" entry from the playlist (it does nothing in
      a skin);
    - asks whether to start the helper with Windows. The helper pins the player
-     on top each time VLC starts and, if you want, docks it in the taskbar;
+     on top each time VLC starts, gives VLC a taskbar button with previous /
+     play / next on hover and, if you want, docks it in the taskbar;
    - turns on VLC's built-in web interface for this computer only
      (`127.0.0.1`, port 48080, protected by a random password that is stored
      in `vlcrc`). The helper uses it to read what VLC is playing and to send
@@ -188,12 +189,21 @@ What the helper does:
   taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Open
   debug log** (when the log is on), **Quit helper**. Windows may hide the
   icon under the `^` overflow until you drag it out.
+- **Taskbar button** for VLC (needs the web interface that Setup turns on):
+  hovering it shows **previous, play / pause and next** buttons and a preview
+  with title, artist and time; the button fills green with the track's
+  progress (yellow while paused); clicking it brings the player to the front,
+  also back from minimized; "Close window" quits VLC. VLC's own button
+  (which has none of this) is hidden. It belongs to the helper, so it is gone
+  while the helper is not running. Off: `$TaskbarButton = $false`, then run
+  Setup again.
 - Quits when VLC quits, except when started with Windows: then it waits for
   the next VLC.
 
 Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
 by display scaling), dock position (`start`, `left`, `right` = next to the
-tray icons), gap, vertical nudge, start pinned, tray icon, debug log.
+tray icons), gap, vertical nudge, start pinned, tray icon, taskbar button
+(and its taskbar group, `$TaskbarAppId`), debug log.
 
 ## Media controls
 
@@ -229,6 +239,48 @@ Tested with this skin.
 | Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `titlebar-helper.log.old`. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`Titlebar-150.vlt` for 150 %), or run Setup again. |
 | Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
+| No VLC button in the taskbar | The button comes from the helper: check that it runs (tray icon) and that Setup has been run (the button needs VLC's web interface). Without the helper, set `$TaskbarButton = $false` and run Setup again to get VLC's own button back. |
+| Two VLC buttons in the taskbar | Run Setup again (VLC closed); it sets `skins2-taskbar=0`. |
+| The VLC button does not join my pinned VLC icon | Turn the log on and find `taskbar button: created ... app id "..."`. In PowerShell run `Get-StartApps \| Where-Object AppID -like '*vlc*'`. If the AppIDs differ, put the one from `Get-StartApps` into `$TaskbarAppId` in `vlc-taskbar.ps1`. |
+
+### Testing the taskbar button (Windows)
+
+The taskbar button could only be compile-checked so far. Checklist (debug log
+on, `%TEMP%\titlebar-helper.log`):
+
+1. Close VLC, run `Setup.cmd`, answer Yes to starting with Windows. `vlcrc`
+   now has `skins2-taskbar=0`.
+2. Open a music file. Exactly one VLC button appears, with VLC's icon. The log
+   has `taskbar button: created ...` and `ThumbBarAddButtons hr=0x00000000`.
+3. Hover the button: a dark card with title, artist, time and a cyan progress
+   line, and the three buttons under it. The time keeps counting while you
+   hover. No "peek" (other windows do not fade).
+4. Click previous / next / play-pause. The middle icon and its tooltip change
+   to match within half a second.
+5. The button fills green while playing, turns yellow when paused, is empty
+   when stopped and for internet radio.
+6. Click the button: the player comes to the front (docked: above the
+   taskbar). Minimize VLC with the full player's minimize button, then click
+   the button: the player comes back.
+7. Switch Windows between dark and light mode (Settings > Personalization >
+   Colors) while hovering: the three icons stay readable (white on dark,
+   dark on light).
+8. Pin VLC (right-click the button > Pin to taskbar), quit VLC, start it from
+   the pin: the running VLC shows on the pinned icon, not as a second icon.
+   The pin starts VLC, not PowerShell. If not, see the troubleshooting row
+   above (`$TaskbarAppId`).
+9. Right-click the button > Close window (or the X on the preview): VLC quits
+   normally (it remembers its position at the next start) and the button
+   disappears.
+10. Restart Explorer (Task Manager > Windows Explorer > Restart) while VLC
+    plays: the button comes back with its three buttons.
+11. Alt+Tab shows VLC with the preview card; picking it brings the player
+    to the front.
+12. 32-bit PowerShell:
+    `%SystemRoot%\SysWOW64\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File taskbar\vlc-taskbar.ps1 -DebugLog`,
+    then steps 2 to 4.
+13. `$TaskbarButton = $false`, run Setup again: no helper button, VLC's own
+    button is back (unless docked).
 | Back to the normal VLC look | Menu (≡) > Interface > Preferences > Use native style, or the Undo steps above. |
 
 ## Limits

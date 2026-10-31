@@ -21,6 +21,8 @@ $StartPinned       = $true              # pin VLC "always on top" each time it s
 $DebugLog          = $DebugLog.IsPresent -or $false   # $true = log what the helper does to %TEMP%\titlebar-helper.log
 $TrayIcon          = $true              # notification-area icon with a menu (dock on / off, pin now, quit)
 $VlcControl        = $true              # read VLC's state and send it commands through its local web interface (Setup enables it)
+$TaskbarButton     = $true              # the helper's own taskbar button for VLC: prev / play-pause / next on hover, progress, track title (needs $VlcControl)
+$TaskbarAppId      = "auto"             # its taskbar group: "auto" = VLC's (groups with a pinned VLC), or an AppID from Get-StartApps
 # -----------------------------------------
 
 $ErrorActionPreference = "Stop"
@@ -269,7 +271,10 @@ function Invoke-Setup {
     Set-VlcOption $lines "core"   "one-instance-when-started-from-file" "1"    # running player, no second window
     Set-VlcOption $lines "core"   "playlist-enqueue" "0"                       # ... and start playing
     Set-VlcOption $lines "core"   "media-library" "0"                          # no "Media Library" entry in the playlist
-    Set-VlcOption $lines "skins2" "skins2-taskbar" $(if ($dock) { "0" } else { "1" })  # docked: no extra VLC button
+    # VLC's own taskbar button: off when docked, or when the helper (started with Windows) shows its own
+    # button with the hover controls; else on, so a minimized VLC can still be brought back
+    $helperButton = $autostart -and $TaskbarButton -and $VlcControl
+    Set-VlcOption $lines "skins2" "skins2-taskbar" $(if ($dock -or $helperButton) { "0" } else { "1" })
     if ($smtc) { Set-VlcModule $lines "core" "extraintf" "win10smtc" }            # start the media controls plugin
     Set-VlcModule $lines "core"   "extraintf" "http"                           # VLC's web interface: the helper reads the
     Set-VlcOption $lines "core"   "http-host" "127.0.0.1"                      # playing state and sends commands through it,
@@ -317,6 +322,9 @@ if ($skinPath -and (Split-Path -Leaf $skinPath) -match '-(\d+)\.vlt$') { $scale 
 $mutex = New-Object System.Threading.Mutex($false, "Local\VlcTaskbarDock")
 if (-not $mutex.WaitOne(0)) { exit }
 
+$remote = $null
+if ($VlcControl) { $remote = Get-VlcRemote }   # $null (control channel stays off, silently) unless Setup enabled the web interface
+
 if ($StartVlc -and -not $Watch -and -not (Get-Process vlc -ErrorAction SilentlyContinue)) {
     $exe = Find-Vlc
     if (-not $exe) {
@@ -324,7 +332,8 @@ if ($StartVlc -and -not $Watch -and -not (Get-Process vlc -ErrorAction SilentlyC
         exit 1
     }
     $vlcArgs = @('--intf', 'skins2', "--skins2-last=`"$skinPath`"")
-    if ($HideVlcTaskbarButton -and -not $NoDock) { $vlcArgs += '--no-skins2-taskbar' }
+    # no VLC taskbar button when docked, or when the helper shows its own (it needs the web interface)
+    if (($HideVlcTaskbarButton -and -not $NoDock) -or ($TaskbarButton -and $remote)) { $vlcArgs += '--no-skins2-taskbar' }
     Start-Process -FilePath $exe -ArgumentList $vlcArgs
 }
 
@@ -345,10 +354,9 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::Dock        = -not $NoDock
 [VlcDock]::StartPinned = $StartPinned
 if ($DebugLog) { [VlcDock]::LogPath = Join-Path $env:TEMP "titlebar-helper.log" }
-if ($VlcControl) {
-    $remote = Get-VlcRemote   # $null (control channel stays off, silently) unless Setup enabled the web interface
-    if ($remote) { [VlcDock]::RemotePort = $remote.Port; [VlcDock]::RemotePassword = $remote.Password }
-}
+if ($remote) { [VlcDock]::RemotePort = $remote.Port; [VlcDock]::RemotePassword = $remote.Password }
+[VlcDock]::TaskbarButton = $TaskbarButton   # only works with the web interface (RemotePort)
+[VlcDock]::TaskbarAppId  = $TaskbarAppId
 [VlcDock]::TrayIcon    = $TrayIcon
 [VlcDock]::ExitWithVlc = -not $Watch
 [VlcDock]::Run()   # returns when VLC exits (not in -Watch mode)
