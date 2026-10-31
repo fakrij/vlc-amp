@@ -68,7 +68,8 @@ for title and time), grip
 rows and the resize grip. Widths do **not** grow, so the right-edge offsets
 (`R(34)` pin, `R(62)` / `R(90)` EQ / PL, `R(96)` end of the time box) and the pin's x stay
 as they were; only the time box widens when the bigger font needs it
-(`tw`, 74 px at 36), which also raises `MIN_W` by the same amount (430).
+(`tw`: 86 px at 24, 96 px at 36, from `bar_metrics`). `MIN_W` stays 420 at every
+height: `bar_metrics` returns the same `min_w` for all bar heights.
 
 Build names carry the height: `Titlebar-NNN` (24), `Titlebar-taskbar-NNN` (36,
 `BAR_TASKBAR`), `Titlebar-bar<N>-NNN` (any other); `ThemeInfo` reads
@@ -116,7 +117,8 @@ whole skin once per theme, into the same 4 layouts:
   around) with `th<i+1>.show();th<j>.hide();...` (shows first, so something is
   always drawn).
 
-Cost: about 2400 bitmaps and 4000 controls with all 11 themes. See the next sections for what
+Cost: about 2400 bitmaps and 4800 controls (Image, Button, Checkbox, Slider,
+Text, Playtree, ...) with all 11 themes. See the next sections for what
 that broke and how it is handled.
 
 ### Custom theme
@@ -651,11 +653,10 @@ only. The script needs a VLC with Lua (the Windows build and the Ubuntu 24.04
 packages used by the harness have it; other distributions: not checked). It also works with Lua 5.1
 (Windows) and 5.2 (the Ubuntu 24.04 build used by the harness).
 
-The setups write `extraintf` (with `luaintf` added), `lua-intf=titlebar` and the
-five `key-...` lines of `lua/vlcrc-keys.txt` (the one list of default keys), as
-in the [vlcrc keys](#vlcrc-keys-what-both-setups-write) table. VLC reads these
-keys from any section; the section headers only matter when a key is added to
-a file that does not have it yet.
+The keys the setups write (`extraintf`, `lua-intf`, the five `key-...` lines of
+`lua/vlcrc-keys.txt`) are listed once, in the [vlcrc keys](#vlcrc-keys-what-both-setups-write)
+table. VLC reads them from any section; the section headers only matter when a
+key is added to a file that does not have it yet.
 
 ### The trigger bridge
 

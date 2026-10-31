@@ -54,6 +54,7 @@ update the numbers in `cmd_quit`.
 | `TB_INSTANCE` | `default` | Name of the session: pid files, logs, VLC's private home and screenshots live in `<cache>/run-<name>/`. |
 | `TB_KEEP_CONFIG` | unset | `1` = do not reset VLC's config on `start`. |
 | `TB_VLC_ARGS` | unset | Extra VLC options for `start`, split on spaces (no quoting), for example `--extraintf http --http-host 127.0.0.1 --http-port 48080 --http-password x` to test the helper's control channel. |
+| `TB_SCALE` | `100` | Scale in percent for `quit` and `shape` when the running skin's file name is not on VLC's command line (`Titlebar-<n>.vlt`). |
 
 Several agents at the same time (they share the downloaded packages): give
 each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
@@ -74,6 +75,13 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
   by both scripts).
 - `xshape.py`: reads the X11 shape (used by `shape` and `quit`).
 - `doc-shots.sh`: regenerates the screenshots in `docs/img` from real VLC.
+- `windows-sim.py`: draws the button comparison in `docs/img/windows-sim/`
+  (how skins2 on X11 and on Windows would blend our semi-transparent bitmaps;
+  no VLC needed, uses the harness venv's Pillow).
+- `make-windows-package.sh`: builds `dist/Titlebar-VLC-skin-windows/` (and a zip)
+  to copy to a Windows PC. Not part of the test harness.
+- `pyodide-spike/`: a spike (node + Pyodide) that checks whether the generator
+  runs unchanged in the browser. Its own README has the details.
 
 The extracted tree has the Qt plugin (`libqt_plugin.so`), which skin keyboard input needs.
 
