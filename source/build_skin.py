@@ -19,6 +19,8 @@ Options
 Needs: Python 3.8+, Pillow. Fonts are read from ./fonts next to this script.
 """
 import argparse
+import math
+from collections import Counter
 import re
 import os
 import shutil
@@ -43,18 +45,62 @@ def H(c, a=255):
     return (int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16), a)
 
 
-# ---------------------------------------------------------------- palette
-BG_TOP, BG_BOT = "#2c3137", "#1a1d21"
-OUTLINE, HILITE = "#08090b", "#48505a"
-BTN = {"up": ("#3a4047", "#262a2f"), "over": ("#454c54", "#2e3339"),
-       "down": ("#1d2125", "#2a2f35")}
-BTN_BORDER, BTN_HILITE = "#0b0c0e", "#535b64"
-ICON = {"up": "#c3cbd3", "over": "#ffffff", "down": "#5fd3e8"}
-CYAN, CYAN_TXT, CYAN2, CYAN_DIM = "#5fd3e8", "#63d8ec", "#4fb3c6", "#2f6f7c"
-LCD_BG, LCD_EDGE = "#061114", "#3a4048"
-TITLE_FILL = "#0e3540"   # played part of the strip's title window (text stays readable)
-AMBER, AMBER_OFF = "#f2a93b", "#4a3a1c"
-GRIP = "#66707a"
+# ---------------------------------------------------------------- palettes
+# The skin is rendered once per theme (6 = dark / light x 3 accents). apply_theme()
+# sets the module-level colour names below; CYAN* are the accent colours (cyan in the
+# default theme), AMBER the LED colour.
+DARK = dict(
+    BG_TOP="#2c3137", BG_BOT="#1a1d21", OUTLINE="#08090b", HILITE="#48505a", PL_FLAT="#24282d",
+    BTN={"up": ("#3a4047", "#262a2f"), "over": ("#454c54", "#2e3339"), "down": ("#1d2125", "#2a2f35")},
+    BTN_BORDER="#0b0c0e", BTN_HILITE="#535b64", ICON_UP="#c3cbd3", ICON_OVER="#ffffff",
+    LCD_EDGE="#3a4048", AMBER="#f2a93b", AMBER_OFF="#4a3a1c", GRIP="#66707a", LABEL="#9aa3ad",
+    THUMB_UP=("#e2e7ec", "#8a939c"), THUMB_OVER=("#ffffff", "#a4adb6"), TRACK="#0b0d0f",
+    PT_PLAY="#ffffff", HEAD_OVER="#ffffff", SHADOW=200, SHADOW2=120)
+LIGHT = dict(
+    BG_TOP="#eef1f4", BG_BOT="#d3d9df", OUTLINE="#7d8791", HILITE="#ffffff", PL_FLAT="#e3e7eb",
+    BTN={"up": ("#fbfcfd", "#dde2e7"), "over": ("#ffffff", "#e9edf1"), "down": ("#c9d0d7", "#d9dfe5")},
+    BTN_BORDER="#8a949e", BTN_HILITE="#ffffff", ICON_UP="#3a4148", ICON_OVER="#000000",
+    LCD_EDGE="#ffffff", AMBER="#e8901a", AMBER_OFF="#d9c6a5", GRIP="#8a949e", LABEL="#5a636c",
+    THUMB_UP=("#ffffff", "#b9c1c9"), THUMB_OVER=("#ffffff", "#d5dbe1"), TRACK="#b9c2cb",
+    PT_PLAY="#000000", HEAD_OVER="#000000", SHADOW=60, SHADOW2=30)
+# accent: CYAN (fills, active icons), CYAN_TXT / CYAN2 / CYAN_DIM (LCD text: main / secondary
+# / off), LCD_BG, TITLE_FILL (played part of the strip title), LCD_HI (LCD toggle hover),
+# DIVIDER, EQ_TRACK, SCROLL_TRACK, PT_SEL / PT_BG2 (playlist selection / odd rows)
+ACCENTS = {
+    "dark": [
+        ("cyan", dict(CYAN="#5fd3e8", CYAN_TXT="#63d8ec", CYAN2="#4fb3c6", CYAN_DIM="#2f6f7c", LCD_BG="#061114",
+                      TITLE_FILL="#0e3540", LCD_HI="#e8fbff", DIVIDER="#15343d", EQ_TRACK="#15262b",
+                      SCROLL_TRACK="#0a1a1e", PT_SEL="#0f3640", PT_BG2="#08171b")),
+        ("amber", dict(CYAN="#ffb547", CYAN_TXT="#ffbf5e", CYAN2="#d9a050", CYAN_DIM="#7a5a2a", LCD_BG="#140d04",
+                       TITLE_FILL="#3d2a0e", LCD_HI="#fff1dc", DIVIDER="#3a2a12", EQ_TRACK="#2a1e0e",
+                       SCROLL_TRACK="#1c1308", PT_SEL="#3d2a0e", PT_BG2="#1a1107")),
+        ("green", dict(CYAN="#6ee68f", CYAN_TXT="#7cf29b", CYAN2="#5cc47a", CYAN_DIM="#2f6e40", LCD_BG="#04110a",
+                       TITLE_FILL="#0d3a1d", LCD_HI="#e6ffec", DIVIDER="#133a22", EQ_TRACK="#13261a",
+                       SCROLL_TRACK="#08180e", PT_SEL="#0d3a1d", PT_BG2="#071a0e")),
+    ],
+    "light": [
+        ("blue", dict(CYAN="#1f7fc4", CYAN_TXT="#0d5f99", CYAN2="#3f78a3", CYAN_DIM="#9fb8cc", LCD_BG="#e4eef6",
+                      TITLE_FILL="#c3dbee", LCD_HI="#08324f", DIVIDER="#b7cde0", EQ_TRACK="#c9d9e6",
+                      SCROLL_TRACK="#d2e1ed", PT_SEL="#c3dbee", PT_BG2="#dbe8f2")),
+        ("red", dict(CYAN="#d0462f", CYAN_TXT="#a8321f", CYAN2="#b5584a", CYAN_DIM="#dcb3ab", LCD_BG="#f7e9e5",
+                     TITLE_FILL="#f0cfc6", LCD_HI="#5a1409", DIVIDER="#e5c4bb", EQ_TRACK="#ebd3cc",
+                     SCROLL_TRACK="#efdcd6", PT_SEL="#f0cfc6", PT_BG2="#f2e1dc")),
+        ("green", dict(CYAN="#2e8b45", CYAN_TXT="#1f6e34", CYAN2="#4a8a5a", CYAN_DIM="#a9cdb2", LCD_BG="#e6f3e8",
+                       TITLE_FILL="#c5e3cb", LCD_HI="#0b3a17", DIVIDER="#bfdcc5", EQ_TRACK="#cfe5d3",
+                       SCROLL_TRACK="#d6eadb", PT_SEL="#c5e3cb", PT_BG2="#dcede0")),
+    ],
+}
+THEMES = [(mode, name, dict(base, **acc)) for mode, base in (("dark", DARK), ("light", LIGHT))
+          for name, acc in ACCENTS[mode]]          # index 0 = dark cyan = default
+
+
+def apply_theme(i):
+    pal = dict(THEMES[i][2])
+    pal["ICON"] = {"up": pal.pop("ICON_UP"), "over": pal.pop("ICON_OVER"), "down": pal["CYAN"]}
+    globals().update(pal)
+
+
+apply_theme(0)
 
 
 # ---------------------------------------------------------------- canvas
@@ -157,7 +203,7 @@ class Canvas:
 def panel_bg(c, x, y, w, h, r, flat=False):
     c.rrect(x, y, w, h, r, OUTLINE)
     if flat:
-        c.rrect(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), "#24282d")
+        c.rrect(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), PL_FLAT)
     else:
         c.grad(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), BG_TOP, BG_BOT)
     c.rrect(x + r, y + 1, w - 2 * r, 1, 0, HILITE)
@@ -166,9 +212,9 @@ def panel_bg(c, x, y, w, h, r, flat=False):
 def lcd(c, x, y, w, h, r=2):
     c.rrect(x, y, w, h, r, LCD_EDGE)               # light bottom edge
     c.rrect(x, y, w, h - 1, r, LCD_BG)
-    c.rrect(x + 1, y, w - 2, 1, 0, (0, 0, 0, 200))  # inner top shadow
-    c.rrect(x, y + 1, 1, h - 3, 0, (0, 0, 0, 120))
-    c.rrect(x + w - 1, y + 1, 1, h - 3, 0, (0, 0, 0, 120))
+    c.rrect(x + 1, y, w - 2, 1, 0, (0, 0, 0, SHADOW))  # inner top shadow
+    c.rrect(x, y + 1, 1, h - 3, 0, (0, 0, 0, SHADOW2))
+    c.rrect(x + w - 1, y + 1, 1, h - 3, 0, (0, 0, 0, SHADOW2))
 
 
 def grip_dots(c, x, y):
@@ -243,6 +289,19 @@ def icon(c, name, ox, oy, size, color):
             c.poly(T([(6, 2), (10.5, 8), (1.5, 8)]), color)
         else:
             c.poly(T([(1.5, 4), (10.5, 4), (6, 10)]), color)
+    elif name == "sun":
+        c.circle(ox + 6 * f, oy + 6 * f, 2.4 * f, color)
+        for a in range(0, 360, 45):
+            r1, r2 = 3.8, 5.6
+            ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+            c.lines(T([(6 + r1 * ca, 6 + r1 * sa), (6 + r2 * ca, 6 + r2 * sa)]), color, 1.1 * f)
+    elif name == "moon":  # crescent: outer circle minus an offset circle
+        pts = []
+        for a in range(40, 321, 10):
+            pts.append((6 + 5 * math.cos(math.radians(a)), 6 + 5 * math.sin(math.radians(a))))
+        for a in range(320, 39, -10):
+            pts.append((8.6 + 4 * math.cos(math.radians(a)), 6 + 4 * math.sin(math.radians(a))))
+        c.poly(T(pts), color)
     elif name == "speaker":
         c.poly(T([(1.5, 4.5), (3.6, 4.5), (6.6, 2), (6.6, 10), (3.6, 7.5), (1.5, 7.5)]), color)
         c.arc(ox + 7 * f, oy + 6 * f, 2.6 * f, -50, 50, color, 1.3 * f)
@@ -254,9 +313,10 @@ class Skin:
     def __init__(self):
         self.bitmaps = {}   # id -> PIL image
         self.windows = []
+        self.prefix = ""    # theme namespace ("t3_"): added to every bitmap id
 
     def add(self, bid, im):
-        self.bitmaps[bid] = im
+        self.bitmaps[self.prefix + bid] = im
         return bid
 
 
@@ -279,11 +339,12 @@ class Layout:
         self._stack = [self.nodes]
         self.oy = 0                      # vertical offset of the section being added (px)
         self.vis = None                  # visible="..." expression for the section being added
+        self.theme_vis = None            # visible="..." expression of the theme being added
 
     def _add(self, n):
         if len(self._stack) == 1:        # top level only: panel children are panel-relative
             n.y += self.oy
-        n.vis = self.vis
+        n.vis = vis_and(self.theme_vis, self.vis)
         self._stack[-1].append(n)
         return n
 
@@ -291,16 +352,19 @@ class Layout:
         return self.skin.bitmaps[bid].size
 
     def image(self, bid, x, y, lt="lefttop", rb="lefttop", action="none", action2="none"):
+        bid = self.skin.prefix + bid
         w, h = self.size(bid)
         return self._add(Node("Image", bid=bid, x=x, y=y, w=w, h=h, lt=lt, rb=rb,
                               action=action, action2=action2))
 
     def button(self, base, x, y, action, tip, lt="lefttop", rb="lefttop"):
+        base = self.skin.prefix + base
         w, h = self.size(base + "_up")
         return self._add(Node("Button", base=base, x=x, y=y, w=w, h=h, lt=lt, rb=rb,
                               action=action, tip=tip))
 
     def checkbox(self, base, x, y, state, a1, a2, tip1, tip2, lt="lefttop", rb="lefttop"):
+        base = self.skin.prefix + base
         w, h = self.size(base + "_off_up")
         return self._add(Node("Checkbox", base=base, x=x, y=y, w=w, h=h, lt=lt, rb=rb,
                               state=state, a1=a1, a2=a2, tip1=tip1, tip2=tip2))
@@ -313,6 +377,8 @@ class Layout:
 
     def slider(self, sid, x, y, points, thumb, value, tip, bg=None, nbvert=1,
                lt="lefttop", rb="lefttop", thickness=None):
+        p = self.skin.prefix
+        sid, thumb, bg = p + sid, p + thumb, (p + bg) if bg else None
         return self._add(Node("Slider", sid=sid, x=x, y=y, points=points, thumb=thumb, value=value,
                               tip=tip, bg=bg, nbvert=nbvert, lt=lt, rb=rb, thickness=thickness))
 
@@ -321,12 +387,15 @@ class Layout:
 
     def playtree(self, x, y, w, h, font, slider_kw, lt="lefttop", rb="rightbottom", pid="playtree",
                  sid="pl_scroll"):
-        slider_kw = dict(slider_kw, y=slider_kw["y"] + self.oy)
+        p = self.skin.prefix
+        pid, sid = p + pid, p + sid
+        slider_kw = dict(slider_kw, y=slider_kw["y"] + self.oy, thumb=p + slider_kw["thumb"])
+        colors = dict(fg=CYAN_TXT, play=PT_PLAY, sel=PT_SEL, bg1=LCD_BG, bg2=PT_BG2)
         return self._add(Node("Playtree", x=x, y=y, w=w, h=h, font=font, slider=slider_kw, lt=lt, rb=rb,
-                              pid=pid, sid=sid))
+                              pid=pid, sid=sid, colors=colors))
 
     def panel_begin(self, pid, x, y, w, h):
-        n = self._add(Node("Panel", pid=pid, x=x, y=y, w=w, h=h))
+        n = self._add(Node("Panel", pid=self.skin.prefix + pid, x=x, y=y, w=w, h=h))
         self._stack.append(n.children)
         return n
 
@@ -334,11 +403,16 @@ class Layout:
         self._stack.pop()
 
 
+def vis_and(*exprs):
+    """Join visible="..." expressions with "and" (skins2 has no parentheses; "not" binds tightest)."""
+    return " and ".join(e for e in exprs if e) or None
+
+
 def label_on(skin, bid, bg, x, y, w, h, text):
     """Label baked onto a crop of the window background so it is fully opaque."""
     im = bg.crop((P(x), P(y), P(x) + P(w), P(y) + P(h))).copy()
     d = ImageDraw.Draw(im)
-    d.text((0, im.height / 2), text, font=ImageFont.truetype(FONT_BOLD, P(8)), fill=H("#9aa3ad"), anchor="lm")
+    d.text((0, im.height / 2), text, font=ImageFont.truetype(FONT_BOLD, P(8)), fill=H(LABEL), anchor="lm")
     skin.add(bid, im)
     return bid
 
@@ -420,7 +494,7 @@ def make_lcd_toggle(skin, base, w, h, label):
             c = Canvas(w, h)
             c.rrect(0, 0, w, h, 0, LCD_BG)  # opaque: thin text on transparency renders badly on X11
             if on:
-                col = "#e8fbff" if st == "over" else CYAN_TXT
+                col = LCD_HI if st == "over" else CYAN_TXT
             else:
                 col = CYAN2 if st == "over" else CYAN_DIM
             c.text(0, h / 2, label, 10, col, font="mono", anchor="lm")
@@ -451,7 +525,7 @@ def make_progress_frames(skin, bid, w, h, n, color):
 
 
 def make_thumb(skin, bid, w, h):
-    for st, (t, b) in (("up", ("#e2e7ec", "#8a939c")), ("over", ("#ffffff", "#a4adb6"))):
+    for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
         c.rrect(0, 0, w, h, 2, BTN_BORDER)
         c.grad(1, 1, w - 2, h - 2, 1, t, b)
@@ -465,7 +539,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
     for i in range(n):
         frac = i / (n - 1)
         c = Canvas(w, h)
-        c.rrect(0, track_y, w, track_h, track_h / 2, "#0b0d0f")
+        c.rrect(0, track_y, w, track_h, track_h / 2, TRACK)
         c.rrect(0, track_y, w, 1, 0, (0, 0, 0, 160))
         if frac > 0:
             c.rrect(0, track_y, max(track_h, w * frac), track_h, track_h / 2, CYAN)
@@ -483,6 +557,11 @@ MIN_W = 442   # narrowest strip: keeps a ~22 px title window
 EQ_ON, PL_ON, COUNTDOWN = "eqflag.isVisible", "plflag.isVisible", "tflag.isVisible"
 
 
+def select_theme(i):
+    """Action: show theme flag i, hide the others (show first, so something is always drawn)."""
+    return ";".join(["th%d.show()" % i] + ["th%d.hide()" % j for j in range(len(THEMES)) if j != i])
+
+
 def build(skin, W):
     """One main window, four layouts: strip / full x panels below ("dn") / above ("up").
     All four have the same size, so VLC carries a dragged width from one to the other
@@ -494,60 +573,73 @@ def build(skin, W):
     TW = 64                           # strip time box: fits "-1:23:45" (hours) in lcd12
     PW = P(W)
     tr = dict(lt="righttop", rb="righttop")
+    sw = W - 16                       # seek bar width
 
-    # ---- shared bitmaps
-    make_button(skin, "b_expand", 22, 18, "expand")
-    make_button(skin, "b_prev", 22, 18, "prev")
-    make_button(skin, "b_slower", 22, 18, "slower")
-    make_toggle(skin, "t_play", 26, 18, icon_off="play", icon_on="pause", on_color=CYAN)
-    make_button(skin, "b_faster", 22, 18, "faster")
-    make_button(skin, "b_next", 22, 18, "next")
-    make_toggle(skin, "t_pl", 26, 18, label="PL", use_led=True)
-    make_toggle(skin, "t_eq", 26, 18, label="EQ", use_led=True)
-    make_toggle(skin, "t_top", 22, 18, icon_off="pin", icon_on="pin", on_color=AMBER)
-    make_thumb(skin, "thumb_v", 7, 13)
-    for st, col in (("up", CYAN), ("over", "#ffffff")):   # play head in the title window
-        skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(16)), H(col)))
-    make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
-    make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
-    make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
-    make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
-    make_button(skin, "b_close", 18, 12, "close", icon_size=8)
-    make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
-    make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
-    make_button(skin, "fb_prev", 28, 22, "prev")
-    make_button(skin, "fb_slower", 28, 22, "slower")
-    make_toggle(skin, "ft_play", 34, 22, icon_off="play", icon_on="pause", on_color=CYAN)
-    make_button(skin, "fb_faster", 28, 22, "faster")
-    make_button(skin, "fb_next", 28, 22, "next")
-    make_toggle(skin, "ft_pl", 30, 22, label="PL", use_led=True)
-    make_toggle(skin, "ft_eq", 30, 22, label="EQ", use_led=True)
-    make_thumb(skin, "thumb_s", 8, 12)
-    make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
-    make_thumb(skin, "thumb_eq", 14, 6)
-    make_thumb(skin, "thumb_pl", 6, 22)
-    make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
-    make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
-    make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
-    make_fill_frames(skin, "vol64", 64, 8, 2, 4, P(64))
-    make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
-    sw = W - 16
-    make_fill_frames(skin, "seek", sw, 6, 1, 4, 101)
-    c = Canvas(12, 12)
-    icon(c, "speaker", 0, 0, 12, "#9aa3ad")
-    skin.add("ic_speaker", c.done())
-    # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
-    c = Canvas(TW, 18)
-    lcd(c, 0, 0, TW, 18)
-    plain_toggle(skin, "c_time_s", c.done())
-    c = Canvas(126, 44)
-    c.rrect(0, 0, 126, 44, 0, LCD_BG)
-    plain_toggle(skin, "c_time_f", c.done())
-    skin.add("flag_px", Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
-    for lbl in ("add", "rem", "sort", "load", "save"):
-        make_button(skin, "b_pl_" + lbl, 32, 14, label=lbl.upper())
-    for lbl in ("shuf", "loop", "rep1"):
-        make_toggle(skin, "t_pl_" + lbl, 38, 14, label=lbl.upper(), use_led=True)
+    def make_bitmaps():
+        """All bitmaps of the current theme (skin.prefix namespaces them)."""
+        make_button(skin, "b_expand", 22, 18, "expand")
+        make_button(skin, "b_prev", 22, 18, "prev")
+        make_button(skin, "b_slower", 22, 18, "slower")
+        make_toggle(skin, "t_play", 26, 18, icon_off="play", icon_on="pause", on_color=CYAN)
+        make_button(skin, "b_faster", 22, 18, "faster")
+        make_button(skin, "b_next", 22, 18, "next")
+        make_toggle(skin, "t_pl", 26, 18, label="PL", use_led=True)
+        make_toggle(skin, "t_eq", 26, 18, label="EQ", use_led=True)
+        make_toggle(skin, "t_top", 22, 18, icon_off="pin", icon_on="pin", on_color=AMBER)
+        make_thumb(skin, "thumb_v", 7, 13)
+        for st, col in (("up", CYAN), ("over", HEAD_OVER)):   # play head in the title window
+            skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(16)), H(col)))
+        make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
+        make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
+        make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
+        make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
+        make_button(skin, "b_close", 18, 12, "close", icon_size=8)
+        make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
+        make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
+        make_button(skin, "fb_prev", 28, 22, "prev")
+        make_button(skin, "fb_slower", 28, 22, "slower")
+        make_toggle(skin, "ft_play", 34, 22, icon_off="play", icon_on="pause", on_color=CYAN)
+        make_button(skin, "fb_faster", 28, 22, "faster")
+        make_button(skin, "fb_next", 28, 22, "next")
+        make_toggle(skin, "ft_pl", 30, 22, label="PL", use_led=True)
+        make_toggle(skin, "ft_eq", 30, 22, label="EQ", use_led=True)
+        make_thumb(skin, "thumb_s", 8, 12)
+        make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
+        make_thumb(skin, "thumb_eq", 14, 6)
+        make_thumb(skin, "thumb_pl", 6, 22)
+        make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
+        make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
+        make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
+        make_fill_frames(skin, "vol64", 64, 8, 2, 4, P(64))
+        make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
+        make_fill_frames(skin, "seek", sw, 6, 1, 4, 101)
+        c = Canvas(12, 12)
+        icon(c, "speaker", 0, 0, 12, LABEL)
+        skin.add("ic_speaker", c.done())
+        # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
+        c = Canvas(TW, 18)
+        lcd(c, 0, 0, TW, 18)
+        plain_toggle(skin, "c_time_s", c.done())
+        c = Canvas(126, 44)
+        c.rrect(0, 0, 126, 44, 0, LCD_BG)
+        plain_toggle(skin, "c_time_f", c.done())
+        for lbl in ("add", "rem", "sort", "load", "save"):
+            make_button(skin, "b_pl_" + lbl, 32, 14, label=lbl.upper())
+        for lbl in ("shuf", "loop", "rep1"):
+            make_toggle(skin, "t_pl_" + lbl, 38, 14, label=lbl.upper(), use_led=True)
+        # theme switcher (full player title bar): light / dark, and one dot per accent
+        make_button(skin, "b_mode", 18, 12, "moon" if cur["mode"] == "light" else "sun", icon_size=9)
+        for k, (mode, name, pal) in enumerate(t for t in THEMES if t[0] == cur["mode"]):
+            for st in ("up", "over", "down"):
+                c = Canvas(12, 12)
+                if k == cur["accent"]:      # current accent: ring around the dot
+                    c.circle(6, 6, 5.5, ICON["over"] if st == "over" else ICON["up"])
+                    c.circle(6, 6, 4.3, BG_BOT)
+                elif st == "over":
+                    c.circle(6, 6, 5.5, ICON["up"])
+                    c.circle(6, 6, 4.5, BG_BOT)
+                c.circle(6, 6, 3.4 if st != "down" else 2.8, pal["CYAN"])
+                skin.add("dot%d_%s" % (k, st), c.done())
 
     def panel_toggles(lay, pl_base, eq_base, x_pl, x_eq, y):
         lay.checkbox(pl_base, x_pl, y, PL_ON, "plflag.show()", "plflag.hide()",
@@ -582,9 +674,9 @@ def build(skin, W):
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, 16
-        make_progress_frames(skin, "title_fill", fw, fh, 201, TITLE_FILL)
+        make_progress_frames(skin, "title_fill", fw, fh, 101, TITLE_FILL)
         lay.slider("s_title_" + lay.id, P(dx + 1), P(4), "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2),
-                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=201,
+                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=101,
                    rb="righttop")
         lay.text(P(dx + 5), P(5), P(dw - 10), "lcd12", "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
@@ -593,7 +685,7 @@ def build(skin, W):
         time_toggle(lay, "c_time_s", tx, P(3), **tr)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
             lay.text(tx + P(3), P(5), P(TW - 6), "lcd12", text, CYAN_TXT, lt="righttop", rb="righttop",
-                     align="right", scrolling="none", sample=sample, focus=False).vis = vis
+                     align="right", scrolling="none", sample=sample, focus=False).vis = vis_and(lay.theme_vis, vis)
         lay.slider("s_vol_" + lay.id, R(160), P(8), "(0,%d),(%d,%d)" % (P(4), P(64) - 1, P(4)), "thumb_v",
                    "volume", "Volume $V%", bg="vol64", nbvert=P(64), **tr)
         panel_toggles(lay, "t_pl", "t_eq", R(90), R(62), P(3))
@@ -611,6 +703,14 @@ def build(skin, W):
         hslice(skin, lay, "full_bg", bg, 0, 0, 14, 8, right_action="resizeE")
         label_on(skin, "lbl_now", bg, 18, 5, 70, 12, "NOW PLAYING")
         lay.image("lbl_now", P(18), P(5), action="move")
+        # theme switcher, left of the menu button
+        modes = [t[0] for t in THEMES]
+        other = "light" if cur["mode"] == "dark" else "dark"
+        lay.button("b_mode", F(176), P(5), select_theme(modes.index(other) + cur["accent"]),
+                   "Switch to the %s theme" % other, **tr)
+        for k, (mode, name, pal) in enumerate(t for t in THEMES if t[0] == cur["mode"]):
+            lay.button("dot%d" % k, F(154 - 14 * k), P(5), select_theme(modes.index(mode) + k),
+                       "%s %s" % (mode.capitalize(), name), **tr)
         lay.button("b_menu", F(102), P(5), "dialogs.popup()", "VLC menu (open files, skins, settings)", **tr)
         lay.checkbox("t_top_s", F(82), P(5), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
@@ -620,15 +720,15 @@ def build(skin, W):
         # LCD: left column = time (wide enough for -1:23:45), right column = title, info, toggles
         c = Canvas(W - 8, 54)
         lcd(c, 0, 0, W - 8, 54, 3)
-        c.rrect(134, 4, 1, 46, 0, "#15343d")       # divider (inside left cap)
+        c.rrect(134, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
         hslice(skin, lay, "full_lcd", c.done(), P(4), P(20), 138, 6)
         time_toggle(lay, "c_time_f", P(8), P(22))
         for big, small, vis, s1, s2 in (("$t", "-$l / $d", "not " + COUNTDOWN, "1:02", "-3:10 / 4:12"),
                                         ("-$l", "$t / $d", COUNTDOWN, "-3:10", "1:02 / 4:12")):
             lay.text(P(12), P(22), P(126), "lcd26", big, CYAN_TXT, scrolling="none", sample=s1,
-                     focus=False).vis = vis
+                     focus=False).vis = vis_and(lay.theme_vis, vis)
             lay.text(P(12), P(55), P(124), "lcd10", small, CYAN2, scrolling="none", sample=s2,
-                     focus=False).vis = vis
+                     focus=False).vis = vis_and(lay.theme_vis, vis)
         lay.text(P(146), P(24), P(W - 158), "lcd14", "$N", CYAN_TXT, rb="righttop",
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         lay.text(P(146), P(43), P(W - 158), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
@@ -685,10 +785,10 @@ def build(skin, W):
         for lbl, yy in (("+20", 11), ("0", 40), ("-20", 69)):
             c.text(22, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
         for i, cx in enumerate(cxs):
-            c.rrect(cx - 2, 10, 4, 60, 2, "#15262b")
+            c.rrect(cx - 2, 10, 4, 60, 2, EQ_TRACK)
             c.rrect(cx - 5, 39.5, 10, 1, 0, CYAN_DIM)
             c.text(cx, 81, names[i], 8, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
-        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 78, 0, "#15343d")
+        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 78, 0, DIVIDER)
         skin.add("eq_bands", c.done())
         lay.panel_begin("eq_panel" + sfx, P((W - BW) // 2), P(19), P(BW), P(90))
         lay.image("eq_bands", 0, 0)
@@ -712,7 +812,7 @@ def build(skin, W):
         flip_button(lay, mode, d, PW - P(26), P(4))
         c = Canvas(W - 12, 154)
         lcd(c, 0, 0, W - 12, 154, 3)
-        c.rrect(W - 12 - 16, 3, 8, 148, 3, "#0a1a1e")   # scroll track (inside right edge)
+        c.rrect(W - 12 - 16, 3, 8, 148, 3, SCROLL_TRACK)  # scroll track (inside right edge)
         nslice(skin, lay, "pl_lcd", c.done(), P(6), P(19), 18, actions={k: "none" for k in
                ("tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br")})
         lay.playtree(P(10), P(23), P(W - 36), P(146), "lcd11",
@@ -735,10 +835,19 @@ def build(skin, W):
     # "up": bar at the bottom, EQ then playlist above it (taskbar use).
     # The playlist sits next to the bar when the EQ is closed, otherwise beyond the EQ,
     # so it is placed twice with complementary visibility.
-    layouts = []
-    for mode in ("full", "strip"):
-        for d in ("up", "dn"):                # last layout added = default: strip-dn
-            lay = Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(MIN_W), maxw=P(4000))
+    # Every theme adds its own copy of all controls, visible only while its flag window
+    # (th0..th5) is shown; the layouts themselves are shared, so the width stays shared.
+    layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(MIN_W), maxw=P(4000))
+               for mode in ("full", "strip") for d in ("up", "dn")]   # last = default: strip-dn
+    cur = {}
+    for ti, (tmode, tname, _) in enumerate(THEMES):
+        apply_theme(ti)
+        skin.prefix = "t%d_" % ti
+        cur.update(mode=tmode, accent=[t[0] for t in THEMES][:ti].count(tmode))
+        make_bitmaps()
+        for lay in layouts:
+            mode, d = lay.id.split("-")
+            lay.theme_vis = "th%d.isVisible" % ti
             sfx = "_%s_%s" % (mode, d)
             bh = BH if mode == "strip" else FH
             top = 0 if d == "dn" else HT - bh                     # bar position
@@ -754,14 +863,17 @@ def build(skin, W):
             add_pl(lay, mode, d, sfx + "_n")
             lay.oy, lay.vis = P(pl_far), PL_ON + " and " + EQ_ON
             add_pl(lay, mode, d, sfx + "_f")
-            lay.oy, lay.vis = 0, None
-            layouts.append(lay)
+            lay.oy, lay.vis, lay.theme_vis = 0, None, None
+    apply_theme(0)
+    skin.prefix = ""
 
+    skin.add("flag_px", Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
     flags = []
-    for fid in ("eqflag", "plflag", "tflag"):
+    for fid in ["eqflag", "plflag", "tflag"] + ["th%d" % i for i in range(len(THEMES))]:
         fl = Layout(skin, fid + "-l", 1, 1)
         fl.image("flag_px", 0, 0)
-        flags.append(dict(id=fid, visible="false", position="Center", yoffset=0, layouts=[fl], dragdrop=False))
+        flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
+                          yoffset=0, layouts=[fl], dragdrop=False))
     skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts)] + flags
 
 
@@ -770,29 +882,42 @@ def q(v):
     return quoteattr(str(v))
 
 
+_ids = [0]
+
+
+def next_id(kind):
+    """Explicit id for every control. VLC 3.0's generated ids ("_ReservedId_N") keep only
+    3 digits (SkinParser::generateId), so with more than 999 unnamed controls they repeat,
+    and a repeated id frees the earlier control: VLC crashes when it draws the layout."""
+    _ids[0] += 1
+    return "%s%d" % (kind[0].lower(), _ids[0])
+
+
 def node_xml(n, ind):
     sp = "  " * ind
+    if n.kind in ("Image", "Button", "Checkbox", "Text"):
+        n.xid = next_id(n.kind)
     common = 'x=%s y=%s lefttop=%s rightbottom=%s' % (q(n.x), q(n.y), q(getattr(n, "lt", "lefttop")),
                                                       q(getattr(n, "rb", "lefttop")))
     if getattr(n, "vis", None):
         common += ' visible=%s' % q(n.vis)
     if n.kind == "Image":
-        return [sp + '<Image image=%s %s action=%s action2=%s resize="mosaic"/>' % (
-            q(n.bid), common, q(n.action), q(n.action2))]
+        return [sp + '<Image id=%s image=%s %s action=%s action2=%s resize="mosaic"/>' % (
+            q(n.xid), q(n.bid), common, q(n.action), q(n.action2))]
     if n.kind == "Button":
         b = n.base
-        return [sp + '<Button up=%s over=%s down=%s %s action=%s tooltiptext=%s/>' % (
-            q(b + "_up"), q(b + "_over"), q(b + "_down"), common, q(n.action), q(n.tip))]
+        return [sp + '<Button id=%s up=%s over=%s down=%s %s action=%s tooltiptext=%s/>' % (
+            q(n.xid), q(b + "_up"), q(b + "_over"), q(b + "_down"), common, q(n.action), q(n.tip))]
     if n.kind == "Checkbox":
         b = n.base
-        return [sp + ('<Checkbox state=%s up1=%s over1=%s down1=%s up2=%s over2=%s down2=%s %s '
+        return [sp + ('<Checkbox id=%s state=%s up1=%s over1=%s down1=%s up2=%s over2=%s down2=%s %s '
                       'action1=%s action2=%s tooltiptext1=%s tooltiptext2=%s/>') % (
-            q(n.state), q(b + "_off_up"), q(b + "_off_over"), q(b + "_off_down"),
+            q(n.xid), q(n.state), q(b + "_off_up"), q(b + "_off_over"), q(b + "_off_down"),
             q(b + "_on_up"), q(b + "_on_over"), q(b + "_on_down"), common,
             q(n.a1), q(n.a2), q(n.tip1), q(n.tip2))]
     if n.kind == "Text":
-        return [sp + '<Text text=%s font=%s color=%s %s width=%s alignment=%s scrolling=%s%s/>' % (
-            q(n.text), q(n.font), q(n.color.upper()), common, q(n.w), q(n.align), q(n.scrolling),
+        return [sp + '<Text id=%s text=%s font=%s color=%s %s width=%s alignment=%s scrolling=%s%s/>' % (
+            q(n.xid), q(n.text), q(n.font), q(n.color.upper()), common, q(n.w), q(n.align), q(n.scrolling),
             '' if n.focus else ' focus="false"')]
     if n.kind == "Slider":
         extra = ' thickness=%s' % q(n.thickness) if n.thickness else ""
@@ -800,7 +925,8 @@ def node_xml(n, ind):
             q(n.sid), q(n.thumb + "_up"), q(n.thumb + "_over"), q(n.thumb + "_over"), common,
             q(n.points), q(n.value), q(n.tip), extra)
         if n.bg:
-            return [head + ">", sp + '  <SliderBackground image=%s nbvert=%s/>' % (q(n.bg), q(n.nbvert)),
+            return [head + ">", sp + '  <SliderBackground id=%s image=%s nbvert=%s/>' % (
+                        q(n.sid + "_bg"), q(n.bg), q(n.nbvert)),
                     sp + "</Slider>"]
         return [head + "/>"]
     if n.kind == "Anchor":
@@ -808,9 +934,10 @@ def node_xml(n, ind):
             q(n.x), q(n.y), q(n.priority), q(n.points))]
     if n.kind == "Playtree":
         s = n.slider
+        k = {c: q(v.upper()) for c, v in n.colors.items()}
         return [sp + ('<Playtree id=%s %s width=%s height=%s font=%s flat="true" '
-                      'fgcolor="#63D8EC" playcolor="#FFFFFF" selcolor="#0F3640" '
-                      'bgcolor1="#061114" bgcolor2="#08171B">') % (q(n.pid), common, q(n.w), q(n.h), q(n.font)),
+                      'fgcolor=%s playcolor=%s selcolor=%s bgcolor1=%s bgcolor2=%s>') % (
+                    q(n.pid), common, q(n.w), q(n.h), q(n.font), k["fg"], k["play"], k["sel"], k["bg1"], k["bg2"]),
                 sp + ('  <Slider id=%s up=%s over=%s down=%s x=%s y=%s points=%s '
                       'lefttop="righttop" rightbottom="rightbottom"%s/>') % (
                     q(n.sid), q(s["thumb"] + "_up"), q(s["thumb"] + "_over"), q(s["thumb"] + "_over"),
@@ -825,14 +952,53 @@ def node_xml(n, ind):
     raise ValueError(n.kind)
 
 
-def theme_xml(skin, label):
+def pack_atlases(skin):
+    """Pack the small bitmaps into one atlas image per theme (shelf packing). VLC starts an
+    image decoder per <Bitmap>, which made loading ~1400 separate PNGs take 10+ s;
+    <SubBitmap> cuts the pieces out of the atlas instead. VLC keeps the atlas in memory
+    next to the pieces, so large bitmaps (fill frame sheets, wide stretch pieces) stay
+    separate files. Returns ([(atlas id, PIL image, [(bid, x, y)])], [separate bids])."""
+    groups, singles = {}, []
+    for bid, im in skin.bitmaps.items():
+        if im.width * im.height > 16384:
+            singles.append(bid)
+            continue
+        m = re.match(r"(t\d+)_", bid)
+        groups.setdefault(m.group(1) if m else "common", []).append(bid)
+    atlases = []
+    for g, bids in sorted(groups.items()):
+        bids.sort(key=lambda b: (-skin.bitmaps[b].height, b))
+        aw = max(P(1024), max(skin.bitmaps[b].width for b in bids))
+        x = y = row_h = 0
+        places = []
+        for b in bids:
+            w, h = skin.bitmaps[b].size
+            if x + w > aw:
+                x, y, row_h = 0, y + row_h, 0
+            places.append((b, x, y))
+            x += w
+            row_h = max(row_h, h)
+        atlas = Image.new("RGBA", (aw, y + row_h), (0, 0, 0, 0))
+        for b, bx, by in places:
+            atlas.paste(skin.bitmaps[b], (bx, by))
+        atlases.append(("atlas_" + g, atlas, places))
+    return atlases, sorted(singles)
+
+
+def theme_xml(skin, label, atlases, singles):
     L = ['<?xml version="1.0" encoding="utf-8" standalone="no"?>',
          '<!DOCTYPE Theme PUBLIC "-//VideoLAN//DTD VLC Skins V2.0//EN" "skin.dtd">',
          '<Theme version="2.0" magnet="0" alpha="255" movealpha="255">',
          '  <ThemeInfo name=%s author="Jiri" webpage=""/>' % q("Titlebar " + label)]
     for fid, size in (("lcd10", 10), ("lcd11", 11), ("lcd12", 12), ("lcd14", 14), ("lcd26", 26)):
         L.append('  <Font id=%s file="fonts/DejaVuSansMono.ttf" size=%s/>' % (q(fid), q(P(size))))
-    for bid in sorted(skin.bitmaps):
+    for aid, atlas, places in atlases:
+        L.append('  <Bitmap id=%s file=%s alphacolor="#FF00FF">' % (q(aid), q("img/%s.png" % aid)))
+        for bid, x, y in sorted(places):
+            w, h = skin.bitmaps[bid].size
+            L.append('    <SubBitmap id=%s x="%d" y="%d" width="%d" height="%d"/>' % (q(bid), x, y, w, h))
+        L.append('  </Bitmap>')
+    for bid in singles:
         L.append('  <Bitmap id=%s file=%s alphacolor="#FF00FF"/>' % (q(bid), q("img/%s.png" % bid)))
     for w in skin.windows:
         L.append('  <Window id=%s visible=%s position=%s yoffset=%s dragdrop=%s playondrop="true">' % (
@@ -850,7 +1016,7 @@ def theme_xml(skin, label):
 
 
 # ---------------------------------------------------------------- preview (emulates VLC anchoring)
-def preview_layout(skin, lay, AW=None, AH=None, flags=()):
+def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
     """Render a layout like VLC would; flags = ids of the flag windows that are shown.
     The result is cropped to the visible pixels."""
     AW, AH = AW or lay.w, AH or lay.h
@@ -859,7 +1025,8 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=()):
         e = getattr(n, "vis", None)
         if not e:
             return True
-        return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in flags), e))
+        on = set(flags) | {"th%d" % theme}
+        return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in on), e))
     out = Image.new("RGBA", (AW, AH), (0, 0, 0, 0))
     font_px = {"lcd10": P(10), "lcd11": P(11), "lcd12": P(12), "lcd14": P(14), "lcd26": P(26)}
 
@@ -892,7 +1059,8 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=()):
                 elif n.state.endswith(".isVisible"):
                     on = n.state.split(".")[0] in flags
                 else:
-                    on = n.base in ("t_play", "ft_play", "t_top", "t_top_s", "t_eqon", "l_loop", "t_pl_loop")
+                    on = re.sub(r"^t\d+_", "", n.base) in ("t_play", "ft_play", "t_top", "t_top_s", "t_eqon",
+                                                             "l_loop", "t_pl_loop")
                 key = n.base + ("_up" if on is None else "_on_up" if on else "_off_up")
                 out.alpha_composite(skin.bitmaps[key], (ox + l, oy + t))
             elif n.kind == "Slider":
@@ -934,8 +1102,8 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=()):
                     if yy + lh > oy + b:
                         break
                     if i == 2:
-                        dd.rectangle([ox + l, yy, ox + r - 1, yy + lh - 1], fill=H("#0F3640"))
-                    dd.text((ox + l + 2, yy + 1), s, font=f, fill=H("#FFFFFF" if i == 2 else CYAN_TXT))
+                        dd.rectangle([ox + l, yy, ox + r - 1, yy + lh - 1], fill=H(n.colors["sel"]))
+                    dd.text((ox + l + 2, yy + 1), s, font=f, fill=H(n.colors["play" if i == 2 else "fg"]))
                 sl = n.slider
                 th = skin.bitmaps[sl["thumb"] + "_up"]
                 sx = sl["x"] - bw + aw
@@ -966,7 +1134,8 @@ def preview(skin, path):
         ("strip + playlist, opening above (taskbar)", preview_layout(skin, su, flags=PL)),
         ("expanded player", preview_layout(skin, fd)),
         ("expanded player + EQ, opening above, countdown", preview_layout(skin, fu, flags=EQ + T)),
-    ]
+    ] + [("theme: %s %s" % (m, n), preview_layout(skin, fd, theme=i)) for i, (m, n, _) in enumerate(THEMES)
+         if i]
     pad = P(24)
     lab = ImageFont.truetype(FONT_BOLD, P(12))
     Wc = max(im.width for _, im in shots) + 2 * pad
@@ -1009,14 +1178,24 @@ def main():
     shutil.rmtree(stage, ignore_errors=True)
     os.makedirs(os.path.join(stage, "img"))
     os.makedirs(os.path.join(stage, "fonts"))
-    for bid, im in skin.bitmaps.items():
-        im.save(os.path.join(stage, "img", bid + ".png"), optimize=True)
+    atlases, singles = pack_atlases(skin)
+    for aid, atlas, _ in atlases:
+        atlas.save(os.path.join(stage, "img", aid + ".png"), optimize=True)
+    for bid in singles:
+        skin.bitmaps[bid].save(os.path.join(stage, "img", bid + ".png"), optimize=True)
     shutil.copy(FONT_MONO, os.path.join(stage, "fonts"))
     lic = os.path.join(HERE, "fonts", "LICENSE-DejaVu.txt")
     if os.path.exists(lic):
         shutil.copy(lic, os.path.join(stage, "fonts"))
+    xml = theme_xml(skin, label, atlases, singles)
+    # every element needs its own id: VLC's generated ids repeat after 999 (see next_id)
+    tags = re.findall(r"<(Window|Layout|Panel|Image|Button|Checkbox|Slider|SliderBackground|Text|Playtree)\b([^>]*)>", xml)
+    ids = [re.search(r'\bid="([^"]*)"', attrs) for _, attrs in tags]
+    assert all(ids), "element without id: %r" % [t for t, i in zip(tags, ids) if not i][:3]
+    dup = [k for k, v in Counter(i.group(1) for i in ids).items() if v > 1]
+    assert not dup, "duplicate ids: %r" % sorted(dup)[:5]
     with open(os.path.join(stage, "theme.xml"), "w", encoding="utf-8") as fh:
-        fh.write(theme_xml(skin, label))
+        fh.write(xml)
 
     vlt = os.path.join(a.out, "Titlebar-%s.vlt" % name)
     with tarfile.open(vlt, "w:gz") as tar:
@@ -1024,7 +1203,8 @@ def main():
             for fn in sorted(files):
                 full_path = os.path.join(root, fn)
                 tar.add(full_path, arcname=os.path.relpath(full_path, stage))
-    print("wrote", vlt, "(%d bitmaps)" % len(skin.bitmaps))
+    print("wrote", vlt, "(%d bitmaps: %d in %d atlases, %d separate)" % (
+        len(skin.bitmaps), len(skin.bitmaps) - len(singles), len(atlases), len(singles)))
     if a.preview:
         pv = os.path.join(a.out, "preview-%s.png" % name)
         preview(skin, pv)
