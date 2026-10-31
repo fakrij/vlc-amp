@@ -44,10 +44,20 @@
     <fieldset><legend>Font</legend>
       <select id="font" aria-label="Font"></select>
       <small id="fontnote"></small>
+      <label class="muted" style="display:block;margin-top:8px">Or your own font (TTF / OTF):
+        <input type="file" id="fontfile" accept=".ttf,.otf,font/ttf,font/otf"></label>
+      <small id="ownnote">Embedded in the skin: check its licence allows that. Use a monospaced font (or one
+        with equal-width digits), or the time will jitter.</small>
     </fieldset>
     <fieldset><legend>Base</legend>
       <label class="r"><input type="radio" name="mode" value="dark" checked> Dark</label>
       <label class="r"><input type="radio" name="mode" value="light"> Light</label>
+    </fieldset>
+    <fieldset><legend>Light + dark</legend>
+      <label class="r"><input type="checkbox" id="pair"> Build both, switchable</label>
+      <small>The round button in the full player switches between them (about twice the memory of one
+        theme: +10 MB at 100 %). The base you chose above comes first. For the Windows helper's
+        "follow the system" setting choose Dark as the base.</small>
     </fieldset>
     <fieldset><legend>Primary colour</legend>
       <input type="color" id="accent" value="#5fd3e8" aria-label="Primary colour">

@@ -496,6 +496,9 @@ def icon(c, name, ox, oy, size, color):
         c.lines(T([(6, 6.8), (6, 10.5)]), color, w)
     elif name == "minimize":
         c.lines(T([(2.5, 9), (9.5, 9)]), color, 1.6 * f)
+    elif name == "restore":  # a window outline: "open the video window again"
+        c.lines(T([(2, 2.5), (10, 2.5), (10, 9.5), (2, 9.5), (2, 2.5)]), color, 1.4 * f)
+        c.lines(T([(2, 4.5), (10, 4.5)]), color, 1.4 * f)
     elif name == "close":
         c.lines(T([(2.5, 2.5), (9.5, 9.5)]), color, 1.6 * f)
         c.lines(T([(9.5, 2.5), (2.5, 9.5)]), color, 1.6 * f)
@@ -599,6 +602,10 @@ class Layout:
         sid, thumb, bg = p + sid, p + thumb, (p + bg) if bg else None
         return self._add(Node("Slider", sid=sid, x=x, y=y, points=points, thumb=thumb, value=value,
                               tip=tip, bg=bg, nbvert=nbvert, lt=lt, rb=rb, thickness=thickness))
+
+    def video(self, x, y, w, h):
+        """skins2 shows video only inside a Video control; it grows with the layout."""
+        return self._add(Node("Video", x=x, y=y, w=w, h=h, lt="lefttop", rb="rightbottom"))
 
     def anchor(self, x, y, priority, points="(0,0)"):
         return self._add(Node("Anchor", x=x, y=y, priority=priority, points=points))
@@ -862,6 +869,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
         make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
         make_button(skin, "b_close", 18, 12, "close", icon_size=8)
+        make_button(skin, "vb_full", 26, 18, "expand", icon_size=11)      # video window: full screen
+        make_button(skin, "vb_min", 26, 18, "minimize", icon_size=11)     # video window: shrink to its title bar
+        make_button(skin, "vb_restore", 26, 18, "restore", icon_size=11)  # ... and back
+        make_button(skin, "fb_fs", 28, 22, "expand")                      # fullscreen controller: leave full screen
         make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
         make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
         make_button(skin, "fb_prev", 28, 22, "prev")
@@ -1108,6 +1119,19 @@ def build(skin, W, BH=BAR_DEFAULT):
     # (th0, th1, ...) is shown; the layouts themselves are shared, so the width stays shared.
     layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(M["min_w"]), maxw=P(4000))
                for mode in ("full", "strip") for d in ("up", "dn")]   # last = default: strip-dn
+    # Video window: skins2 draws video only inside a Video control. The window is "shown" all the
+    # time, but every control in it needs vlc.hasVout, so with no video it has no pixels and no
+    # window shape (invisible, like the flag windows). It grows to the video (autoresize).
+    VB, VT = 6, 24                                         # frame width, title bar height (logical px)
+    VW, VH = 480 + 2 * VB, VT + 270 + VB
+    vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(2 * VB + 160), maxw=P(3840),
+                  minh=P(VT + VB + 90), maxh=P(2160))
+    MW = 140                                               # minimized: the title bar alone
+    mlay = Layout(skin, "video-min", P(MW), P(VT))
+    # Full screen: skins2 shows the window "fullscreenController" over the video when the mouse
+    # moves, and fades it out (VLC's own fullscreen controller option, on by default).
+    FSH = 56
+    flay = Layout(skin, "fsc-l", P(W), P(FSH))
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
         apply_theme(ti)
@@ -1136,6 +1160,43 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.oy, lay.vis = P(pl_far), PL_ON + " and " + EQ_ON
             add_pl(lay, mode, d, sfx + "_f")
             lay.oy, lay.vis, lay.theme_vis = 0, None, None
+        vlay.theme_vis = ("th%d.isVisible" % ti if ti else
+                          " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
+        vlay.vis = "vlc.hasVout"
+        mlay.theme_vis, mlay.vis = vlay.theme_vis, vlay.vis
+        c = Canvas(VW, VH)
+        panel_bg(c, 0, 0, VW, VH, 6)
+        grip_dots(c, 4, 4, rows=2)                        # title bar grip, left
+        grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
+        nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
+               actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+        rt = dict(lt="righttop", rb="righttop")
+        vlay.button("vb_full", P(VW - 64), P(3), "vlc.fullscreen()", "Full screen", **rt)
+        vlay.button("vb_min", P(VW - 34), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
+        vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VH - VT - VB))
+        c = Canvas(MW, VT)
+        panel_bg(c, 0, 0, MW, VT, 6)
+        grip_dots(c, 4, 4, rows=2)
+        skin.add("video_min_bg", c.done(hard_edges=True))
+        mlay.image("video_min_bg", 0, 0, action="move")
+        mlay.button("vb_restore", P(MW - 34), P(3), "video.setLayout(video-l)", "Show the video")
+        flay.theme_vis = vlay.theme_vis
+        c = Canvas(W, FSH)
+        panel_bg(c, 0, 0, W, FSH, 6)
+        hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
+        flay.slider("s_seek_fsc", P(8), P(8), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+                    "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES)
+        flay.button("fb_prev", P(8), P(28), "playlist.previous()", "Previous")
+        flay.checkbox("ft_play", P(38), P(28), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        flay.button("fb_next", P(78), P(28), "playlist.next()", "Next")
+        flay.text(P(124), P(31), P(190), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
+                  focus=False)
+        flay.image("ic_speaker", P(W - 150), P(33), action="none")
+        flay.slider("s_vol_fsc", P(W - 134), P(35), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
+                    "volume", "Volume $V%", bg="vol90", nbvert=P(90))
+        flay.button("fb_fs", P(W - 36), P(28), "vlc.fullscreen()", "Leave full screen")
+        vlay.vis, vlay.theme_vis, mlay.vis, mlay.theme_vis = None, None, None, None
+        flay.theme_vis = None
     apply_theme(0)
     skin.prefix = ""
 
@@ -1146,7 +1207,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         fl.image("flag_px", 0, 0)
         flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
                           yoffset=0, layouts=[fl], dragdrop=False))
-    skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts)] + flags
+    skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts),
+                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[vlay, mlay],
+                         dragdrop=False),
+                    dict(id="fullscreenController", visible="false", position="South", yoffset=0,
+                         layouts=[flay], dragdrop=False)] + flags
 
 
 # ---------------------------------------------------------------- XML
@@ -1167,12 +1232,14 @@ def next_id(kind):
 
 def node_xml(n, ind):
     sp = "  " * ind
-    if n.kind in ("Image", "Button", "Checkbox", "Text"):
+    if n.kind in ("Image", "Button", "Checkbox", "Text", "Video"):
         n.xid = next_id(n.kind)
     common = 'x=%s y=%s lefttop=%s rightbottom=%s' % (q(n.x), q(n.y), q(getattr(n, "lt", "lefttop")),
                                                       q(getattr(n, "rb", "lefttop")))
     if getattr(n, "vis", None):
         common += ' visible=%s' % q(n.vis)
+    if n.kind == "Video":
+        return [sp + '<Video id=%s %s width=%s height=%s autoresize="true"/>' % (q(n.xid), common, q(n.w), q(n.h))]
     if n.kind == "Image":
         return [sp + '<Image id=%s image=%s %s action=%s action2=%s resize="mosaic"/>' % (
             q(n.xid), q(n.bid), common, q(n.action), q(n.action2))]

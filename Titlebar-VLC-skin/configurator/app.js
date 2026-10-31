@@ -2,6 +2,7 @@
 const $ = (id) => document.getElementById(id);
 const SCALES = [1, 1.25, 1.5, 2];
 let fonts = [];
+let ownFont = null;                    // {name, data: Uint8Array} when the user picked a font file
 let worker = null, ready = false, nextId = 0, current = 0, result = null, previewUrl = null;
 
 function defaultScale() {
@@ -17,8 +18,11 @@ function status(text, cls) {
 
 function options() {
   const f = fonts.find(x => x.id === $("font").value);
-  return { scale: parseFloat($("size").value), mode: document.querySelector("input[name=mode]:checked").value,
-           accent: $("accent").value, led: $("led").value, font: f.file, licence: f.licence };
+  const o = { scale: parseFloat($("size").value), mode: document.querySelector("input[name=mode]:checked").value,
+              accent: $("accent").value, led: $("led").value, pair: $("pair").checked,
+              font: f.file, licence: f.licence };
+  if (ownFont) { o.font = null; o.licence = null; o.ownFont = ownFont.name; }
+  return o;
 }
 
 function refreshNote() {
@@ -26,7 +30,7 @@ function refreshNote() {
   const n = "Titlebar-" + Math.round(o.scale * 100) + ".vlt";
   $("filename").textContent = n;
   const f = fonts.find(x => x.id === $("font").value);
-  $("fontnote").textContent = f.note;
+  $("fontnote").textContent = ownFont ? "Using your file: " + ownFont.name : f.note;
 }
 
 function build() {
@@ -36,7 +40,7 @@ function build() {
   $("build").disabled = true;
   $("download").disabled = true;
   status("Building (a few seconds, up to about 10 s at 200 %)...");
-  worker.postMessage({ type: "build", id, opts: options() });
+  worker.postMessage({ type: "build", id, opts: options(), fontData: ownFont ? ownFont.data : null });
 }
 
 function onMessage(ev) {
@@ -75,6 +79,15 @@ async function main() {
   $("font").innerHTML = fonts.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
   $("size").value = String(defaultScale());
   for (const id of ["size", "font"]) $(id).addEventListener("change", refreshNote);
+  $("fontfile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    ownFont = null;
+    if (file) {
+      if (file.size > 8 * 1048576) { status("That font file is larger than 8 MB.", "err"); e.target.value = ""; }
+      else ownFont = { name: file.name, data: new Uint8Array(await file.arrayBuffer()) };
+    }
+    refreshNote();
+  });
   $("build").addEventListener("click", build);
   $("download").addEventListener("click", download);
   refreshNote();

@@ -32,9 +32,14 @@ async function init() {
   post({ type: "ready" });
 }
 
-async function build(id, opts) {
+async function build(id, opts, fontData) {
   try {
-    if (opts.font) await stage(opts.font);
+    if (fontData) {                       // the user's own font: /work/fonts/own.ttf (or .otf), no licence file
+      const ext = /\.otf$/i.test(opts.ownFont || "") ? "otf" : "ttf";
+      opts.font = "fonts/own." + ext;
+      py.FS.writeFile("/work/" + opts.font, fontData);
+    }
+    if (opts.font && !fontData) await stage(opts.font);
     if (opts.licence) await stage(opts.licence);
     py.globals.set("OPTS", JSON.stringify(opts));
     const t = performance.now();
@@ -51,5 +56,5 @@ async function build(id, opts) {
 const ready = init().catch(e => post({ type: "fatal", text: String(e.message || e) }));
 self.onmessage = async (ev) => {
   await ready;
-  if (py && ev.data.type === "build") await build(ev.data.id, ev.data.opts);
+  if (py && ev.data.type === "build") await build(ev.data.id, ev.data.opts, ev.data.fontData);
 };

@@ -1,7 +1,9 @@
 # Titlebar configurator (static page)
 
 Builds one `Titlebar-NNN.vlt` in the browser: size (100 / 125 / 150 / 200 %, preselected from
-`devicePixelRatio`), font, dark / light, primary and secondary colour, preview, download.
+`devicePixelRatio`), font (curated, or your own TTF / OTF file, embedded as `fonts/lcd.*`), dark / light,
+an optional light + dark pair (`--pair`: the theme button switches; about twice the memory), primary and
+secondary colour, preview, download.
 No server and no build step: `source/build_skin.py` runs **unchanged** in Pyodide + Pillow (a Web Worker),
 so the generator stays the single source of truth. The preview is the generator's own `--preview` image.
 

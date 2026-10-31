@@ -36,6 +36,8 @@ def build(opts_json):
     os.makedirs(OUT)
     args = ["--scale", str(o["scale"]), "--mode", o["mode"], "--accent", o["accent"],
             "--led", o["led"], "--preview", "--out", OUT]
+    if o.get("pair"):
+        args.append("--pair")
     if o.get("font"):
         args += ["--font", WORK + "/" + o["font"]]
     saved = (ImageFont.truetype, time.time)
