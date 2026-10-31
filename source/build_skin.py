@@ -52,6 +52,7 @@ BTN_BORDER, BTN_HILITE = "#0b0c0e", "#535b64"
 ICON = {"up": "#c3cbd3", "over": "#ffffff", "down": "#5fd3e8"}
 CYAN, CYAN_TXT, CYAN2, CYAN_DIM = "#5fd3e8", "#63d8ec", "#4fb3c6", "#2f6f7c"
 LCD_BG, LCD_EDGE = "#061114", "#3a4048"
+TITLE_FILL = "#0e3540"   # played part of the strip's title window (text stays readable)
 AMBER, AMBER_OFF = "#f2a93b", "#4a3a1c"
 GRIP = "#66707a"
 
@@ -435,6 +436,20 @@ def plain_toggle(skin, base, im):
     return base
 
 
+def make_progress_frames(skin, bid, w, h, n, color):
+    """Slider background drawn inside an LCD: frame i is filled to i/(n-1) from the left,
+    the rest is fully transparent (the LCD shows through). Hard edges: X11 skins2 draws
+    without alpha blending."""
+    pw, ph = P(w), P(h)
+    sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
+    d = ImageDraw.Draw(sheet)
+    for i in range(1, n):
+        fw = round(pw * i / (n - 1))
+        d.rectangle([0, ph * i, fw - 1, ph * i + ph - 1], fill=H(color))
+    skin.add(bid, sheet)
+    return bid
+
+
 def make_thumb(skin, bid, w, h):
     for st, (t, b) in (("up", ("#e2e7ec", "#8a939c")), ("over", ("#ffffff", "#a4adb6"))):
         c = Canvas(w, h)
@@ -491,6 +506,8 @@ def build(skin, W):
     make_toggle(skin, "t_eq", 26, 18, label="EQ", use_led=True)
     make_toggle(skin, "t_top", 22, 18, icon_off="pin", icon_on="pin", on_color=AMBER)
     make_thumb(skin, "thumb_v", 7, 13)
+    for st, col in (("up", CYAN), ("over", "#ffffff")):   # play head in the title window
+        skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(16)), H(col)))
     make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
     make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
     make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
@@ -562,7 +579,14 @@ def build(skin, W):
         c = Canvas(dw, 18)
         lcd(c, 0, 0, dw, 18)
         hslice(skin, lay, "strip_lcd", c.done(), P(dx), P(3), 4, 4)
-        lay.text(P(dx + 5), P(5), P(dw - 10), "lcd12", "$N", CYAN_TXT, rb="righttop",
+        # the title window is also a seek bar: progress fills it from the left, a click jumps
+        # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
+        fw, fh = dw - 2, 16
+        make_progress_frames(skin, "title_fill", fw, fh, 201, TITLE_FILL)
+        lay.slider("s_title_" + lay.id, P(dx + 1), P(4), "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2),
+                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=201,
+                   rb="righttop")
+        lay.text(P(dx + 5), P(5), P(dw - 10), "lcd12", "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         R = lambda v: PW - P(v)
         tx = R(TW + 166)

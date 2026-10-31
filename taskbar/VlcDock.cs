@@ -26,7 +26,9 @@ public static class VlcDock
     public static string DockTo = "start"; // "start" | "left" | "right"
     public static int Gap = 8;             // px between strip and Start button / taskbar edge
     public static int OffsetY = 0;         // fine-tune vertical position of the strip
-    public static bool ExitWithVlc = true;
+    public static bool ExitWithVlc = true; // false = keep waiting for the next VLC (started with Windows)
+    public static bool Dock = true;        // false = only StartPinned, no taskbar docking
+    public static bool StartPinned = false;// click VLC's pin button once after each VLC start
 
     // ---- state
     static bool enabled = true;
@@ -37,6 +39,8 @@ public static class VlcDock
     static DateTime lastPidCheck = DateTime.MinValue;
     static DateTime lastStartLookup = DateTime.MinValue;
     static int startLeft = int.MinValue;   // screen x of the Start button, if found
+    static uint pinnedPid;                 // VLC process already pinned by StartPinned
+    static DateTime mainSeenAt = DateTime.MinValue;
     static IntPtr locHook = IntPtr.Zero, fgHook = IntPtr.Zero;
     static WinEventProc winEventDelegate = OnWinEvent; // keep alive (GC)
     static TimerProc timerDelegate = OnTimer;
@@ -77,6 +81,7 @@ public static class VlcDock
     [DllImport("user32.dll")] static extern bool RegisterHotKey(IntPtr h, int id, uint mods, uint vk);
     [DllImport("user32.dll")] static extern bool UnregisterHotKey(IntPtr h, int id);
     [DllImport("user32.dll")] static extern void PostQuitMessage(int code);
+    [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] static extern int GetWindowRgn(IntPtr h, IntPtr rgn);
     [DllImport("gdi32.dll")] static extern IntPtr CreateRectRgn(int l, int t, int r, int b);
     [DllImport("gdi32.dll")] static extern int GetRgnBox(IntPtr rgn, out RECT r);
@@ -92,6 +97,8 @@ public static class VlcDock
     const uint WINEVENT_OUTOFCONTEXT = 0, WM_HOTKEY = 0x312;
     const uint MOD_ALT = 1, MOD_CONTROL = 2, MOD_SHIFT = 4, MOD_NOREPEAT = 0x4000;
     const int NULLREGION = 1;
+    const uint WM_MOUSEMOVE = 0x200, WM_LBUTTONDOWN = 0x201, WM_LBUTTONUP = 0x202;
+    const int MK_LBUTTON = 1;
 
     static int P(double v) { return (int)Math.Round(v * Scale); }
     static int W(RECT r) { return r.Right - r.Left; }
@@ -165,7 +172,8 @@ public static class VlcDock
     // ---------------------------------------------------------------- VLC process
     static void CheckVlc()
     {
-        if ((DateTime.Now - lastPidCheck).TotalMilliseconds < 1000 && vlcPid != 0) return;
+        // look for VLC every second while it runs, every 2 s while waiting for it (-Watch)
+        if ((DateTime.Now - lastPidCheck).TotalMilliseconds < (vlcPid != 0 ? 1000 : 2000)) return;
         lastPidCheck = DateTime.Now;
         uint pid = 0;
         Process[] ps = Process.GetProcessesByName("vlc");
@@ -177,6 +185,7 @@ public static class VlcDock
         {
             if (locHook != IntPtr.Zero) { UnhookWinEvent(locHook); locHook = IntPtr.Zero; }
             vlcPid = pid;
+            mainSeenAt = DateTime.MinValue;
             if (pid != 0)
                 locHook = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE, IntPtr.Zero,
                                           winEventDelegate, pid, 0, WINEVENT_OUTOFCONTEXT);
@@ -278,20 +287,42 @@ public static class VlcDock
         SetWindowPos(h, after, x, y, 0, 0, flags);
     }
 
+    // ---------------------------------------------------------------- start pinned
+    // VLC never saves "always on top", so it starts unpinned. Clicking the skin's own pin
+    // button (posted mouse messages, which skins2 handles like real clicks) keeps VLC's
+    // state and the lit pin icon in sync, unlike setting HWND_TOPMOST from outside.
+    static void PinOnce(IntPtr main, RECT r)
+    {
+        if (pinnedPid == vlcPid) return;
+        if (mainSeenAt == DateTime.MinValue) { mainSeenAt = DateTime.Now; return; }
+        if ((DateTime.Now - mainSeenAt).TotalMilliseconds < 1500) return;  // let the skin settle
+        pinnedPid = vlcPid;
+
+        int hh = H(r);
+        RECT box;
+        bool barAtBottom, full;
+        ReadShape(main, hh, out box, out barAtBottom, out full);
+        int x, y;
+        if (full)   // full player: small pin, 82 px from the right edge, 5 px from its top
+        {
+            x = W(r) - P(82) + P(9);
+            y = (barAtBottom ? hh - P(122) : 0) + P(11);
+        }
+        else        // strip: pin 34 px from the right edge
+        {
+            x = W(r) - P(34) + P(11);
+            y = (barAtBottom ? hh - P(24) : 0) + P(12);
+        }
+        IntPtr pos = new IntPtr((y << 16) | (x & 0xFFFF));
+        PostMessage(main, WM_MOUSEMOVE, IntPtr.Zero, pos);
+        PostMessage(main, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), pos);
+        PostMessage(main, WM_LBUTTONUP, IntPtr.Zero, pos);
+    }
+
     static void Place()
     {
         CheckVlc();
-        if (!enabled || vlcPid == 0) return;
-
-        IntPtr tray = FindWindow("Shell_TrayWnd", null);
-        if (tray == IntPtr.Zero) return;
-        RECT tb;
-        GetWindowRect(tray, out tb);
-        MONITORINFO mi = new MONITORINFO();
-        mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
-        GetMonitorInfo(MonitorFromWindow(tray, 2), ref mi);
-        RECT mon = mi.rcMonitor;
-        bool atBottom = (tb.Top + tb.Bottom) / 2 > (mon.Top + mon.Bottom) / 2;
+        if (vlcPid == 0) return;
 
         List<IntPtr> wins = FindSkinWindows();
         IntPtr main = IntPtr.Zero;
@@ -302,6 +333,18 @@ public static class VlcDock
             GetWindowRect(h, out rMain);
         }
         if (main == IntPtr.Zero) return;
+        if (StartPinned) PinOnce(main, rMain);
+        if (!Dock || !enabled) return;
+
+        IntPtr tray = FindWindow("Shell_TrayWnd", null);
+        if (tray == IntPtr.Zero) return;
+        RECT tb;
+        GetWindowRect(tray, out tb);
+        MONITORINFO mi = new MONITORINFO();
+        mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+        GetMonitorInfo(MonitorFromWindow(tray, 2), ref mi);
+        RECT mon = mi.rcMonitor;
+        bool atBottom = (tb.Top + tb.Bottom) / 2 > (mon.Top + mon.Bottom) / 2;
 
         // fullscreen app in front: get out of the way
         bool fs = ForegroundIsFullscreen(tray, wins);

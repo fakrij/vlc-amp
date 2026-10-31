@@ -3,10 +3,25 @@
 A music skin for VLC (Windows/Linux, skins2 engine) whose main window collapses
 into a 24 px strip that fits into a window title bar or the taskbar.
 
-## Install
+## Install (Windows, recommended)
 
-1. Pick the file matching your Windows display scaling
-   (Settings > System > Display > Scale):
+1. Copy this folder somewhere permanent (for example `Documents\VLC-skin`);
+   the setup points VLC at the skin file in it.
+2. Close VLC and double-click **`taskbar\Setup.cmd`**. It:
+   - picks the skin file for your display scaling (`Titlebar-100/125/150/200.vlt`),
+   - makes VLC use it also when you double-click a file or folder in Explorer,
+   - sends files you open to the running player (no second VLC window),
+   - removes the useless "Media Library" entry from the playlist,
+   - asks whether to start the helper with Windows: it pins the player on top
+     each time VLC starts, and optionally docks it in the taskbar.
+   Your previous VLC settings are saved as `%APPDATA%\vlc\vlcrc.before-titlebar`.
+
+Undo: close VLC, copy `vlcrc.before-titlebar` back over `vlcrc`, and delete
+"Titlebar VLC helper" from the Startup folder (Win+R, `shell:startup`).
+
+## Install (manual, any OS)
+
+1. Pick the file matching your display scaling:
    `Titlebar-100.vlt`, `Titlebar-125.vlt`, `Titlebar-150.vlt`, `Titlebar-200.vlt`.
 2. VLC > Tools > Preferences > Interface > Look and feel: **Use custom skin**,
    choose the .vlt file, Save, restart VLC.
@@ -19,7 +34,9 @@ Use native style, then restart VLC.
 ## Controls
 
 Strip, left to right: grip (drag to move), expand, previous, slower,
-play/pause, faster, next, title (scrolls when too long), time (elapsed;
+play/pause, faster, next, title (scrolls when too long; it is also the seek
+bar: the played part fills it, click anywhere in it to jump there or drag,
+mouse wheel = 5 % back / forward), time (elapsed;
 click it for time left, click again for elapsed; fits tracks over an hour),
 volume,
 playlist, equalizer, always on top, resize grip (drag the right edge).
@@ -64,9 +81,11 @@ The `taskbar` folder has a small helper that places the strip inside the
 Windows 11 taskbar, just left of the Start button, and keeps it there.
 
 1. Free the space: Settings > Personalization > Taskbar > **Widgets: Off**.
-2. Close VLC if it is open.
-3. Double-click **`taskbar\VLC in taskbar.cmd`**. It starts VLC with the skin
-   and docks it. (A console window flashes for a moment; that is PowerShell starting.)
+2. Either run `Setup.cmd` and answer Yes to both questions (the helper then
+   starts with Windows and docks VLC whenever it runs, also when started from
+   a file), or close VLC and double-click **`taskbar\VLC in taskbar.cmd`**,
+   which starts VLC with the skin and docks it for this session.
+   (A console window flashes for a moment; that is PowerShell starting.)
 
 What it does:
 - Strip sits in the taskbar, vertically centred, its right edge 8 px left of
@@ -79,12 +98,16 @@ What it does:
 - Stays above the taskbar even after you click the taskbar.
 - Steps behind full-screen apps (games, full-screen video) and comes back after.
 - Hides VLC's own taskbar button (the player is already there).
-- Quits when VLC quits.
+- Pins VLC on top once it starts (it clicks the skin's pin button, so the pin
+  lights up). VLC itself always starts unpinned.
+- Quits when VLC quits (except when started with Windows: then it waits for
+  the next VLC).
 - **Ctrl+Alt+Shift+V** undocks / re-docks (undocked, you can drag windows freely).
 - The skin's own pin button has no effect while docked.
 
-Settings are at the top of `taskbar\vlc-taskbar.ps1`: which skin file, dock
-position (`start`, `left`, `right` = next to the tray icons), gap, vertical nudge.
+Settings are at the top of `taskbar\vlc-taskbar.ps1`: which skin file (`auto` =
+by display scaling), dock position (`start`, `left`, `right` = next to the
+tray icons), gap, vertical nudge, start pinned.
 
 It is still VLC's own window kept in place, not part of Explorer, so it
 cannot be pinned like an app icon. To start it with Windows, put a shortcut to
