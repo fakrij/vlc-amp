@@ -56,26 +56,7 @@ click 507 12; click 479 12             # EQ, PL off
 click 27 12                            # expand
 park; shot full 0 0 $W 122
 
-# themes (the release build has Midnight + Paper): the theme button (full player, 434,11) toggles
-park; shot theme-0 0 0 $W 122
-click 434 11                                     # Paper
-park; shot theme-1 0 0 $W 122
-click 503 11; click 479 12                       # collapse, PL
-park; shot light-strip-playlist 0 0 $W 222
-click 479 12; click 27 12                        # PL off, expand
-click 434 11                                     # back to Midnight, the default
 $T quit >/dev/null
 $T xvfb-stop >/dev/null
 
-"$PY" - "$OUT" <<'EOF'
-import sys
-from PIL import Image
-out = sys.argv[1]
-ims = [Image.open("%s/theme-%d.png" % (out, i)) for i in range(2)]
-w, h = ims[0].size
-grid = Image.new("RGB", (w, h * 2 + 12), (230, 232, 235))
-for i, im in enumerate(ims):
-    grid.paste(im, (0, i * (h + 12)))
-grid.save("%s/themes.png" % out)
-EOF
 echo "screenshots in $OUT"

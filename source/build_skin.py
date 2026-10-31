@@ -146,7 +146,7 @@ def _theme(mode, hue, sat, accent, led):
 THEMES, CUSTOM = [], None      # CUSTOM = index of the Custom theme, None when it is not built
 # The release skins carry only these: every theme costs ~10 MB of VLC memory at 100 % scaling
 # (~20 MB at 150 %) and start-up time. --themes all builds every theme.
-DEFAULT_THEMES = ["midnight", "paper"]
+DEFAULT_THEMES = ["midnight"]
 
 
 def set_themes(names=None):
@@ -784,8 +784,6 @@ def build(skin, W):
         c.rrect(W - 3, 30, 1, 46, 0, GRIP)  # resize grip in the 4 px right margin
         bg = c.done(hard_edges=True)
         hslice(skin, lay, "full_bg", bg, 0, 0, 14, 8, right_action="resizeE")
-        label_on(skin, "lbl_now", bg, 18, 5, 70, 12, "NOW PLAYING")
-        lay.image("lbl_now", P(18), P(5), action="move")
         # theme button, left of the menu button: steps to the next theme (none with one theme)
         nxt = (cur["theme"] + 1) % len(THEMES)
         if nxt != cur["theme"]:
@@ -803,8 +801,11 @@ def build(skin, W):
         c.rrect(134, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
         hslice(skin, lay, "full_lcd", c.done(), P(4), P(20), 138, 6)
         time_toggle(lay, "c_time_f", P(8), P(22))
-        for big, small, vis, s1, s2 in (("$t", "-$l / $d", "not " + COUNTDOWN, "1:02", "-3:10 / 4:12"),
-                                        ("-$l", "$t / $d", COUNTDOWN, "-3:10", "1:02 / 4:12")):
+        # big = elapsed or time left (click switches), small = total only: VLC truncates time and
+        # length to seconds separately, so "time left" next to "elapsed" would tick at a different
+        # moment and can disagree by a second (skins2 vars/time.cpp)
+        for big, small, vis, s1, s2 in (("$t", "of $d", "not " + COUNTDOWN, "1:02", "of 4:12"),
+                                        ("-$l", "of $d", COUNTDOWN, "-3:10", "of 4:12")):
             lay.text(P(12), P(22), P(126), "lcd26", big, CYAN_TXT, scrolling="none", sample=s1,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
             lay.text(P(12), P(55), P(124), "lcd10", small, CYAN2, scrolling="none", sample=s2,

@@ -76,7 +76,7 @@ fill, playlist rows and so on from the accent, **only by mixing it with
 neutral colours** (black, white, grey); the Custom theme depends on that (see
 below). `apply_theme(i)` sets the module-level colour names (`CYAN*` are the
 accent colours, named after the default theme). `--themes` builds a subset
-(`set_themes`); the release skins use `DEFAULT_THEMES` (Midnight, Paper), and
+(`set_themes`); the release skins use `DEFAULT_THEMES` (Midnight only), and
 with a single theme the theme button is left out. The generator renders the whole skin once per theme, into the
 same 4 layouts:
 
@@ -157,6 +157,15 @@ the ids repeat, the later control replaces the earlier one in the theme's
 control map, the earlier one is freed while its layout still uses it, and VLC
 crashes in `GenericLayout::refreshRect`. Two themes stayed under the limit,
 three crashed.
+
+## Time readouts
+
+VLC formats the skin's time variables itself (`vars/time.cpp`): elapsed =
+`time / 1 s`, total = `length / 1 s`, time left = `(length - time) / 1 s`, each
+truncated on its own. Time left therefore ticks at a different moment than
+elapsed (offset by the fraction of a second in the track length) and can be one
+second off from total - elapsed. The full player shows only one of them big
+plus the total ("of 5:16"), never elapsed and time left side by side.
 
 ## Clickable things
 

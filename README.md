@@ -35,13 +35,9 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
   ![Full player](docs/img/full.png)
 
-- **Themes**: Midnight (dark, cyan-blue) and Paper (white / grey, blue). The
-  round button in the full player's title bar switches between them. Each
-  theme costs memory, so the skin ships with these two only; 9 more colour
-  schemes and a Custom theme in any colour can be built in (see
-  [More themes](#more-themes)).
-
-  ![Themes](docs/img/themes.png)
+- **Look**: Midnight (dark, cyan-blue). Every extra theme costs VLC memory, so
+  the skin ships with this one only. Other colour schemes, a light look and a
+  Custom colour can be built in (see [More themes](#more-themes)).
 
 - **Remembered**: VLC remembers the position, width, open panels, panel side,
   time mode and theme across restarts.
@@ -50,8 +46,6 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 - **Media controls**: keyboard media keys and the system's media panel show
   and control VLC. Windows: optional plugin, installed by Setup (see
   [Media controls](#media-controls)). Linux: built into VLC.
-
-![Light theme with playlist](docs/img/light-strip-playlist.png)
 
 ## Install
 
@@ -113,17 +107,19 @@ Interface > Preferences > **Use native style**, restart VLC.
 
 ### Full player
 
-Title bar: theme button (next theme), VLC menu (≡: open
-files, preferences, skins), pin, collapse back to the strip, minimize, quit.
-Display: large time (click to switch elapsed / time left), the other value and
-the total under it, title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
+Title bar: VLC menu (≡: open files, preferences, skins), pin, collapse back
+to the strip, minimize, quit. A skin built with several themes also has a
+round theme button there.
+Display: large time (click to switch elapsed / time left), the track length
+under it ("of 5:16"), title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
 speed. Then the seek bar, transport, volume, PL and EQ.
 
 ### More themes
 
-The generator has 9 more themes: dark Ember (amber), Forest (mint), Nord
-(frost blue), Dusk (pink), Carbon (red); light Sand (teal on cream), Sage
-(green), Rose (raspberry); and **Custom**, dark in any colour you choose.
+The generator has 10 more themes: dark Ember (amber), Forest (mint), Nord
+(frost blue), Dusk (pink), Carbon (red); light Paper (white / grey, blue), Sand
+(teal on cream), Sage (green), Rose (raspberry); and **Custom**, dark in any
+colour you choose.
 Each adds about 10 MB of VLC memory at 100 % scaling (20 MB at 150 %) and some
 start-up time, so build only the ones you want (the first is the default):
 
@@ -245,9 +241,9 @@ These come from VLC's skin engine (skins2); details in
   actions; options are in the backlog).
 - Flipping the panel side moves the bar once.
 - The player's invisible area does not snap to screen edges.
-- Memory: VLC with this skin (2 themes) uses about 146 MB at 100 % scaling and
-  167 MB at 150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of
-  that is VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
+- Memory: VLC with this skin uses about 136 MB at 100 % scaling and 146 MB at
+  150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is
+  VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
   150 %), see [More themes](#more-themes).
 - Windows only: the taskbar helper. The skin itself also works on Linux.
 
@@ -274,7 +270,7 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 width in logical pixels (min 442), `--out` the output folder (default
 `source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
 the themes (comma-separated, the first one is the default; `all` = every
-theme; default `Midnight,Paper`), and
+theme; default `Midnight`), and
 `--custom #rrggbb` sets the Custom theme's colour. See
 [docs/architecture.md](docs/architecture.md) for how the generator works.
 
