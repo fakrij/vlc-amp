@@ -201,6 +201,11 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     // ---------------------------------------------------------------- entry
     public static void Run()
     {
+        // A hidden helper that dies leaves nothing behind: log what killed it.
+        AppDomain.CurrentDomain.UnhandledException += delegate(object o, UnhandledExceptionEventArgs e)
+        {
+            Log("CRASH (unhandled, terminating=" + e.IsTerminating + "): " + e.ExceptionObject);
+        };
         DpiInit();   // first: every coordinate the helper reads or posts is in physical pixels from here on
         fgHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
                                  winEventDelegate, 0, 0, WINEVENT_OUTOFCONTEXT);
@@ -232,6 +237,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         }
         finally
         {
+            Log("helper exiting (message loop ended)");
             remoteStop = true;
             TaskbarStop();
             DisposeTray();   // also when VLC quit (not -Watch): no ghost icon left behind
