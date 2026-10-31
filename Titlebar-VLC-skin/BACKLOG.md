@@ -194,6 +194,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T18 | Follow system light / dark (25), **phase 2** | Sonnet | T17 step 4, T14 (Linux launcher) | M |
 | T19 | Font check for the configurator: which OFL fonts skins2 renders, tabular digits (report only) | Sonnet | - | S |
 | T20 | Flatpak / Snap VLC paths and options, from docs and sources (report only, for 22a) | **DONE (report; mostly unverified, see brief)** | - | S |
+| T24 | Generator reproducibility for Pyodide (BASIC text layout, tar / gzip metadata zeroed, sorted member order) + T17 step 4 (light + dark pair) | Sonnet | T17 step 1 | M |
 | T21 | Helper docking fixes: flashing, unpin, resize while docked, collapse with panels, item 15 (26, 27, 28, 31, T9) | **DONE** (untested on Windows; README "second Windows test" checklist) | - | M |
 | T22 | Media Library off on Windows: file association overrides (30) | **DONE** (untested on Windows) | - | M |
 | T23 | Skin: Windows bitmap rendering check + wider resize grip (29, 27) | **DONE** (Windows unverified) | - | S-M |
