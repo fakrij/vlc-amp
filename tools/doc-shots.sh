@@ -38,7 +38,7 @@ park() { $T park; sleep 1; }   # pointer off the skin, so no hover look and no t
 
 # positions at 100 % (window 556 x 436), from build_skin.py:
 #   strip (bar at top):  expand 27,12  title 173..321  time 358,12  PL 479,12  EQ 507,12
-#   EQ header flip: 497, EQ top + 10    full player: mode 389,11  dots 408/422/436,11  collapse 503,11
+#   EQ header flip: 497, EQ top + 10    full player: theme 434,11  collapse 503,11
 click 262 12                           # seek to ~60 % in the title window
 park; shot strip 0 0 $W 24
 click 358 12                           # time: countdown
@@ -56,18 +56,16 @@ click 507 12; click 479 12             # EQ, PL off
 click 27 12                            # expand
 park; shot full 0 0 $W 122
 
-# themes (index = order in THEMES: dark cyan/amber/green, light blue/red/green)
-park; shot theme-0 0 0 $W 122
-click 422 11; park; shot theme-1 0 0 $W 122     # dot 2: dark amber
-click 436 11; park; shot theme-2 0 0 $W 122     # dot 3: dark green
-click 389 11; park; shot theme-5 0 0 $W 122     # light, keeps the accent: light green
-click 408 11; park; shot theme-3 0 0 $W 122     # dot 1: light blue
-click 422 11; park; shot theme-4 0 0 $W 122     # dot 2: light red
-click 408 11                                     # light blue
+# themes, in THEME_SEEDS order: the theme button (full player, 434,11) steps to the next one
+for i in $(seq 0 10); do
+    park; shot theme-$i 0 0 $W 122
+    click 434 11
+done                                             # 11 clicks: back to theme 0
+for i in 1 2 3 4 5 6; do click 434 11; done      # theme 6: Paper (light)
 click 503 11; click 479 12                       # collapse, PL
 park; shot light-strip-playlist 0 0 $W 222
 click 479 12; click 27 12                        # PL off, expand
-click 389 11                                     # dark (accent 1 = cyan): back to the default
+for i in 1 2 3 4 5; do click 434 11; done        # back to theme 0 (Midnight), the default
 $T quit >/dev/null
 $T xvfb-stop >/dev/null
 
@@ -75,11 +73,12 @@ $T xvfb-stop >/dev/null
 import sys
 from PIL import Image
 out = sys.argv[1]
-ims = [Image.open("%s/theme-%d.png" % (out, i)) for i in range(6)]
+ims = [Image.open("%s/theme-%d.png" % (out, i)) for i in range(11)]
 w, h = ims[0].size
-grid = Image.new("RGB", (w * 2 + 12, h * 3 + 24), (230, 232, 235))
-for i, im in enumerate(ims):               # columns: dark, light; rows: accent 1-3
-    grid.paste(im, ((i // 3) * (w + 12), (i % 3) * (h + 12)))
+grid = Image.new("RGB", (w * 2 + 12, h * 6 + 60), (230, 232, 235))
+for i, im in enumerate(ims):               # left: the 6 dark themes; right: 4 light + Custom
+    col, row = (0, i) if i < 6 else (1, i - 6)
+    grid.paste(im, (col * (w + 12), row * (h + 12)))
 grid.save("%s/themes.png" % out)
 EOF
 echo "screenshots in $OUT"

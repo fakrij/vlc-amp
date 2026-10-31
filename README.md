@@ -35,9 +35,13 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
   ![Full player](docs/img/full.png)
 
-- **Themes**: dark and light, each in three colours. Switch them in the full
-  player's title bar: the sun / moon button toggles light and dark, the dots
-  pick the colour.
+- **Themes**: 10 colour schemes plus one in your own colour. Dark: Midnight
+  (cyan, the default), Ember (amber), Forest (mint), Nord (frost blue), Dusk
+  (pink), Carbon (red). Light: Paper (blue), Sand (teal on cream), Sage (green),
+  Rose (raspberry). **Custom**: dark, in any colour you pick (see
+  [Custom colour](#custom-colour)). The round button in the full player's
+  title bar steps to the next theme; its tooltip names the current and the
+  next one.
 
   ![Themes](docs/img/themes.png)
 
@@ -111,7 +115,7 @@ Interface > Preferences > **Use native style**, restart VLC.
 
 ### Full player
 
-Title bar: theme switcher (sun / moon and colour dots), VLC menu (≡: open
+Title bar: theme button (next theme), VLC menu (≡: open
 files, preferences, skins), pin, collapse back to the strip, minimize, quit.
 Display: large time (click to switch elapsed / time left), the other value and
 the total under it, title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
@@ -213,7 +217,10 @@ These come from VLC's skin engine (skins2); details in
   actions; options are in the backlog).
 - Flipping the panel side moves the bar once.
 - The player's invisible area does not snap to screen edges.
-- Six themes cost memory: about 150 MB for VLC at 100 % scaling, 240 MB at 150 %.
+- Eleven themes cost memory and start-up time: VLC uses about 190 MB at 100 %
+  scaling and 310 MB at 150 % (one theme alone: about 85 MB). To make it
+  lighter, build a skin with only the themes you use:
+  `python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Custom"`.
 - Windows only: the taskbar helper. The skin itself also works on Linux.
 
 ## Project files
@@ -236,7 +243,9 @@ python3 source/build_skin.py --scale 1.5 --width 556 --preview
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
 width in logical pixels (min 442), `--out` the output folder (default
-`source/dist`), `--preview` also writes a PNG of all states. See
+`source/dist`), `--preview` also writes a PNG of all states, `--themes` builds
+only the named themes (comma-separated, the first one is the default), and
+`--custom #rrggbb` sets the Custom theme's colour. See
 [docs/architecture.md](docs/architecture.md) for how the generator works.
 
 ## Credits

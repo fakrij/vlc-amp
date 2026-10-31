@@ -68,21 +68,41 @@ multiply them). They are **tiny 1 x 1 windows** with no visible pixels:
 
 ## Themes
 
-`THEMES` in `build_skin.py`: dark and light, each with 3 accents.
-`apply_theme(i)` sets the module-level colour names (`CYAN*` are the accent
-colours, named after the default theme). The generator renders the whole skin
-once per theme, into the same 4 layouts:
+`THEME_SEEDS` in `build_skin.py`: 10 themes plus Custom, each given by a few
+seed colours: dark or light base template (`DARK` / `LIGHT`) tinted with a hue
+and saturation (`base_palette`), an accent colour and an LED colour.
+`accent_palette()` derives the LCD background, dim and bright text, progress
+fill, playlist rows and so on from the accent, **only by mixing it with
+neutral colours** (black, white, grey); the Custom theme depends on that (see
+below). `apply_theme(i)` sets the module-level colour names (`CYAN*` are the
+accent colours, named after the default theme). `--themes` builds a subset
+(`set_themes`). The generator renders the whole skin once per theme, into the
+same 4 layouts:
 
 - bitmap ids get the prefix `t<i>_` (`Skin.prefix`, applied by `Skin.add` and
   the `Layout` methods);
 - every control of theme `i` gets `th<i>.isVisible and ...` (`Layout.theme_vis`); theme 0 instead
-  gets `not th1.isVisible and ... not th5.isVisible`, so a saved state with no theme flag
+  gets `not th1.isVisible and ... not th<last>.isVisible`, so a saved state with no theme flag
   shown (nothing drawn = no window shape = invisible and unmovable) falls back to theme 0;
-- the switcher selects a theme with `th<i>.show();th<j>.hide();...` (shows
-  first, so something is always drawn).
+- theme `i`'s button (full player title bar) selects theme `i + 1` (wrapping
+  around) with `th<i+1>.show();th<j>.hide();...` (shows first, so something is
+  always drawn).
 
-Cost: about 1400 bitmaps and 2000 controls. See the next sections for what
+Cost: about 2400 bitmaps and 4000 controls with 11 themes. See the next sections for what
 that broke and how it is handled.
+
+### Custom theme
+
+The Custom theme is rendered with a neutral grey base and a pure red accent
+(`CUSTOM_REF`), so every one of its pixels is `grey n + t * red`: `n = G (= B)`,
+`t * 255 = R - G`. Recolouring to any accent `A` is exact:
+`R', G', B' = n + t * A / 255` (`recolour`, `recolour_hex`, `recolour_xml`
+for the `#RRGGBB` attributes of controls with `visible="th<custom>.isVisible...`).
+The build asserts that every Custom bitmap is grey + red. The `.vlt` ships
+the Custom theme in `--custom` colour (default `#b48cff`) and keeps the red
+originals in `custom-ref/` (`img/`, the unrecoloured `theme.xml`, `slot.txt`
+with the slot index and current colour), which the colour picker tools in
+`custom-colour/` recolour from.
 
 ## Bitmaps: atlases
 
@@ -93,8 +113,12 @@ theme (`pack_atlases`, shelf packing) and cut out with `<SubBitmap>`:
 bitmaps (the progress fill frame sheets, wide stretch pieces; > 16384 px)
 stay separate files to avoid storing them twice.
 
-Memory (RSS of VLC): about 150 MB at 100 %, 240 MB at 150 %. Most of it is the
-fill frame sheets (`title_fill`, `seek`: one frame per percent, per theme).
+Memory (RSS of VLC, 11 themes): about 190 MB at 100 %, 310 MB at 150 %; one
+theme alone is about 85 MB. Most of the per-theme cost is the fill frame
+sheets (`title_fill`, `seek`, volume): `CtrlSliderBg` copies its whole frame
+sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
+Hence `FILL_FRAMES = 51` (2 % steps; 101 frames cost 80 MB more at 150 %).
+Start-up grows by roughly 0.4 s per theme (measured under Xvfb).
 
 ## Element ids
 
