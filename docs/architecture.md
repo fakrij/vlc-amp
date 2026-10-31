@@ -84,6 +84,43 @@ once per theme, into the same 4 layouts:
 Cost: about 1400 bitmaps and 2000 controls. See the next sections for what
 that broke and how it is handled.
 
+### Custom theme
+
+One theme, "Custom" (`THEME_SEEDS`), is meant to be recoloured after the build.
+It is drawn with the pure red accent `CUSTOM_REF` (`#ff0000`) on a neutral grey
+base, and the palette only ever mixes the accent with neutral colours, so every
+pixel is `grey + t * red` (`R = n + t*255`, `G = B = n`). The build asserts that.
+Any accent `(ar, ag, ab)` follows exactly:
+
+```
+R' = G + (R - G) * ar / 255      G' = G + (R - G) * ag / 255      B' = G + (R - G) * ab / 255
+```
+
+alpha unchanged, clamped to 0..255 (`recolour()` in `build_skin.py`). The same
+formula applies to the `#RRGGBB` attributes in `theme.xml`, but only on lines
+that contain `visible="th<slot>.isVisible` (`recolour_xml()`: the Custom
+theme's controls). `--custom` sets the accent of a build (`CUSTOM_DEFAULT`,
+`#b48cff`).
+
+So that a finished `.vlt` can be recoloured without the generator, it carries
+`custom-ref/`: `slot.txt` (`slot=<N>`, `accent=#rrggbb`, the current accent),
+`theme.xml` before recolouring, and `img/` with the Custom theme's images
+(`atlas_t<N>.png`, `t<N>_*.png`) in red. Recolouring writes every file of
+`custom-ref/img` recoloured to `img/` (same name), `recolour_xml(custom-ref/theme.xml)`
+to `theme.xml`, and the new accent to `slot.txt`; everything else in the
+`.vlt` stays byte-identical. VLC reads the `.vlt` at start, so a restart is
+needed. The tools in `custom-colour/` do exactly this:
+
+- `custom-colour.py`: Python 3 standard library only (own PNG decoder for
+  8-bit RGBA, all five filters, and encoder; uses Pillow when importable,
+  `--no-pil` forces the pure path). The recolour maps every distinct pixel
+  value once (cached), so it needs about 1 s for the 200 % skin.
+- `custom-colour.ps1` (+ `Custom colour.cmd`): Windows PowerShell 5.1, the
+  pixel loop is C# 5 (`Add-Type`, `System.Drawing` `LockBits` with
+  `Format32bppArgb`, which is straight alpha), unpack / pack with the built-in
+  `tar.exe` (explicit file list with `-T`, so there are no folder entries, as
+  in the generator's tar).
+
 ## Bitmaps: atlases
 
 VLC starts an image decoder module for every `<Bitmap>`. With 1400 separate

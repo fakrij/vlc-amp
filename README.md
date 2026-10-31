@@ -41,6 +41,11 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
 
   ![Themes](docs/img/themes.png)
 
+  **Custom colour**: the last theme, Custom, takes any accent colour you pick.
+  Run `custom-colour\Custom colour.cmd` (Windows) or `custom-colour/custom-colour.py`
+  (Linux), choose a colour, restart VLC and select Custom with the theme button.
+  See [Custom colour](#custom-colour).
+
 - **Remembered**: VLC remembers the position, width, open panels, panel side,
   time mode and theme across restarts.
 - **Taskbar mode** (Windows): a helper docks the strip in the taskbar, left of
@@ -116,6 +121,29 @@ files, preferences, skins), pin, collapse back to the strip, minimize, quit.
 Display: large time (click to switch elapsed / time left), the other value and
 the total under it, title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
 speed. Then the seek bar, transport, volume, PL and EQ.
+
+### Custom colour
+
+The Custom theme is the one theme whose accent you choose. The `.vlt` files
+carry the Custom theme in a red reference colour; the tool in `custom-colour/`
+turns it into your colour and rewrites the `.vlt` files in this folder (close
+VLC first if the file is locked; it is read when VLC starts).
+
+- **Windows**: double-click **`custom-colour\Custom colour.cmd`**. A colour
+  dialog opens (starting at the current accent), then every `Titlebar-*.vlt`
+  next to the `custom-colour` folder is rewritten. Needs Windows 10 1803 or
+  later (`tar.exe`); no admin rights.
+- **Linux** (any distro, Python 3 only, nothing else to install):
+  `python3 custom-colour/custom-colour.py` opens `zenity`, `kdialog`, `yad` or
+  tkinter's colour chooser, whichever exists, else asks in the terminal.
+  `python3 custom-colour/custom-colour.py "#33ff99"` skips the dialog;
+  `--reset` returns to the default accent (`#b48cff`); more arguments are
+  `.vlt` files to change instead of the default ones.
+
+Then restart VLC, open the full player and click the theme button in its title
+bar until Custom shows. Rerun the tool to change the colour again. A new
+build of the skin (copying fresh `Titlebar-*.vlt` files here) starts with the
+default accent: run the tool again.
 
 ### Playlist and equalizer
 
@@ -224,6 +252,7 @@ These come from VLC's skin engine (skins2); details in
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs` |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
+| `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
 | `tools/` | Test harness: real VLC under Xvfb, screenshots ([tools/README.md](tools/README.md)) |
 | `docs/` | [Architecture](docs/architecture.md), [Lua API notes](docs/lua-api-notes.md), screenshots |
 | `BACKLOG.md` | Wishlist, what is possible, agent task briefs |
