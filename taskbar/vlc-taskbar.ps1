@@ -223,6 +223,18 @@ function Get-VlcRemote {
     return @{ Port = $port; Password = $password }
 }
 
+# ---- Lua interface (lua\intf\titlebar.lua): A-B loop, next / previous folder, EQ presets ----
+# Its triggers are VLC hotkey actions that do nothing for music (see docs/architecture.md, "Lua interface").
+# Default keys, written into vlcrc only where the user has not set the action. The tray menu and the web
+# interface use the action names without the "key-" prefix.
+$LuaKeys = [ordered]@{
+    "key-subsync-markaudio"        = "Ctrl+Shift+a"       # A-B loop: set A, set B (loops), clear
+    "key-viewpoint-roll-clock"     = "Ctrl+Shift+Right"   # next folder
+    "key-viewpoint-roll-anticlock" = "Ctrl+Shift+Left"    # previous folder
+    "key-viewpoint-fov-in"         = "Ctrl+Shift+Up"      # next equalizer preset
+    "key-viewpoint-fov-out"        = "Ctrl+Shift+Down"    # previous equalizer preset
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
@@ -277,6 +289,24 @@ function Invoke-Setup {
     if (-not (Get-VlcSetting $lines "http-password")) {                        # locked with a random password (kept if set)
         Set-VlcOption $lines "lua" "http-password" (New-Password 24)           # (the key lives in vlcrc's [lua] section)
     }
+    # Lua interface: the script goes into VLC's user Lua folder and starts next to the skin and the web interface
+    # (extraintf=http:luaintf; lua-intf only names the script that "luaintf" runs, "http" is not affected).
+    $luaOn = $false
+    $luaSrc = Join-Path $root "lua\intf\titlebar.lua"
+    if (Test-Path $luaSrc) {
+        $other = Get-VlcSetting $lines "lua-intf"
+        if (-not $other -or $other -eq "dummy" -or $other -eq "titlebar") {
+            $luaDir = Join-Path $env:APPDATA "vlc\lua\intf"
+            New-Item -ItemType Directory -Force -Path $luaDir | Out-Null
+            Copy-Item $luaSrc (Join-Path $luaDir "titlebar.lua") -Force
+            Set-VlcModule $lines "core" "extraintf" "luaintf"
+            Set-VlcOption $lines "lua" "lua-intf" "titlebar"                       # (the key lives in vlcrc's [lua] section)
+            foreach ($k in $LuaKeys.Keys) {
+                if (-not (Get-VlcSetting $lines $k)) { Set-VlcOption $lines "core" $k $LuaKeys[$k] }
+            }
+            $luaOn = $true
+        }
+    }
     [IO.File]::WriteAllLines($rc, $lines, (New-Object System.Text.UTF8Encoding $false))  # vlcrc: UTF-8 without BOM
 
     # a helper that is already running read the old settings: stop it (a new one starts below)
@@ -302,6 +332,10 @@ function Invoke-Setup {
     }
     $extra = ""
     if ($smtc) { $extra = "Media controls are on (media keys, the media panel, lock screen).`n`n" }
+    if ($luaOn) {
+        $extra += "Extra keys (while the player has focus): Ctrl+Shift+A = A-B loop, Ctrl+Shift+Left / Right = previous / next folder, " +
+            "Ctrl+Shift+Up / Down = next / previous equalizer preset. The helper's tray menu has them too.`n`n"
+    }
     Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" + $extra +
         "VLC's web interface is on for this computer only (127.0.0.1, port 48080, password in vlcrc); the helper uses it.`n`n" +
         "To undo: restore $rc.before-titlebar (VLC closed) and delete the shortcut in $startup.") | Out-Null
