@@ -496,6 +496,11 @@ def icon(c, name, ox, oy, size, color):
         c.lines(T([(6, 6.8), (6, 10.5)]), color, w)
     elif name == "minimize":
         c.lines(T([(2.5, 9), (9.5, 9)]), color, 1.6 * f)
+    elif name == "maximize":  # one big square
+        c.lines(T([(2, 2), (10, 2), (10, 10), (2, 10), (2, 2)]), color, 1.5 * f)
+    elif name == "unmaximize":  # two overlapping squares: "back to the window size"
+        c.lines(T([(4, 4), (10, 4), (10, 10), (4, 10), (4, 4)]), color, 1.4 * f)
+        c.lines(T([(2, 8), (2, 2), (8, 2)]), color, 1.4 * f)
     elif name == "restore":  # a window outline: "open the video window again"
         c.lines(T([(2, 2.5), (10, 2.5), (10, 9.5), (2, 9.5), (2, 2.5)]), color, 1.4 * f)
         c.lines(T([(2, 4.5), (10, 4.5)]), color, 1.4 * f)
@@ -869,6 +874,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
         make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
         make_button(skin, "b_close", 18, 12, "close", icon_size=8)
+        make_toggle(skin, "vb_max", 26, 18, icon_off="maximize", icon_on="unmaximize", icon_size=11)   # video window: fill the screen, keep the title bar
         make_button(skin, "vb_full", 26, 18, "expand", icon_size=11)      # video window: full screen
         make_button(skin, "vb_min", 26, 18, "minimize", icon_size=11)     # video window: shrink to its title bar
         make_button(skin, "vb_restore", 26, 18, "restore", icon_size=11)  # ... and back
@@ -1171,7 +1177,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
                actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
         rt = dict(lt="righttop", rb="righttop")
-        vlay.button("vb_full", P(VW - 64), P(3), "vlc.fullscreen()", "Full screen", **rt)
+        vlay.checkbox("vb_max", P(VW - 94), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
+                      "Fill the screen (keeps the title bar)", "Back to the window size", **rt)
+        vlay.button("vb_full", P(VW - 64), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
         vlay.button("vb_min", P(VW - 34), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
         vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VH - VT - VB))
         c = Canvas(MW, VT)
