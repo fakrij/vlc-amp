@@ -496,6 +496,9 @@ def icon(c, name, ox, oy, size, color):
         c.lines(T([(6, 6.8), (6, 10.5)]), color, w)
     elif name == "minimize":
         c.lines(T([(2.5, 9), (9.5, 9)]), color, 1.6 * f)
+    elif name == "restore":  # a window outline: "open the video window again"
+        c.lines(T([(2, 2.5), (10, 2.5), (10, 9.5), (2, 9.5), (2, 2.5)]), color, 1.4 * f)
+        c.lines(T([(2, 4.5), (10, 4.5)]), color, 1.4 * f)
     elif name == "close":
         c.lines(T([(2.5, 2.5), (9.5, 9.5)]), color, 1.6 * f)
         c.lines(T([(9.5, 2.5), (2.5, 9.5)]), color, 1.6 * f)
@@ -866,6 +869,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
         make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
         make_button(skin, "b_close", 18, 12, "close", icon_size=8)
+        make_button(skin, "vb_full", 18, 12, "expand", icon_size=8)       # video window: full screen
+        make_button(skin, "vb_min", 18, 12, "minimize", icon_size=8)      # video window: shrink to its title bar
+        make_button(skin, "vb_restore", 18, 12, "restore", icon_size=8)   # ... and back
         make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
         make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
         make_button(skin, "fb_prev", 28, 22, "prev")
@@ -1115,10 +1121,12 @@ def build(skin, W, BH=BAR_DEFAULT):
     # Video window: skins2 draws video only inside a Video control. The window is "shown" all the
     # time, but every control in it needs vlc.hasVout, so with no video it has no pixels and no
     # window shape (invisible, like the flag windows). It grows to the video (autoresize).
-    VB = 6                                                 # frame width (logical px)
-    VW, VH = 480 + 2 * VB, 270 + 2 * VB
+    VB, VT = 6, 18                                         # frame width, title bar height (logical px)
+    VW, VH = 480 + 2 * VB, VT + 270 + VB
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(2 * VB + 160), maxw=P(3840),
-                  minh=P(2 * VB + 90), maxh=P(2160))
+                  minh=P(VT + VB + 90), maxh=P(2160))
+    MW = 120                                               # minimized: the title bar alone
+    mlay = Layout(skin, "video-min", P(MW), P(VT))
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
         apply_theme(ti)
@@ -1150,13 +1158,24 @@ def build(skin, W, BH=BAR_DEFAULT):
         vlay.theme_vis = ("th%d.isVisible" % ti if ti else
                           " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
         vlay.vis = "vlc.hasVout"
+        mlay.theme_vis, mlay.vis = vlay.theme_vis, vlay.vis
         c = Canvas(VW, VH)
         panel_bg(c, 0, 0, VW, VH, 6)
+        grip_dots(c, 4, 4, rows=2)                        # title bar grip, left
         grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
-        nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
+        nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
                actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
-        vlay.video(P(VB), P(VB), P(VW - 2 * VB), P(VH - 2 * VB))
-        vlay.vis, vlay.theme_vis = None, None
+        rt = dict(lt="righttop", rb="righttop")
+        vlay.button("vb_full", P(VW - 42), P(3), "vlc.fullscreen()", "Full screen", **rt)
+        vlay.button("vb_min", P(VW - 22), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
+        vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VH - VT - VB))
+        c = Canvas(MW, VT)
+        panel_bg(c, 0, 0, MW, VT, 6)
+        grip_dots(c, 4, 4, rows=2)
+        skin.add("video_min_bg", c.done(hard_edges=True))
+        mlay.image("video_min_bg", 0, 0, action="move")
+        mlay.button("vb_restore", P(MW - 22), P(3), "video.setLayout(video-l)", "Show the video")
+        vlay.vis, vlay.theme_vis, mlay.vis, mlay.theme_vis = None, None, None, None
     apply_theme(0)
     skin.prefix = ""
 
@@ -1168,7 +1187,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
                           yoffset=0, layouts=[fl], dragdrop=False))
     skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts),
-                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[vlay],
+                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[vlay, mlay],
                          dragdrop=False)] + flags
 
 
