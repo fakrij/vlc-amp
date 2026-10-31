@@ -11,7 +11,7 @@
 param([switch]$Setup, [switch]$Watch, [switch]$NoDock, [switch]$DebugLog)
 
 # ---------------- settings ----------------
-$Skin              = "auto"             # "auto" = pick Titlebar-NNN.vlt from the Windows display scale, or a file name
+$Skin              = "auto"             # "auto" = pick the skin file from the Windows display scale (the taller Titlebar-taskbar-NNN.vlt when docking and it exists), or a file name
 $DockTo            = "start"            # start = left of the Start button | left = left end of taskbar | right = next to the tray icons
 $Gap               = 8                  # pixels between the strip and the Start button / edge
 $OffsetY           = 0                  # nudge the strip up (-) or down (+) inside the taskbar
@@ -32,8 +32,27 @@ function Show-Msg($text, $buttons = "OK") {
     return [System.Windows.Forms.MessageBox]::Show($text, "Titlebar VLC skin", $buttons)
 }
 
-# Skin file for the current display scale (AppliedDPI: 96 = 100 %, 120 = 125 %, 144 = 150 %, 192 = 200 %)
-function Get-SkinPath {
+# Strip height (logical px) of the taller skin build "Titlebar-taskbar-NNN.vlt" (generator --bar-height);
+# "Titlebar-bar<N>-NNN.vlt" carries its own height in the name. Plain "Titlebar-NNN.vlt" is 24.
+$TaskbarBarHeight = 36
+
+# Scale (1.5) and strip height (24, 36, ...) from a skin file name, as @{ Scale = ..; BarHeight = .. }
+function Get-SkinInfo($path) {
+    $info = @{ Scale = 1.0; BarHeight = 24 }
+    if (-not $path) { return $info }
+    $leaf = Split-Path -Leaf $path
+    if ($leaf -match '^Titlebar-(taskbar|bar(\d+))-(\d+)\.vlt$') {
+        $info.Scale = [int]$Matches[3] / 100.0
+        if ($Matches[2]) { $info.BarHeight = [int]$Matches[2] } else { $info.BarHeight = $TaskbarBarHeight }
+    } elseif ($leaf -match '-(\d+)\.vlt$') {
+        $info.Scale = [int]$Matches[1] / 100.0
+    }
+    return $info
+}
+
+# Skin file for the current display scale (AppliedDPI: 96 = 100 %, 120 = 125 %, 144 = 150 %, 192 = 200 %).
+# -Taskbar: the skin is docked in the taskbar, so prefer the taller Titlebar-taskbar-NNN.vlt if it exists.
+function Get-SkinPath([switch]$Taskbar) {
     $name = $Skin
     if ($name -eq "auto") {
         $dpi = 96
@@ -42,6 +61,11 @@ function Get-SkinPath {
         $best = 100
         foreach ($s in 100, 125, 150, 200) { if ([math]::Abs($s - $pct) -lt [math]::Abs($best - $pct)) { $best = $s } }
         $name = "Titlebar-$best.vlt"
+        if ($Taskbar) {
+            foreach ($dir in $root, $here) {
+                if (Test-Path (Join-Path $dir "Titlebar-taskbar-$best.vlt")) { $name = "Titlebar-taskbar-$best.vlt"; break }
+            }
+        }
     }
     foreach ($dir in $root, $here) {
         $p = Join-Path $dir $name
@@ -228,8 +252,7 @@ function Invoke-Setup {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
         exit 1
     }
-    $skinPath = Get-SkinPath
-    if (-not $skinPath) { Show-Msg "Skin file not found next to the taskbar folder." | Out-Null; exit 1 }
+    if (-not (Get-SkinPath)) { Show-Msg "Skin file not found next to the taskbar folder." | Out-Null; exit 1 }
 
     $autostart = (Show-Msg ("Start the helper with Windows? It pins VLC on top each time VLC starts " +
         "(also when you open a file from Explorer).") "YesNo") -eq "Yes"
@@ -238,6 +261,9 @@ function Invoke-Setup {
         $dock = (Show-Msg ("Also dock the player in the taskbar, left of the Start button?`n`n" +
             "No = the player stays where you put it (for example in a window title bar).") "YesNo") -eq "Yes"
     }
+
+    # the strip is taller in the taskbar build (Titlebar-taskbar-NNN.vlt), used when docking if it exists
+    $skinPath = Get-SkinPath -Taskbar:$dock
 
     # Windows media controls (optional; the plugin is downloaded from GitHub)
     $smtc = $false
@@ -309,9 +335,9 @@ function Invoke-Setup {
 
 if ($Setup) { Invoke-Setup; exit 0 }
 
-$skinPath = Get-SkinPath
-$scale = 1.0
-if ($skinPath -and (Split-Path -Leaf $skinPath) -match '-(\d+)\.vlt$') { $scale = [int]$Matches[1] / 100.0 }
+$skinPath = Get-SkinPath -Taskbar:(-not $NoDock)   # same choice as Setup made, so scale and bar height match VLC's skin
+$skinInfo = Get-SkinInfo $skinPath
+$scale = $skinInfo.Scale
 
 # Only one helper at a time
 $mutex = New-Object System.Threading.Mutex($false, "Local\VlcTaskbarDock")
@@ -339,6 +365,7 @@ if (-not ('VlcDock' -as [type])) {
 }
 
 [VlcDock]::Scale       = $scale
+[VlcDock]::BarHeight   = $skinInfo.BarHeight
 [VlcDock]::DockTo      = $DockTo
 [VlcDock]::Gap         = $Gap
 [VlcDock]::OffsetY     = $OffsetY

@@ -25,8 +25,9 @@ usage: vlc-test.sh <command> [args]
                            (VLC then writes skins2-config), wait for exit
   stop                     kill the VLC this script started (config is not saved)
   xvfb-stop                kill the Xvfb this script started
-  build [scale]            build the skin with the test venv to $CACHE/skins;
-                           prints the .vlt path (scale 1 = 100 %, default 1)
+  build [scale] [bar]      build the skin with the test venv to $CACHE/skins;
+                           prints the .vlt path (scale 1 = 100 %, default 1;
+                           bar = strip height, default 24, 36 = taskbar build)
 
 Environment: TITLEBAR_TEST_CACHE (cache dir), TB_DISPLAY_NUM (default 99),
 TB_SCREEN (default 1280x1024x24), TB_KEEP_CONFIG=1 (keep VLC's config on start),
@@ -204,32 +205,46 @@ cmd_geometry() {
     echo "$WX $WY $WW $WH"
 }
 
-# skin_scale: scale in percent of the running skin (from Titlebar-<n>.vlt on
-# VLC's command line), else TB_SCALE, else 100
+# skin_scale: scale in percent of the running skin (from Titlebar-<n>.vlt,
+# Titlebar-taskbar-<n>.vlt or Titlebar-bar<h>-<n>.vlt on VLC's command line),
+# else TB_SCALE, else 100
 skin_scale() {
     local n
-    n="$(tr '\0' '\n' <"/proc/$(vlc_pid)/cmdline" | sed -n 's/.*Titlebar-\([0-9]*\)\.vlt$/\1/p')"
+    n="$(tr '\0' '\n' <"/proc/$(vlc_pid)/cmdline" | sed -n 's/.*Titlebar-\(taskbar-\|bar[0-9]*-\)\{0,1\}\([0-9]*\)\.vlt$/\2/p')"
     echo "${n:-${TB_SCALE:-100}}"
 }
 
+# skin_bar: strip height in logical px of the running skin: 24, 36 for
+# Titlebar-taskbar-<n>.vlt, <h> for Titlebar-bar<h>-<n>.vlt (as in the generator)
+skin_bar() {
+    local f
+    f="$(tr '\0' '\n' <"/proc/$(vlc_pid)/cmdline" | sed -n 's/.*\/\(Titlebar-[^/]*\.vlt\)$/\1/p')"
+    case "$f" in
+        Titlebar-taskbar-*) echo 36 ;;
+        Titlebar-bar[0-9]*-*) f="${f#Titlebar-bar}"; echo "${f%%-*}" ;;
+        *) echo 24 ;;
+    esac
+}
+
 cmd_shape() {
-    "$VENV/bin/python" "$HERE/xshape.py" "$DISPLAY" "$(main_window)" $((24 * $(skin_scale) / 100)) "$@"
+    "$VENV/bin/python" "$HERE/xshape.py" "$DISPLAY" "$(main_window)" $(($(skin_bar) * $(skin_scale) / 100)) "$@"
 }
 
 # quit: VLC only writes skins2-config on a clean exit, so use the skin's own
 # quit button. It is in the full player (top right); expand the strip first.
 # Button positions are the generator's 100 % values times the scale.
 cmd_quit() {
-    local pct bar_at_bottom full pid i
+    local pct bar bar_at_bottom full pid i
     pct="$(skin_scale)"
+    bar="$(skin_bar)"
     pid="$(vlc_pid)"
     p() { echo $(($1 * pct / 100)); }     # scale a 100 % pixel value
     win_origin
     eval "$(cmd_shape --state)"            # sets bar_at_bottom and full
     if [ "$full" = 0 ]; then
         # expand button of the strip
-        if [ "$bar_at_bottom" = 1 ]; then cmd_click "$(p 27)" $((WH - $(p 24) + $(p 12)))
-        else cmd_click "$(p 27)" "$(p 12)"; fi
+        if [ "$bar_at_bottom" = 1 ]; then cmd_click "$(p 27)" $((WH - $(p "$bar") + $(p "$bar") / 2))
+        else cmd_click "$(p 27)" $(($(p "$bar") / 2)); fi
         eval "$(cmd_shape --state)"
         [ "$full" = 1 ] || die "could not expand the strip to the full player"
     fi
@@ -248,10 +263,12 @@ cmd_quit() {
 }
 
 cmd_build() {
-    local scale="${1:-1}" out="$CACHE/skins"
+    local scale="${1:-1}" bar="${2:-24}" out="$CACHE/skins" pct kind=""
     mkdir -p "$out"
-    "$VENV/bin/python" "$HERE/../source/build_skin.py" --scale "$scale" --out "$out" >&2
-    echo "$out/Titlebar-$(awk "BEGIN{printf \"%d\", $scale * 100 + 0.5}").vlt"
+    "$VENV/bin/python" "$HERE/../source/build_skin.py" --scale "$scale" --bar-height "$bar" --out "$out" >&2
+    pct="$(awk "BEGIN{printf \"%d\", $scale * 100 + 0.5}")"
+    if [ "$bar" = 36 ]; then kind=taskbar-; elif [ "$bar" != 24 ]; then kind="bar$bar-"; fi
+    echo "$out/Titlebar-$kind$pct.vlt"
 }
 
 [ $# -ge 1 ] || { usage; exit 1; }

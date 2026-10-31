@@ -57,6 +57,15 @@ click 27 12                            # expand
 park; shot full 0 0 $W 122
 
 $T quit >/dev/null
+
+# the taller strip of the taskbar build (Titlebar-taskbar-NNN.vlt, 36 px at 100 %): title seek at ~60 %
+SKIN=$($T build 1 36 | tail -1)
+$T start "$SKIN" "$MUSIC"/*.wav >/dev/null
+sleep 3
+read -r WX WY WW WH < <($T geometry)
+click 243 18
+park; shot strip-taskbar 0 0 $W 36
+$T quit >/dev/null
 $T xvfb-stop >/dev/null
 
 echo "screenshots in $OUT"

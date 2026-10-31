@@ -53,6 +53,30 @@ to the other end of the window.
 
 Expand / collapse and the flip arrows are `main.setLayout(<id>)` actions.
 
+### Bar height (`--bar-height`)
+
+The window height `HT` (436) does not depend on the strip height: a taller strip
+only changes what is drawn inside it, so all four layouts stay the same size
+(strip-up puts the bar at `HT - bar`). `bar_metrics(bh)` in `build_skin.py`
+derives the strip's parts from `bh` (24 gives the original numbers; the default
+build is identical, member by member, to the one before the option existed):
+button height `bh - 6` (3 px margin), icon size `12 + (bh-24)//4`, PL / EQ label,
+LCD and title window height, the title window's play head, the strip font
+(`lcdbar`, `12 + (bh-24)//6`, only declared when it differs from `lcd12`; used
+for title and time), the volume slider (own bitmap and thumb `thumb_vs`), grip
+rows and the resize grip. Widths do **not** grow, so the right-edge offsets
+(`R(34)` pin, `R(62)` / `R(90)` EQ / PL, `R(160)` volume) and the pin's x stay
+as they were; only the time box widens when the bigger font needs it
+(`tw`, 74 px at 36), which also raises `MIN_W` by the same amount (430).
+
+Build names carry the height: `Titlebar-NNN` (24), `Titlebar-taskbar-NNN` (36,
+`BAR_TASKBAR`), `Titlebar-bar<N>-NNN` (any other); `ThemeInfo` reads
+"Titlebar 150% bar 36". The helper gets the height from the file name
+(`Get-SkinInfo` in `vlc-taskbar.ps1`, `$TaskbarBarHeight` = 36 for `taskbar`),
+and `Setup` / the helper pick the `taskbar` file when docking if it exists
+(`Get-SkinPath -Taskbar`). The test harness reads the same names
+(`skin_bar` in `tools/vlc-test.sh`).
+
 ## State without layouts: flag windows
 
 Opening PL / EQ, the time mode and the theme are not layouts (that would
@@ -210,13 +234,16 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
 - `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
   windows), reads the main window's region (`GetWindowRgn`): if the visible
   box reaches the window bottom, the bar is at the bottom; a pixel test at the
-  strip's rounded corner tells the strip from the full player. Then it moves
+  strip's rounded corner (one bar height from the bar's outer edge) tells the
+  strip from the full player. Then it moves
   the window so the strip sits in the taskbar, re-asserts `HWND_TOPMOST` when
   the taskbar is above it, and steps aside for full-screen apps.
 - Start pinned: VLC never saves "always on top", so the helper posts a click
   (`WM_MOUSEMOVE` / `WM_LBUTTONDOWN` / `UP`) on the skin's own pin button
   1.5 s after VLC's window appears. The positions in `PinOnce` / `ClickPin` must
-  follow the generator's layout.
+  follow the generator's layout. The strip's height is `VlcDock.BarHeight` (set
+  by the script from the skin file name; 24 or 36 / `--bar-height`) in
+  `ReadShape`, `Place` and `ClickPin`; the full player's 122 px stay fixed.
 - Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
   own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`).
 - Media controls (Setup only): the third-party control-interface plugin

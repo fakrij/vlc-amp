@@ -13,6 +13,12 @@ Options
     --width        default width (logical px, before scaling) of the strip, the
                    full player and the panels (all share one width). Can also be
                    resized in VLC by dragging the right edge.
+    --bar-height   height of the strip in logical px (default 24; 32-40 for the Windows 11
+                   taskbar, which is 48 px tall). Buttons, LCDs, strip fonts, the volume slider
+                   and the grips grow with it; widths and right-edge offsets do not. The full
+                   player, EQ and playlist stay as they are. A taller build is named
+                   Titlebar-taskbar-NNN.vlt (36 px) or Titlebar-bar<N>-NNN.vlt, which the
+                   Windows helper reads the bar height from.
     --out          output folder (default: dist)
     --preview      also write a PNG preview of all windows
 
@@ -304,10 +310,10 @@ def lcd(c, x, y, w, h, r=2):
     c.rrect(x + w - 1, y + 1, 1, h - 3, 0, (0, 0, 0, SHADOW2))
 
 
-def grip_dots(c, x, y):
+def grip_dots(c, x, y, rows=3):
     for cx in (x + 2, x + 6):
-        for cy in (y + 3, y + 7, y + 11):
-            c.circle(cx, cy, 1, GRIP)
+        for i in range(rows):
+            c.circle(cx, y + 3 + 4 * i, 1, GRIP)
 
 
 def button_face(c, w, h, state):
@@ -552,7 +558,7 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
 
 
 def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_led=False,
-                on_color=None, icon_size=12):
+                on_color=None, icon_size=12, label_size=8):
     """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true)."""
     for on in (False, True):
         for st in ("up", "over", "down"):
@@ -567,9 +573,9 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             if label:
                 if use_led:
                     led(c, 6, h / 2, on)
-                    c.text(w / 2 + 3, h / 2 + 0.5, label, 8, ICON[st], anchor="mm")
+                    c.text(w / 2 + 3, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
                 else:
-                    c.text(w / 2, h / 2 + 0.5, label, 8, col, anchor="mm")
+                    c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), c.done())
     return base
 
@@ -637,6 +643,25 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
 
 # ---------------------------------------------------------------- windows
 MIN_W = 420   # narrowest strip: EQ band block (400 px) plus a 10 px margin each side; title window 62 px
+BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
+BAR_TASKBAR = 36   # --bar-height of the taskbar build (Titlebar-taskbar-NNN.vlt); the helper assumes the same
+
+
+def bar_metrics(bh):
+    """Sizes of the strip's parts for a bar of bh logical px. At 24 these are the original
+    values (the normal skin must not change). Widths do not grow with the height, except the
+    time box, which has to fit "-1:23:45" in the bigger strip font; MIN_W grows with it."""
+    fs = 12 + (bh - 24) // 6                       # strip font (title, time), px
+    tw = max(64, math.ceil(8 * 0.602 * fs) + 6)    # time box width; DejaVu Sans Mono advance = 0.602 em
+    return dict(bh=bh, btn=bh - 6, icon=12 + (bh - 24) // 4, label=8 + (bh - 24) // 12, font=fs, tw=tw,
+                min_w=MIN_W + tw - 64, grip_rows=3 + (bh - 24) // 8, grip_h=10 + (bh - 24) // 2,
+                vol_track=4 + (bh - 24) // 6, thumb_w=7 + (bh - 24) // 6, thumb_h=13 + (bh - 24) // 2)
+
+
+def skin_name(bh, pct):
+    """File stem of a build: Titlebar-150, Titlebar-taskbar-150 (36 px bar), Titlebar-bar40-150."""
+    kind = "" if bh == BAR_DEFAULT else "taskbar-" if bh == BAR_TASKBAR else "bar%d-" % bh
+    return "Titlebar-%s%d" % (kind, pct)
 FILL_FRAMES = 51   # frames of the seek / title progress fills (2 % steps); each frame costs memory in every theme
 
 # State that must survive layout switches and restarts lives in tiny invisible "flag"
@@ -650,31 +675,39 @@ def select_theme(i):
     return ";".join(["th%d.show()" % i] + ["th%d.hide()" % j for j in range(len(THEMES)) if j != i])
 
 
-def build(skin, W):
+def build(skin, W, BH=BAR_DEFAULT):
     """One main window, four layouts: strip / full x panels below ("dn") / above ("up").
     All four have the same size, so VLC carries a dragged width from one to the other
     (it only does that between layouts of identical original size). Areas without
     pixels are cut out of the window, so the unused space is invisible and click-through.
     EQ and playlist are shown / hidden inside the layout, not separate layouts."""
-    BH, FH, EH, LH = 24, 122, 116, 198
-    HT = FH + EH + LH                 # window height: full player + EQ + playlist
-    TW = 64                           # strip time box: fits "-1:23:45" (hours) in lcd12
+    FH, EH, LH = 122, 116, 198
+    HT = FH + EH + LH                 # window height: full player + EQ + playlist (the same for every bar height)
+    M = bar_metrics(BH)
+    TW = M["tw"]                      # strip time box: fits "-1:23:45" (hours) in the strip font
+    BT = M["btn"]                     # strip button height (3 px margin above and below)
+    skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
+    vthumb = "thumb_v" if BH == BAR_DEFAULT else "thumb_vs"   # volume thumb of the strip
+    vh = 4 + M["vol_track"]           # strip volume slider bitmap height: track + 2 px above and below
     PW = P(W)
     tr = dict(lt="righttop", rb="righttop")
     sw = W - 16                       # seek bar width
 
     def make_bitmaps():
         """All bitmaps of the current theme (skin.prefix namespaces them)."""
-        make_button(skin, "b_expand", 22, 18, "expand")
-        make_button(skin, "b_prev", 22, 18, "prev")
-        make_toggle(skin, "t_play", 26, 18, icon_off="play", icon_on="pause", on_color=CYAN)
-        make_button(skin, "b_next", 22, 18, "next")
-        make_toggle(skin, "t_pl", 26, 18, label="PL", use_led=True)
-        make_toggle(skin, "t_eq", 26, 18, label="EQ", use_led=True)
-        make_toggle(skin, "t_top", 22, 18, icon_off="pin", icon_on="pin", on_color=AMBER)
+        isz, lsz = M["icon"], M["label"]
+        make_button(skin, "b_expand", 22, BT, "expand", icon_size=isz)
+        make_button(skin, "b_prev", 22, BT, "prev", icon_size=isz)
+        make_toggle(skin, "t_play", 26, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
+        make_button(skin, "b_next", 22, BT, "next", icon_size=isz)
+        make_toggle(skin, "t_pl", 26, BT, label="PL", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_eq", 26, BT, label="EQ", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_top", 22, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
         make_thumb(skin, "thumb_v", 7, 13)
+        if BH != BAR_DEFAULT:
+            make_thumb(skin, "thumb_vs", M["thumb_w"], M["thumb_h"])
         for st, col in (("up", CYAN), ("over", HEAD_OVER)):   # play head in the title window
-            skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(16)), H(col)))
+            skin.add("thumb_title_" + st, Image.new("RGBA", (max(2, P(2)), P(BT - 2)), H(col)))
         make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
         make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
         make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
@@ -696,15 +729,15 @@ def build(skin, W):
         make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
         make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
         make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
-        make_fill_frames(skin, "vol64", 64, 8, 2, 4, P(64))
+        make_fill_frames(skin, "vol64", 64, vh, 2, M["vol_track"], P(64))
         make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
         make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
         c = Canvas(12, 12)
         icon(c, "speaker", 0, 0, 12, LABEL)
         skin.add("ic_speaker", c.done())
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
-        c = Canvas(TW, 18)
-        lcd(c, 0, 0, TW, 18)
+        c = Canvas(TW, BT)
+        lcd(c, 0, 0, TW, BT)
         plain_toggle(skin, "c_time_s", c.done())
         c = Canvas(126, 44)
         c.rrect(0, 0, 126, 44, 0, LCD_BG)
@@ -738,34 +771,36 @@ def build(skin, W):
     def add_strip(lay, d):
         c = Canvas(W, BH)
         panel_bg(c, 0, 0, W, BH, 4)
-        grip_dots(c, 4, 5)
+        rows = M["grip_rows"]
+        grip_dots(c, 4, BH / 2 - 3 - 2 * (rows - 1), rows)
         for gx in (W - 7, W - 5):  # resize grip
-            c.rrect(gx, 7, 1, 10, 0, GRIP)
+            c.rrect(gx, (BH - M["grip_h"]) // 2, 1, M["grip_h"], 0, GRIP)
         hslice(skin, lay, "strip_bg", c.done(hard_edges=True), 0, 0, 14, 10, right_action="resizeE")
         lay.button("b_expand", P(16), P(3), "main.setLayout(full-%s)" % d, "Expand to full player")
         lay.button("b_prev", P(44), P(3), "playlist.previous()", "Previous")
         lay.checkbox("t_play", P(68), P(3), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("b_next", P(96), P(3), "playlist.next()", "Next")
         dx, dw = 124, W - (TW + 170) - 124   # slower / faster live in the full player only
-        c = Canvas(dw, 18)
-        lcd(c, 0, 0, dw, 18)
+        c = Canvas(dw, BT)
+        lcd(c, 0, 0, dw, BT)
         hslice(skin, lay, "strip_lcd", c.done(), P(dx), P(3), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
-        fw, fh = dw - 2, 16
+        fw, fh = dw - 2, BT - 2
         make_progress_frames(skin, "title_fill", fw, fh, FILL_FRAMES, TITLE_FILL)
         lay.slider("s_title_" + lay.id, P(dx + 1), P(4), "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2),
                    "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=FILL_FRAMES,
                    rb="righttop")
-        lay.text(P(dx + 5), P(5), P(dw - 10), "lcd12", "$N", CYAN_TXT, rb="righttop", focus=False,
+        ty = round(BH / 2 - 0.582 * M["font"])   # text top: the line (1.164 em) is centred in the bar
+        lay.text(P(dx + 5), P(ty), P(dw - 10), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         R = lambda v: PW - P(v)
         tx = R(TW + 166)
         time_toggle(lay, "c_time_s", tx, P(3), **tr)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(3), P(5), P(TW - 6), "lcd12", text, CYAN_TXT, lt="righttop", rb="righttop",
+            lay.text(tx + P(3), P(ty), P(TW - 6), skin.strip_font[0], text, CYAN_TXT, lt="righttop", rb="righttop",
                      align="right", scrolling="none", sample=sample, focus=False).vis = vis_and(lay.theme_vis, vis)
-        lay.slider("s_vol_" + lay.id, R(160), P(8), "(0,%d),(%d,%d)" % (P(4), P(64) - 1, P(4)), "thumb_v",
+        lay.slider("s_vol_" + lay.id, R(160), P((BH - vh) // 2), "(0,%d),(%d,%d)" % (P(vh) // 2, P(64) - 1, P(vh) // 2), vthumb,
                    "volume", "Volume $V%", bg="vol64", nbvert=P(64), **tr)
         panel_toggles(lay, "t_pl", "t_eq", R(90), R(62), P(3))
         lay.checkbox("t_top", R(34), P(3), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
@@ -914,7 +949,7 @@ def build(skin, W):
     # so it is placed twice with complementary visibility.
     # Every theme adds its own copy of all controls, visible only while its flag window
     # (th0, th1, ...) is shown; the layouts themselves are shared, so the width stays shared.
-    layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(MIN_W), maxw=P(4000))
+    layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(M["min_w"]), maxw=P(4000))
                for mode in ("full", "strip") for d in ("up", "dn")]   # last = default: strip-dn
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
@@ -1070,7 +1105,10 @@ def theme_xml(skin, label, atlases, singles):
          '<!DOCTYPE Theme PUBLIC "-//VideoLAN//DTD VLC Skins V2.0//EN" "skin.dtd">',
          '<Theme version="2.0" magnet="0" alpha="255" movealpha="255">',
          '  <ThemeInfo name=%s author="Jiri" webpage=""/>' % q("Titlebar " + label)]
-    for fid, size in (("lcd10", 10), ("lcd11", 11), ("lcd12", 12), ("lcd14", 14), ("lcd26", 26)):
+    fonts = [("lcd10", 10), ("lcd11", 11), ("lcd12", 12), ("lcd14", 14), ("lcd26", 26)]
+    if skin.strip_font[0] == "lcdbar":      # taller strip: its own, bigger font for title and time
+        fonts.append(skin.strip_font)
+    for fid, size in fonts:
         L.append('  <Font id=%s file="fonts/DejaVuSansMono.ttf" size=%s/>' % (q(fid), q(P(size))))
     for aid, atlas, places in atlases:
         L.append('  <Bitmap id=%s file=%s alphacolor="#FF00FF">' % (q(aid), q("img/%s.png" % aid)))
@@ -1108,7 +1146,8 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
         on = set(flags) | {"th%d" % theme}
         return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in on), e))
     out = Image.new("RGBA", (AW, AH), (0, 0, 0, 0))
-    font_px = {"lcd10": P(10), "lcd11": P(11), "lcd12": P(12), "lcd14": P(14), "lcd26": P(26)}
+    font_px = {"lcd10": P(10), "lcd11": P(11), "lcd12": P(12), "lcd14": P(14), "lcd26": P(26),
+               skin.strip_font[0]: P(skin.strip_font[1])}
 
     def pos(n, bw, bh, aw, ah, w, h):
         lt, rb = getattr(n, "lt", "lefttop"), getattr(n, "rb", "lefttop")
@@ -1237,6 +1276,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scale", type=float, default=1.0)
     ap.add_argument("--width", type=int, default=556)
+    ap.add_argument("--bar-height", type=int, default=BAR_DEFAULT,
+                    help="strip height in logical px (default %%(default)s; %d for the Windows 11 taskbar, "
+                    "sensible 32-40): a taller strip is written as Titlebar-taskbar-NNN.vlt" % BAR_TASKBAR)
     ap.add_argument("--out", default=os.path.join(HERE, "dist"))
     ap.add_argument("--preview", action="store_true")
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
@@ -1256,13 +1298,17 @@ def main():
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", a.custom):
         ap.error("--custom must look like #b48cff")
     S = a.scale
-    if a.width < MIN_W:
-        ap.error("--width must be at least %d" % MIN_W)
+    if not BAR_DEFAULT <= a.bar_height <= 60:
+        ap.error("--bar-height must be between %d and 60" % BAR_DEFAULT)
+    min_w = bar_metrics(a.bar_height)["min_w"]
+    if a.width < min_w:
+        ap.error("--width must be at least %d (with --bar-height %d)" % (min_w, a.bar_height))
 
-    label = "%d%%" % round(S * 100)
-    name = label.rstrip("%")
+    pct = round(S * 100)
+    label = "%d%%" % pct + ("" if a.bar_height == BAR_DEFAULT else " bar %d" % a.bar_height)
+    name = skin_name(a.bar_height, pct)[len("Titlebar-"):]    # "150", "taskbar-150", "bar40-150"
     skin = Skin()
-    build(skin, a.width)
+    build(skin, a.width, a.bar_height)
     # VLC unpacks the .vlt to disk: on Windows (case-insensitive) b_x.png and B_x.png would collide
     lower = {}
     for bid in skin.bitmaps:

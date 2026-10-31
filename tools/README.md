@@ -16,8 +16,9 @@ tools/vlc-test.sh quit                        # clean exit, VLC saves its state
 tools/vlc-test.sh xvfb-stop
 ```
 
-`tools/vlc-test.sh build [scale]` does the build step for you into
-`~/.cache/titlebar-test/skins` (`scale` 1, 1.25, 1.5, 2) and prints the path.
+`tools/vlc-test.sh build [scale] [bar-height]` does the build step for you into
+`~/.cache/titlebar-test/skins` (`scale` 1, 1.25, 1.5, 2; bar height 24, or 36 for
+the taller taskbar strip) and prints the path.
 
 ## Commands
 
@@ -33,11 +34,14 @@ tools/vlc-test.sh xvfb-stop
 | `quit` | Expands the strip if needed and clicks the full player's quit button, so VLC writes `skins2-config` into its `vlcrc`. Prints that line. |
 | `stop` | Kills only the VLC PID this script saved. VLC does not save its state this way. |
 | `xvfb-stop` | Kills only the Xvfb PID this script saved. |
-| `build [scale]` | Builds a skin with the venv Python (see above). |
+| `build [scale] [bar-height]` | Builds a skin with the venv Python (see above); `build 1.5 36` makes `Titlebar-taskbar-150.vlt`. |
 
 `quit` finds the buttons from the generator's 100 % positions times the scale,
 which it reads from `Titlebar-<n>.vlt` on VLC's command line (else `TB_SCALE`,
-default 100). If the layout of the strip or full player changes, update the
+default 100). `shape` and `quit` also read the strip height from the file name
+(`Titlebar-taskbar-<n>.vlt` = 36, `Titlebar-bar<h>-<n>.vlt` = h, else 24; `skin_bar`).
+With a taller strip, the strip's buttons are centred at `bar / 2` (bar at the top)
+or `window height - bar / 2` (panels above); x positions do not change. If the layout of the strip or full player changes, update the
 numbers in `cmd_quit`.
 
 ## Environment variables

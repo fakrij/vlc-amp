@@ -7,7 +7,8 @@ the shape's bounding box is the visible part. The last line applies the same
 rule as VlcDock.ReadShape in taskbar/VlcDock.cs: the bar is at the bottom when
 the box reaches the window's bottom edge, and the full player is showing when
 a point one bar height from the bar's outer edge is inside the shape.
-bar_height is the bar's pixel height (24 at 100 %, 36 at 150 %).
+bar_height is the bar's pixel height (24 at 100 %, 36 at 150 %; 36 at 100 % for
+the taskbar build, vlc-test.sh passes the right one).
 With --state it prints only "bar_at_bottom=0|1 full=0|1" (for shell scripts).
 """
 import sys
