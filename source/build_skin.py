@@ -37,6 +37,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT_MONO = os.path.join(HERE, "fonts", "DejaVuSansMono.ttf")
+FONT_FILE = ["fonts/DejaVuSansMono.ttf"]   # path of the LCD font inside the .vlt (--font changes it)
 FONT_BOLD = os.path.join(HERE, "fonts", "DejaVuSans-Bold.ttf")
 SS = 4          # supersampling factor for shapes
 S = 1.0         # global scale, set in main()
@@ -161,6 +162,19 @@ def set_themes(names=None):
     seeds = [t for t in THEME_SEEDS if names is None or t[1].lower() in names]
     THEMES[:] = [(mode, name, _theme(mode, hue, sat, acc, led)) for mode, name, hue, sat, acc, led in seeds]
     CUSTOM = next((i for i, t in enumerate(THEMES) if t[1] == "Custom"), None)
+
+
+def set_single_theme(mode, accent, led=None):
+    """One theme from seeds. The base tint takes the accent's hue (Midnight's saturation, none for
+    a grey accent); the LED defaults to a lightened accent, like the Custom theme."""
+    global CUSTOM
+    import colorsys
+    r, g, b = (v / 255 for v in _rgb(accent))
+    h, _, sat = colorsys.rgb_to_hls(r, g, b)
+    hue = h * 360
+    THEMES[:] = [(mode, "Theme", _theme(mode, round(hue), 0.12 if sat > 0.05 else 0.0, accent.lower(),
+                                        led.lower() if led else None))]
+    CUSTOM = None
 
 
 set_themes(DEFAULT_THEMES)
@@ -1167,7 +1181,7 @@ def theme_xml(skin, label, atlases, singles):
     if skin.strip_font[0] == "lcdbar":      # taller strip: its own, bigger font for title and time
         fonts.append(skin.strip_font)
     for fid, size in fonts:
-        L.append('  <Font id=%s file="fonts/DejaVuSansMono.ttf" size=%s/>' % (q(fid), q(P(size))))
+        L.append('  <Font id=%s file=%s size=%s/>' % (q(fid), q(FONT_FILE[0]), q(P(size))))
     for aid, atlas, places in atlases:
         L.append('  <Bitmap id=%s file=%s alphacolor="#FF00FF">' % (q(aid), q("img/%s.png" % aid)))
         for bid, x, y in sorted(places):
@@ -1341,13 +1355,26 @@ def main():
     ap.add_argument("--preview", action="store_true")
     ap.add_argument("--classic", action="store_true", help="old bevelled / gradient style instead of the flat one")
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
+    ap.add_argument("--mode", choices=["dark", "light"],
+                    help="build ONE single theme from --mode / --accent / --led / --font instead of the named themes")
+    ap.add_argument("--accent", help="single theme: primary colour #RRGGBB (LCD text, progress, active buttons)")
+    ap.add_argument("--led", help="single theme: secondary colour #RRGGBB (indicator LEDs); default: from the accent")
+    ap.add_argument("--font", help="TTF / OTF used for every LCD text (shipped in the .vlt); default: DejaVu Sans Mono")
     ap.add_argument("--themes", default=",".join(DEFAULT_THEMES),
                     help="comma-separated theme names to build, or 'all' (default: %(default)s): " +
                     ", ".join(t[1] for t in THEME_SEEDS))
     a = ap.parse_args()
     global FLAT
     FLAT = not a.classic
-    if a.themes.lower() == "all":
+    single = a.mode or a.accent or a.led
+    for opt in ("accent", "led"):
+        if getattr(a, opt) and not re.fullmatch(r"#[0-9A-Fa-f]{6}", getattr(a, opt)):
+            ap.error("--%s must look like #ff8800" % opt)
+    if a.font and not os.path.isfile(a.font):
+        ap.error("--font: no such file: " + a.font)
+    if single:
+        set_single_theme(a.mode or "dark", a.accent or "#5fd3e8", a.led)
+    elif a.themes.lower() == "all":
         set_themes()
     else:
         names = [n.strip().lower() for n in a.themes.split(",")]
@@ -1359,6 +1386,12 @@ def main():
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", a.custom):
         ap.error("--custom must look like #b48cff")
     S = a.scale
+    global FONT_MONO
+    font_file = "DejaVuSansMono.ttf"
+    if a.font:
+        FONT_MONO = a.font
+        font_file = "lcd" + os.path.splitext(a.font)[1].lower()
+        FONT_FILE[0] = "fonts/" + font_file
     if not BAR_DEFAULT <= a.bar_height <= 60:
         ap.error("--bar-height must be between %d and 60" % BAR_DEFAULT)
     min_w = bar_metrics(a.bar_height)["min_w"]
@@ -1398,9 +1431,9 @@ def main():
             im.save(os.path.join(stage, "custom-ref", "img", fid + ".png"), optimize=True)
             im = recolour(im, a.custom)
         im.save(os.path.join(stage, "img", fid + ".png"), optimize=True)
-    shutil.copy(FONT_MONO, os.path.join(stage, "fonts"))
+    shutil.copy(FONT_MONO, os.path.join(stage, "fonts", font_file))
     lic = os.path.join(HERE, "fonts", "LICENSE-DejaVu.txt")
-    if os.path.exists(lic):
+    if os.path.exists(lic) and not a.font:
         shutil.copy(lic, os.path.join(stage, "fonts"))
     xml = theme_xml(skin, label, atlases, singles)
     # every element needs its own id: VLC's generated ids repeat after 999 (see next_id)
