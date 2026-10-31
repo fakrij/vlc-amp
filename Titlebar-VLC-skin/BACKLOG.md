@@ -190,11 +190,11 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T14 | Linux setup script (22a) | **DONE** (merged; Flatpak / Snap paths unverified) | T1 | M |
 | T15 | Linux docs: MPRIS, setup, limits (22b) | **DONE** | T14 | XS |
 | T16 | Linux pin on start + Wayland check (22c, 22d; docking postponed) | **DONE** (Xvfb-tested; Wayland / real WMs need the 22d checklist) | T14 | M |
-| T17 | Online configurator (24), **phase 2**; **step 1 DONE** (generator options, branch `worktree-agent-aac67cb843e6e2de1`; steps 2-4 open) | Opus (design), Sonnet (build) | - | M |
+| T17 | Online configurator (24), **phase 2**; **step 1 DONE** (generator options, branch `worktree-agent-aac67cb843e6e2de1`; step 4 DONE in T24: `--pair`; steps 2-3 open) | Opus (design), Sonnet (build) | - | M |
 | T18 | Follow system light / dark (25), **phase 2** | Sonnet | T17 step 4, T14 (Linux launcher) | M |
 | T19 | Font check for the configurator: which OFL fonts skins2 renders, tabular digits (report only) | Sonnet | - | S |
 | T20 | Flatpak / Snap VLC paths and options, from docs and sources (report only, for 22a) | **DONE (report; mostly unverified, see brief)** | - | S |
-| T24 | Generator reproducibility for Pyodide (BASIC text layout, tar / gzip metadata zeroed, sorted member order) + T17 step 4 (light + dark pair) | Sonnet | T17 step 1 | M |
+| T24 | **DONE** (branch `worktree-agent-a8554c6a9e035c677`, not merged): generator reproducibility (`_truetype` forces `Layout.BASIC`; tar `filter=` + `GzipFile(mtime=0)`; sorted dirs / files) and T17 step 4 (`--pair`). Verified: two native builds byte-identical; Pyodide 314.0.7 + Pillow 12.2.0 via `tools/pyodide-spike/run.mjs ... 1 0` (no normalising wrapper) byte-identical to a native Pillow 12.2.0 build (a native Pillow 13.0 build differs in PNG bytes only). Release staged PNGs vs before: only `atlas_t0` and `t0_eq_bands` differ (glyph pixels, 0.8 % / 1.9 % of those images at 100 %, max channel delta ~200); looked right in VLC 3.0.20. Release `.vlt` files NOT rebuilt | Sonnet | T17 step 1 | M |
 | T21 | Helper docking fixes: flashing, unpin, resize while docked, collapse with panels, item 15 (26, 27, 28, 31, T9) | **DONE** (untested on Windows; README "second Windows test" checklist) | - | M |
 | T22 | Media Library off on Windows: file association overrides (30) | **DONE** (untested on Windows) | - | M |
 | T23 | Skin: Windows bitmap rendering check + wider resize grip (29, 27) | **DONE** (Windows unverified) | - | S-M |

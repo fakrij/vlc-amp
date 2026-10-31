@@ -30,6 +30,7 @@ from collections import Counter
 import re
 import os
 import shutil
+import gzip
 import tarfile
 from xml.sax.saxutils import quoteattr
 
@@ -37,6 +38,14 @@ from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT_MONO = os.path.join(HERE, "fonts", "DejaVuSansMono.ttf")
+
+
+def _truetype(path, size):
+    """BASIC layout on every platform: native Pillow wheels ship libraqm, Pyodide's does not, and
+    the two lay glyphs out differently; BASIC makes all environments render identically."""
+    return ImageFont.truetype(path, size, layout_engine=ImageFont.Layout.BASIC)
+
+
 FONT_FILE = ["fonts/DejaVuSansMono.ttf"]   # path of the LCD font inside the .vlt (--font changes it)
 FONT_BOLD = os.path.join(HERE, "fonts", "DejaVuSans-Bold.ttf")
 SS = 4          # supersampling factor for shapes
@@ -164,16 +173,71 @@ def set_themes(names=None):
     CUSTOM = next((i for i, t in enumerate(THEMES) if t[1] == "Custom"), None)
 
 
+def _seed_hue_sat(accent):
+    """Base tint of a single / pair theme: the accent's hue at Midnight's saturation (none for a grey accent)."""
+    import colorsys
+    r, g, b = (v / 255 for v in _rgb(accent))
+    h, _, sat = colorsys.rgb_to_hls(r, g, b)
+    return round(h * 360), (0.12 if sat > 0.05 else 0.0)
+
+
 def set_single_theme(mode, accent, led=None):
     """One theme from seeds. The base tint takes the accent's hue (Midnight's saturation, none for
     a grey accent); the LED defaults to a lightened accent, like the Custom theme."""
     global CUSTOM
-    import colorsys
-    r, g, b = (v / 255 for v in _rgb(accent))
-    h, _, sat = colorsys.rgb_to_hls(r, g, b)
-    hue = h * 360
-    THEMES[:] = [(mode, "Theme", _theme(mode, round(hue), 0.12 if sat > 0.05 else 0.0, accent.lower(),
-                                        led.lower() if led else None))]
+    hue, sat = _seed_hue_sat(accent)
+    THEMES[:] = [(mode, "Theme", _theme(mode, hue, sat, accent.lower(), led.lower() if led else None))]
+    CUSTOM = None
+
+
+def _luminance(c):
+    def lin(v):
+        v /= 255
+        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b = (lin(v) for v in _rgb(c))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(a, b):
+    """WCAG contrast ratio of two colours (1 .. 21)."""
+    la, lb = sorted((_luminance(a), _luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def _fit_colour(c, towards, ok):
+    """c, mixed step by step with `towards` (black or white) until ok(colour) holds."""
+    for i in range(34):
+        m = mix(c, towards, i * 0.03)
+        if ok(m):
+            return m
+    return mix(c, towards, 1.0)
+
+
+def fit_for_mode(mode, accent, led, hue, sat):
+    """The same accent / LED seeds, moved in lightness (hue kept) until they read on this mode's
+    surfaces: LCD text 4.5:1 on the LCD, accent and LED 3:1 on the button face. A seed that already
+    reads is unchanged, so a dark pair half equals the single dark theme."""
+    base = base_palette(mode, hue, sat)
+    face = base["BTN"]["up"][0]
+    towards = "#ffffff" if mode == "dark" else "#000000"
+    if led is None:
+        led = mix(accent, "#ffffff", 0.25)
+    accent = _fit_colour(accent, towards, lambda c: contrast(c, face) >= 3 and contrast(
+        accent_palette(mode, c, led)["CYAN_TXT"], accent_palette(mode, c, led)["LCD_BG"]) >= 4.5)
+    led = _fit_colour(led, towards, lambda c: contrast(c, face) >= 3)
+    return accent, led
+
+
+def set_pair(first_mode, accent, led=None):
+    """The same design twice: first_mode (shown at start) and the other base, same hue, accent and LED
+    seeds fitted for contrast on each base; the theme button toggles them."""
+    global CUSTOM
+    hue, sat = _seed_hue_sat(accent)
+    modes = [first_mode, "light" if first_mode == "dark" else "dark"]
+    THEMES[:] = []
+    for mode in modes:
+        acc, lc = fit_for_mode(mode, accent.lower(), led.lower() if led else None, hue, sat)
+        THEMES.append((mode, mode.capitalize(), _theme(mode, hue, sat, acc, lc)))
     CUSTOM = None
 
 
@@ -322,7 +386,7 @@ class Canvas:
             out.putalpha(a)
         d = ImageDraw.Draw(out)
         for x, y, s, size, color, font, anchor in self.texts:
-            f = ImageFont.truetype(FONT_MONO if font == "mono" else FONT_BOLD, max(6, P(size)))
+            f = _truetype(FONT_MONO if font == "mono" else FONT_BOLD, max(6, P(size)))
             d.text((x * self.pw / self.w, y * self.ph / self.h), s, font=f, fill=H(color), anchor=anchor)
         return out
 
@@ -566,7 +630,7 @@ def label_on(skin, bid, bg, x, y, w, h, text):
     """Label baked onto a crop of the window background so it is fully opaque."""
     im = bg.crop((P(x), P(y), P(x) + P(w), P(y) + P(h))).copy()
     d = ImageDraw.Draw(im)
-    d.text((0, im.height / 2), text, font=ImageFont.truetype(FONT_BOLD, P(8)), fill=H(LABEL), anchor="lm")
+    d.text((0, im.height / 2), text, font=_truetype(FONT_BOLD, P(8)), fill=H(LABEL), anchor="lm")
     skin.add(bid, im)
     return bid
 
@@ -1294,7 +1358,7 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 out.alpha_composite(th, (int(ox + l + x * fx - th.width / 2), int(oy + t + y - th.height / 2)))
             elif n.kind == "Text":
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, 0)
-                f = ImageFont.truetype(FONT_MONO, font_px[n.font])
+                f = _truetype(FONT_MONO, font_px[n.font])
                 txt = Image.new("RGBA", (max(1, r - l), font_px[n.font] * 2), (0, 0, 0, 0))
                 dd = ImageDraw.Draw(txt)
                 tw = dd.textlength(n.sample, font=f)
@@ -1303,7 +1367,7 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 out.alpha_composite(txt, (ox + l, oy + t))
             elif n.kind == "Playtree":
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
-                f = ImageFont.truetype(FONT_MONO, font_px[n.font])
+                f = _truetype(FONT_MONO, font_px[n.font])
                 dd = ImageDraw.Draw(out)
                 lh = int(font_px[n.font] * 1.35)
                 songs = ["Harbour Lights", "Paper Satellites", "Slow Burn Across the River (Extended Mix)",
@@ -1349,7 +1413,7 @@ def preview(skin, path):
     ] + [("theme %d: %s" % (i, n), preview_layout(skin, fd, theme=i)) for i, (m, n, _) in enumerate(THEMES)
          if i]
     pad = P(24)
-    lab = ImageFont.truetype(FONT_BOLD, P(12))
+    lab = _truetype(FONT_BOLD, P(12))
     Wc = max(im.width for _, im in shots) + 2 * pad
     Hc = sum(im.height + P(26) for _, im in shots) + pad * (len(shots) + 1)
     canvas = Image.new("RGBA", (Wc, Hc), H("#e6e8eb"))
@@ -1378,6 +1442,10 @@ def main():
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
     ap.add_argument("--mode", choices=["dark", "light"],
                     help="build ONE single theme from --mode / --accent / --led / --font instead of the named themes")
+    ap.add_argument("--pair", action="store_true",
+                    help="with --mode / --accent / --led: build the design twice, --mode base first and the other base "
+                    "second, accent / LED adjusted for contrast; the theme button in the full player toggles them "
+                    "(about twice the VLC memory of one theme)")
     ap.add_argument("--accent", help="single theme: primary colour #RRGGBB (LCD text, progress, active buttons)")
     ap.add_argument("--led", help="single theme: secondary colour #RRGGBB (indicator LEDs); default: from the accent")
     ap.add_argument("--font", help="TTF / OTF used for every LCD text (shipped in the .vlt); default: DejaVu Sans Mono")
@@ -1387,14 +1455,14 @@ def main():
     a = ap.parse_args()
     global FLAT
     FLAT = not a.classic
-    single = a.mode or a.accent or a.led
+    single = a.mode or a.accent or a.led or a.pair
     for opt in ("accent", "led"):
         if getattr(a, opt) and not re.fullmatch(r"#[0-9A-Fa-f]{6}", getattr(a, opt)):
             ap.error("--%s must look like #ff8800" % opt)
     if a.font and not os.path.isfile(a.font):
         ap.error("--font: no such file: " + a.font)
     if single:
-        set_single_theme(a.mode or "dark", a.accent or "#5fd3e8", a.led)
+        (set_pair if a.pair else set_single_theme)(a.mode or "dark", a.accent or "#5fd3e8", a.led)
     elif a.themes.lower() == "all":
         set_themes()
     else:
@@ -1474,11 +1542,19 @@ def main():
         fh.write(xml)
 
     vlt = os.path.join(a.out, "Titlebar-%s.vlt" % name)
-    with tarfile.open(vlt, "w:gz") as tar:
-        for root, _, files in os.walk(stage):
+    def clean(ti):      # reproducible .vlt: no mtime / owner / platform-dependent mode in the tar
+        ti.mtime = 0
+        ti.uid = ti.gid = 0
+        ti.uname = ti.gname = ""
+        ti.mode = 0o644
+        return ti
+    with open(vlt, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz, \
+            tarfile.open(fileobj=gz, mode="w") as tar:
+        for root, dirs, files in os.walk(stage):
+            dirs.sort()
             for fn in sorted(files):
                 full_path = os.path.join(root, fn)
-                tar.add(full_path, arcname=os.path.relpath(full_path, stage))
+                tar.add(full_path, arcname=os.path.relpath(full_path, stage), filter=clean)
     print("wrote", vlt, "(%d bitmaps: %d in %d atlases, %d separate)" % (
         len(skin.bitmaps), len(skin.bitmaps) - len(singles), len(atlases), len(singles)))
     if a.preview:

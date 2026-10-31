@@ -56,3 +56,8 @@ So wasm is about as fast as native here (this build is dominated by pure-Python 
    `pyodide.loadPackage("pillow")` instead.
 6. Pyodide's CDN has Pillow only for its own Python ABI; pin the Pyodide version (wheel and runtime must match).
 7. Not tested: browsers, `--font/--mode/--accent/--led` (do not exist yet), memory use.
+
+## Update (T24): generator patched
+`source/build_skin.py` now forces `Layout.BASIC`, zeroes tar / gzip metadata and sorts members itself.
+`node run.mjs ... <scale> 0` (no wrapper) gives a `.vlt` byte-identical to a native build with the same
+Pillow version (checked at scale 1, Pillow 12.2.0: sha256 equal). `harness.py` is no longer needed for that.
