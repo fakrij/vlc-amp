@@ -240,14 +240,16 @@ when no line exists. Colon lists are merged, never replaced.
 | `playlist-enqueue` | core | `0` | yes | yes | ...and the file starts playing |
 | `media-library` | core | `0` | yes | yes | No "Media Library" node in the playlist. **On Linux the `vlc` program overrides it**, so the Linux setup also writes a launcher with `--no-media-library` |
 | `skins2-taskbar` | skins2 | `1`, or `0` when docked | yes | no | Windows-only option (it does not exist in VLC's Linux build) |
-| `extraintf` | core | colon list: `http`, plus `win10smtc` (Windows, media controls) or `luaintf` (Linux, when `lua/intf/titlebar.lua` exists) | yes | yes | Control interfaces started next to skins2 |
+| `extraintf` | core | colon list: `http`, `luaintf` (when `lua/intf/titlebar.lua` exists), plus `win10smtc` (Windows, media controls) | yes | yes | Control interfaces started next to skins2 |
 | `http-host` | core | `127.0.0.1` | yes | yes | Web interface for this computer only |
 | `http-port` | core | `48080` | yes | yes | An unusual port |
 | `http-password` | lua | random, 24 letters and digits; kept if already set | yes | yes | Locks the web interface. Windows: the helper's control channel uses it. Linux: nothing uses it yet, it is there for later helpers (`--no-web` skips the three web keys) |
-| `lua-intf` | lua | `titlebar` | no | with the Lua script | Which script the `luaintf` interface runs (`modules/lua/vlc.c`: `lua-intf` and `lua-config` belong to the primary `lua` module) |
+| `lua-intf` | lua | `titlebar` | yes | yes | Which script the `luaintf` interface runs (`modules/lua/vlc.c`: `lua-intf` and `lua-config` belong to the primary `lua` module) |
 
-On Linux more keys can be added without changing `setup.sh`: see
-`lua/vlcrc-keys.txt` under "Lua extras" below.
+| `key-subsync-markaudio` ... `key-viewpoint-fov-out` | core | the five lines of `lua/vlcrc-keys.txt` | yes | yes | Default keys of the Lua extras; written only when unset |
+
+Both setups read `lua/vlcrc-keys.txt` (`<section> <key>=<value>`), so more
+default keys can be added there without changing either setup.
 
 ## The Linux setup (`linux/setup.sh`)
 
@@ -365,8 +367,9 @@ grows. Never run it against your real home unless you want the changes.
 
 - `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): the keys of the
   table [vlcrc keys](#vlcrc-keys-what-both-setups-write), with `Set-VlcOption`
-  and `Set-VlcModule`. Optionally it creates a Startup shortcut running the
-  helper with `-Watch` (and `-NoDock`).
+  and `Set-VlcModule`. It also installs the Lua interface and its default keys (see "Lua
+  interface"). Optionally it creates a Startup shortcut running the helper
+  with `-Watch` (and `-NoDock`).
 - `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
   windows), reads the main window's region (`GetWindowRgn`): if the visible
   box reaches the window bottom, the bar is at the bottom; a pixel test at the
@@ -381,7 +384,9 @@ grows. Never run it against your real home unless you want the changes.
   by the script from the skin file name; 24 or 36 / `--bar-height`) in
   `ReadShape`, `Place` and `ClickPin`; the full player's 122 px stay fixed.
 - Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
-  own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`).
+  own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`). The menu's
+  "Playback" submenu (A-B loop, next / previous folder, next EQ preset) sends
+  VLC hotkey actions through the control channel, see "Lua interface".
 - Media controls (Setup only): the third-party control-interface plugin
   `libwin10smtc_plugin.dll` (vlc-win10smtc, pinned version and SHA-256 in
   `vlc-taskbar.ps1`) goes into `<VLC>\plugins\misc`, and `win10smtc` into the
@@ -459,6 +464,154 @@ from the player's top; bar at the bottom: from `H - 24` / `H - 122`).
   `:0`; `--display` limits the watcher to VLCs on that display.
 - Not done on purpose: docking into a panel, or placing windows (Wayland does
   not allow it, and GNOME has no panel to dock into).
+
+## Lua interface (`lua/intf/titlebar.lua`)
+
+A-B loop, next / previous folder, equalizer presets and a bitrate for lossless
+files: things a skins2 button cannot do (a button can only run skins2's own
+action list). A Lua *interface* script runs inside VLC next to the skin, on
+Windows and Linux alike. Facts below were checked in the VLC 3.0.x source
+(`modules/control/hotkeys.c`, `src/misc/actions.c`, `modules/lua/*`,
+`share/lua/*`, `modules/gui/skins2/src/vlcproc.cpp`) and by running real
+VLC 3.0.20 under the test harness (`tools/`).
+
+### Start and install (what Setup / `linux/setup.sh` must do)
+
+| What | Value |
+|---|---|
+| Script | copy `lua/intf/titlebar.lua` to VLC's user Lua folder, `intf/titlebar.lua` |
+| Windows folder | `%APPDATA%\vlc\lua\intf\` (create it) |
+| Linux folder | `${XDG_DATA_HOME:-$HOME/.local/share}/vlc/lua/intf/` (create it). Flatpak VLC: `~/.var/app/org.videolan.VLC/data/vlc/lua/intf/` (not tested) |
+| vlcrc | Windows `%APPDATA%\vlc\vlcrc`; Linux `${XDG_CONFIG_HOME:-$HOME/.config}/vlc/vlcrc` |
+| `[core]` `extraintf` | add `luaintf` to the colon-separated list (`http:luaintf`, `win10smtc:http:luaintf`), keep the others |
+| `[lua]` `lua-intf` | `titlebar` (the option belongs to the `lua` module, like `http-password`; only set it when it is unset or `dummy`) |
+| `[core]` keys | the five `key-...` lines of `lua/vlcrc-keys.txt` (format `<section> <key>=<value>`, `#` comments), written only when vlcrc has no active, non-empty value for the key. Both `vlc-taskbar.ps1 -Setup` and `linux/setup.sh` read this file, so it is the one list to edit |
+
+Both `http` and `luaintf` are interface modules of VLC's one `lua` plugin;
+`lua-intf` is read only by `luaintf` (`modules/lua/intf.c`: `http`, `cli` and
+`telnet` pass their own script name), so `extraintf=http:luaintf` runs the web
+interface and `titlebar.lua` side by side. Checked by running it, from vlcrc
+only. The script needs a VLC with Lua (the Windows build and the Ubuntu 24.04
+packages used by the harness have it; other distributions: not checked). It also works with Lua 5.1
+(Windows) and 5.2 (the Ubuntu 24.04 build used by the harness).
+
+vlcrc lines, exactly (same as `lua/vlcrc-keys.txt` plus the two lines the setups handle themselves; the `[lua]` and `[core]` section headers only matter for
+a file that does not have the option yet; VLC reads these keys from any
+section):
+
+```
+[core]
+extraintf=http:luaintf
+key-subsync-markaudio=Ctrl+Shift+a
+key-viewpoint-roll-clock=Ctrl+Shift+Right
+key-viewpoint-roll-anticlock=Ctrl+Shift+Left
+key-viewpoint-fov-in=Ctrl+Shift+Up
+key-viewpoint-fov-out=Ctrl+Shift+Down
+[lua]
+lua-intf=titlebar
+```
+
+### The trigger bridge
+
+Lua in VLC 3.0 has no callbacks (see [lua-api-notes.md](lua-api-notes.md)), so
+the script polls the libvlc integer variable `key-action` (the id of the hotkey
+action VLC last ran) every 100 ms (50 ms while an A-B loop runs) and sets it
+back to 0 (`hotkeys.c` ignores 0). It can only react to action ids that exist
+in `src/misc/actions.c`, and VLC still runs the action's normal handler
+(`PutAction` in `hotkeys.c`). So the five triggers are actions whose handler
+does nothing for music:
+
+| Trigger | VLC action (`key-` prefix in vlcrc) | VLC's own handler | Default key |
+|---|---|---|---|
+| A-B loop | `subsync-markaudio` | stores a time stamp for subtitle sync (only used by `subsync-apply`, which needs `subsync-marksub` too; nothing visible, no `p_vout` needed) | `Ctrl+Shift+a` (VLC default `Shift+h`) |
+| Next folder | `viewpoint-roll-clock` | `if( p_vout )` 360 degree view roll; no default key | `Ctrl+Shift+Right` |
+| Previous folder | `viewpoint-roll-anticlock` | same; no default key | `Ctrl+Shift+Left` |
+| Next EQ preset | `viewpoint-fov-in` | 360 degree zoom, only when a vout can change viewpoint (`input.c` `viewpoint-changeable`); VLC default `Page Up` | `Ctrl+Shift+Up` |
+| Previous EQ preset | `viewpoint-fov-out` | same; VLC default `Page Down` | `Ctrl+Shift+Down` |
+
+Why these: candidates were checked one by one in `PutAction`.
+`set-bookmark1..10` writes a bookmark into the configuration, `play-bookmark1..10`
+jumps in the playlist, `record`, `wallpaper`, `disc-menu`, `nav-*`, `title-*`,
+`chapter-*`, `program-sid-*`, `audio-track`, `subsync-reset` (dereferences a
+missing input) and `subpos-*` (dereferences a missing vout) have effects or
+risks with audio; `crop*`, `zoom*`, `aspect-ratio`, `deinterlace*`,
+`subtitle-text-scale-*` only act when a video output exists but would change
+real video. The `viewpoint-*` actions need a vout *and* a 360 degree video
+(`viewpoint-changeable`), so they do nothing for audio and for normal video;
+two of them have no default key. `subsync-markaudio` has no effect at all
+unless the user runs the subtitle sync workflow.
+
+Default keys avoid every VLC default (VLC uses plain letters, `Shift+letter`,
+`Alt+letter`, `Ctrl+arrows`, `Ctrl+Alt+arrows`, F keys; checked in
+`src/libvlc-module.c`) and `Ctrl+Alt+...` (which is AltGr on many keyboards).
+Replacing the keys of `viewpoint-fov-in` / `-out` (Page Up / Down) and
+`subsync-markaudio` (`Shift+h`) takes those defaults away; only subtitle sync
+and 360 degree video use them.
+
+Ways to trigger an action:
+
+- **Keyboard**, while the skin has focus: VLC's hotkeys. Skin key presses reach
+  VLC through the Qt dialogs provider (`Dialogs::sendKey`), so the Qt plugin
+  must be there (standard on Windows and in distribution packages). Tested
+  with `xdotool` against the harness (Qt plugin present).
+- **Global hotkeys** (VLC not focused): VLC's `global-key-<action>` options, for
+  example `global-key-subsync-markaudio=Ctrl+Alt+F9`, in Tools > Preferences >
+  All > Hotkeys, or vlcrc. Not set by default (a system-wide key can collide
+  with other programs). Windows: `globalhotkeys/win32.c`; Linux: X11 only
+  (`globalhotkeys/xcb.c`). Not tested (the harness has no desktop to grab
+  keys from).
+- **Web interface**: `requests/status.json?command=key&val=<action name without
+  "key-">` (`httprequests.lua` calls `common.hotkey("key-"..val)`, which sets
+  `key-action`). Needs the http password:
+  `curl -u :PASSWORD "http://127.0.0.1:48080/requests/status.json?command=key&val=subsync-markaudio"`.
+  The Windows helper's tray menu "Playback" uses this through
+  `VlcDock.Remote.SendAsync("key", ...)`.
+
+Limits of the bridge: `key-action` is a single slot, so two triggers within one
+poll period (100 ms) lose one; only keys that VLC maps to an action reach
+the script.
+
+### What the script does
+
+- **A-B loop**: 1st trigger stores A (current `time`, microseconds, from
+  `vlc.var.get(vlc.object.input(), "time")`), 2nd stores B (at least 0.5 s after
+  A) and seeks to A, from then on `time >= B` seeks to A; 3rd clears. Also
+  cleared when the track changes or playback stops. Measured: the loop turns
+  about 0.2 s after B (harness, WAV files); A and B are read from the
+  same variable, so the loop length stays right. State goes to
+  the log (`vlc -v`; `-vv` also logs each turn). **The
+  skin cannot show it**: skins2 computes the title text (`$N`) once, when an
+  input starts (`VlcProc::update_current_input`), so changing the title meta
+  from Lua would not reach it (and would rename the playlist entry). The only
+  live text fields are the bitrate and sample-rate (`$B`, `$S`); using them for
+  A-B state would be a hack and was not done.
+- **Next / previous folder**: flattens `vlc.playlist.get("playlist")` in play
+  order, takes the directory of each item's `file://` URI (case-folded on
+  Windows, percent-escapes normalised), then `vlc.playlist.gotoitem(id)` to the
+  first item of a different directory (next), or to the first item of the
+  previous directory group (previous). Streams and other schemes are skipped.
+  Folders must be contiguous in the playlist. With random on it still follows
+  the list order. From a stopped player it starts playing there.
+- **EQ presets**: index kept in the script (starts at Flat), `vlc.equalizer.enable(true)`
+  then `vlc.equalizer.setpreset(i)` (18 presets; the filter must be loaded and
+  an audio output exist, `setpreset` returns nil otherwise: then it retries for
+  6 s). It re-applies the preset when a new track starts, as long as the
+  equalizer is on. The skin's EQ panel follows (its sliders watch the same
+  variables), so the change is visible. The name goes to the log.
+- **Bitrate** (`$B kbps` in the full player): skins2 shows the input's
+  `bit-rate` variable (`/ 1000`), VLC sets it only from a bitrate the codec
+  declares (`es_out.c`, `fmt->i_bitrate`), so FLAC and other lossless files showed
+  an empty value. When it is 0 the script sets it once per track to file size x 8 /
+  duration (local files; else bytes read x 8 / seconds played, after 5 s), in
+  whole kbps. Nothing else reads `bit-rate` except `$B` in title formats
+  (`src/text/strings.c`), and the core only writes it when the codec declares
+  one. The sample rate (`$S`) stays integer kHz ("44" for 44.1 kHz): skins2
+  does `sample-rate / 1000` in integer arithmetic (`vlcproc.cpp`) and
+  the skin has no other source for it, so neither Lua nor the skin can show "44.1".
+- Robustness: every part runs in `pcall`; an error is logged (once per 5 s per
+  message) and the loop goes on. Nothing playing, empty playlist, stop / start,
+  playlist changes were tried. The loop ends when VLC quits (`vlc.misc.mwait`
+  raises "Interrupted"). CPU: 0.1 % more over 30 s while playing (harness).
 
 ## Building and testing
 

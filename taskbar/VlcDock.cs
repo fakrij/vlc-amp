@@ -67,6 +67,7 @@ public static class VlcDock
     static NotifyIcon tray;
     static ContextMenu trayMenu;
     static MenuItem dockItem, pinItem, playItem, logItem;
+    static MenuItem playbackItem;          // submenu "Playback": A-B loop, folder jump, EQ preset (Lua interface)
     static Icon trayIcon;
     static IntPtr trayIconHandle = IntPtr.Zero;
     static Thread remoteThread;
@@ -223,9 +224,16 @@ public static class VlcDock
             dockItem = new MenuItem("Dock in taskbar", OnMenuDock);
             pinItem = new MenuItem("Pin VLC on top now", OnMenuPin);
             playItem = new MenuItem("Play / pause", OnMenuPlay);   // smoke test of the control channel
+            // These send VLC hotkey actions through the web interface; lua/intf/titlebar.lua (Setup installs it) does the work.
+            playbackItem = new MenuItem("Playback", new MenuItem[] {
+                new MenuItem("A-B loop (set A / set B / clear)", delegate { Remote.SendAsync("key", "subsync-markaudio"); }),
+                new MenuItem("Next folder", delegate { Remote.SendAsync("key", "viewpoint-roll-clock"); }),
+                new MenuItem("Previous folder", delegate { Remote.SendAsync("key", "viewpoint-roll-anticlock"); }),
+                new MenuItem("Next EQ preset", delegate { Remote.SendAsync("key", "viewpoint-fov-in"); })
+            });
             logItem = new MenuItem("Open debug log", OnMenuLog);
             MenuItem quitItem = new MenuItem("Quit helper", OnMenuQuit);
-            trayMenu = new ContextMenu(new MenuItem[] { dockItem, pinItem, playItem, logItem, new MenuItem("-"), quitItem });
+            trayMenu = new ContextMenu(new MenuItem[] { dockItem, pinItem, playItem, playbackItem, logItem, new MenuItem("-"), quitItem });
             trayMenu.Popup += OnMenuPopup;
 
             tray = new NotifyIcon();
@@ -286,6 +294,8 @@ public static class VlcDock
         pinItem.Enabled = vlcPid != 0;
         playItem.Visible = Remote.Configured;
         playItem.Enabled = vlcPid != 0 && Remote.Status.Ok;
+        playbackItem.Visible = Remote.Configured;
+        playbackItem.Enabled = vlcPid != 0 && Remote.Status.Ok;
         logItem.Visible = LogPath != null;
         logItem.Enabled = LogPath != null && File.Exists(LogPath);
     }
