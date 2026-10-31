@@ -386,8 +386,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             playbackItem = new MenuItem("Playback", new MenuItem[] {
                 new MenuItem("A-B loop (set A / set B / clear)", delegate { Remote.SendAsync("key", "subsync-markaudio"); }),
                 new MenuItem("Next folder", delegate { Remote.SendAsync("key", "viewpoint-roll-clock"); }),
-                new MenuItem("Previous folder", delegate { Remote.SendAsync("key", "viewpoint-roll-anticlock"); }),
-                new MenuItem("Next EQ preset", delegate { Remote.SendAsync("key", "viewpoint-fov-in"); })
+                new MenuItem("Previous folder", delegate { Remote.SendAsync("key", "viewpoint-roll-anticlock"); })
             });
             logItem = new MenuItem("Open debug log", OnMenuLog);
             MenuItem quitItem = new MenuItem("Quit helper", OnMenuQuit);
@@ -2246,6 +2245,13 @@ public static partial class VlcDock
     // ---- what the button does
     static void TaskbarClicked(int id)
     {
+        if (id == 4 || id == 5)
+        {
+            // folder jump = the Lua interface's hotkeys (same as the tray menu)
+            Log("taskbar button: " + (id == 4 ? "previous" : "next") + " folder");
+            Remote.SendAsync("key", id == 4 ? "viewpoint-roll-anticlock" : "viewpoint-roll-clock");
+            return;
+        }
         string cmd = id == 1 ? "pl_previous" : id == 2 ? "pl_pause" : id == 3 ? "pl_next" : null;
         if (cmd == null) return;
         Log("taskbar button: " + cmd);
@@ -2436,7 +2442,7 @@ public static partial class VlcDock
             }
             buttonState = -1; progressFlag = -1; progressPermille = -1;
             tbRootTabRemoved = IntPtr.Zero;   // after an Explorer restart VLC's own button may be back
-            int hr = tbList.ThumbBarAddButtons(Handle, 3, Buttons(shown));
+            int hr = tbList.ThumbBarAddButtons(Handle, 5, Buttons(shown));
             Log("taskbar button: button created, ThumbBarAddButtons hr=0x" + hr.ToString("X8"));
             if (hr >= 0) buttonState = ButtonState(shown);
             ready = true;
@@ -2452,10 +2458,12 @@ public static partial class VlcDock
         {
             bool playing = s.State == VlcState.Playing;
             uint flags = s.Ok ? TbNative.THBF_ENABLED : TbNative.THBF_DISABLED;
-            THUMBBUTTON[] b = new THUMBBUTTON[3];
-            b[0] = Button(1, glyphs[VlcTaskbarView.GlyphPrev], "Previous", flags);
-            b[1] = Button(2, glyphs[playing ? VlcTaskbarView.GlyphPause : VlcTaskbarView.GlyphPlay], playing ? "Pause" : "Play", flags);
-            b[2] = Button(3, glyphs[VlcTaskbarView.GlyphNext], "Next", flags);
+            THUMBBUTTON[] b = new THUMBBUTTON[5];
+            b[0] = Button(4, glyphs[VlcTaskbarView.GlyphPrevFolder], "Previous folder", flags);
+            b[1] = Button(1, glyphs[VlcTaskbarView.GlyphPrev], "Previous", flags);
+            b[2] = Button(2, glyphs[playing ? VlcTaskbarView.GlyphPause : VlcTaskbarView.GlyphPlay], playing ? "Pause" : "Play", flags);
+            b[3] = Button(3, glyphs[VlcTaskbarView.GlyphNext], "Next", flags);
+            b[4] = Button(5, glyphs[VlcTaskbarView.GlyphNextFolder], "Next folder", flags);
             return b;
         }
 
@@ -2474,7 +2482,7 @@ public static partial class VlcDock
         {
             int state = ButtonState(shown);
             if (!force && state == buttonState) return;
-            int hr = tbList.ThumbBarUpdateButtons(Handle, 3, Buttons(shown));
+            int hr = tbList.ThumbBarUpdateButtons(Handle, 5, Buttons(shown));
             if (hr >= 0) buttonState = state;
             else Log("taskbar button: ThumbBarUpdateButtons hr=0x" + hr.ToString("X8"));
         }
@@ -2540,8 +2548,8 @@ public static partial class VlcDock
             int n = TbNative.GetSystemMetrics(TbNative.SM_CXSMICON);
             if (n < 16) n = 16;
             Color c = light ? Color.FromArgb(32, 33, 36) : Color.White;
-            IntPtr[] icons = new IntPtr[4];
-            for (int k = 0; k < 4; k++)
+            IntPtr[] icons = new IntPtr[6];
+            for (int k = 0; k < 6; k++)
             {
                 using (Bitmap bmp = VlcTaskbarView.GlyphBitmap(k, n, c))
                     icons[k] = bmp.GetHicon();
@@ -2677,7 +2685,7 @@ public static partial class VlcDock
 public static class VlcTaskbarView
 {
     public const string DefaultTitle = "VLC media player";
-    public const int GlyphPrev = 0, GlyphPlay = 1, GlyphPause = 2, GlyphNext = 3;
+    public const int GlyphPrev = 0, GlyphPlay = 1, GlyphPause = 2, GlyphNext = 3, GlyphPrevFolder = 4, GlyphNextFolder = 5;
 
     // Midnight
     static readonly Color Back = Color.FromArgb(0x1b, 0x1c, 0x1e);
@@ -2811,6 +2819,18 @@ public static class VlcTaskbarView
                     g.FillRectangle(b, x + n * 0.18f, t, n * 0.13f, bo - t);
                     g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.82f, t), new PointF(x + n * 0.82f, bo),
                                                     new PointF(x + n * 0.33f, mid) });
+                    break;
+                case GlyphPrevFolder:   // two triangles pointing left
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.50f, t), new PointF(x + n * 0.50f, bo),
+                                                    new PointF(x + n * 0.12f, mid) });
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.88f, t), new PointF(x + n * 0.88f, bo),
+                                                    new PointF(x + n * 0.50f, mid) });
+                    break;
+                case GlyphNextFolder:   // two triangles pointing right
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.12f, t), new PointF(x + n * 0.12f, bo),
+                                                    new PointF(x + n * 0.50f, mid) });
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.50f, t), new PointF(x + n * 0.50f, bo),
+                                                    new PointF(x + n * 0.88f, mid) });
                     break;
                 default:   // next
                     g.FillRectangle(b, x + n * 0.69f, t, n * 0.13f, bo - t);

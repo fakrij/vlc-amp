@@ -501,7 +501,7 @@ grows. Never run it against your real home unless you want the changes.
   full player's 122 px stay fixed.
 - Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
   own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`). The menu's
-  "Playback" submenu (A-B loop, next / previous folder, next EQ preset) sends
+  "Playback" submenu (A-B loop, next / previous folder) sends
   VLC hotkey actions through the control channel, see "Lua interface".
 - Media controls (Setup only): the third-party control-interface plugin
   `libwin10smtc_plugin.dll` (vlc-win10smtc, pinned version and SHA-256 in

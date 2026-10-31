@@ -223,7 +223,7 @@ do; other distributions are not checked).
 | **A-B loop**: first press sets A, second sets B and plays A-B in a loop, third clears | `Ctrl+Shift+A` | Playback > A-B loop |
 | **Next folder**: jumps to the first track of the next folder in the playlist | `Ctrl+Shift+Right` | Playback > Next folder |
 | **Previous folder**: start of the previous folder | `Ctrl+Shift+Left` | Playback > Previous folder |
-| **Next / previous equalizer preset** (turns the equalizer on; the EQ panel follows) | `Ctrl+Shift+Up` / `Down` | Playback > Next EQ preset |
+| **Next / previous equalizer preset** (turns the equalizer on; the EQ panel follows) | `Ctrl+Shift+Up` / `Down` | hotkey only |
 | **Bitrate for FLAC** and other lossless files (shown by the full player; VLC shows none) | automatic | |
 
 - Folders are the directories of local files; streams are skipped. A folder
@@ -311,7 +311,7 @@ What the helper does:
   taskbar button or its tray icon. Not docked, the helper leaves minimizing alone.
 - Tray icon (dark square with a cyan bar) with a right-click menu: **Dock in
   taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Play /
-  pause** and **Playback** (A-B loop, next / previous folder, next EQ preset;
+  pause** and **Playback** (A-B loop, next / previous folder);
   see [Lua extras](#lua-extras); the last two need the web interface),
   **Open debug log** (when the log is on), **Quit helper**. Windows may hide the
   icon under the `^` overflow until you drag it out.
@@ -483,7 +483,7 @@ on, `%TEMP%\titlebar-helper.log`):
 2. Open a music file. Exactly one VLC button appears, with VLC's icon. The log
    has `taskbar button: created ...` and `ThumbBarAddButtons hr=0x00000000`.
 3. Hover the button: a dark card with title, artist, time and a cyan progress
-   line, and the three buttons under it. The time keeps counting while you
+   line, and the five buttons (previous folder, previous, play / pause, next, next folder) under it. The time keeps counting while you
    hover. No "peek" (other windows do not fade).
 4. Click previous / next / play-pause. The middle icon and its tooltip change
    to match within half a second.
@@ -503,7 +503,7 @@ on, `%TEMP%\titlebar-helper.log`):
    normally (it remembers its position at the next start) and the button
    disappears.
 10. Restart Explorer (Task Manager > Windows Explorer > Restart) while VLC
-    plays: the button comes back with its three buttons.
+    plays: the button comes back with its five buttons.
 11. Alt+Tab shows VLC with the preview card; picking it brings the player
     to the front.
 12. 32-bit PowerShell:
