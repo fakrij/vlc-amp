@@ -258,6 +258,7 @@ case "$cmd" in
     shot)       cmd_shot "$@" ;;
     click)      cmd_click "$@" ;;
     drag)       cmd_drag "$@" ;;
+    park)       xdotool mousemove 0 0 ;;   # pointer off the skin: no hover state, tooltips go away
     geometry)   cmd_geometry ;;
     shape)      cmd_shape "$@" ;;
     quit)       cmd_quit ;;

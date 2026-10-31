@@ -1,0 +1,185 @@
+# How the Titlebar skin works
+
+For people changing the skin, the generator or the Windows helper. User
+documentation is in the [README](../README.md); open work in
+[BACKLOG.md](../BACKLOG.md).
+
+Everything here was checked against the VLC 3.0.x source
+(`modules/gui/skins2`, branch `3.0.x`) or by running VLC 3.0.20. skins2 is
+old and lightly documented, so **check the source before relying on any
+behaviour**; several "obvious" assumptions turned out wrong (see
+[Pitfalls](#skins2-pitfalls-we-hit)).
+
+## Overview
+
+```
+source/build_skin.py  --(Pillow)-->  Titlebar-NNN.vlt  (tar.gz: theme.xml + img/*.png + fonts/)
+                                          |
+                    VLC skins2 interface  <--  vlcrc (intf=skins2, skins2-last=...)  <--  taskbar/Setup.cmd
+                                          |
+               taskbar/VlcDock.cs (Windows) moves / pins VLC's window, read via its window region
+```
+
+- **The skin** is generated, never hand-edited. `build_skin.py` draws every
+  bitmap with Pillow (supersampled 4x, then reduced), writes `theme.xml`, and
+  packs both into a `.vlt` (a gzipped tar). One `.vlt` per display scaling:
+  `--scale` multiplies every logical pixel (`P()`), so the 150 % skin is drawn
+  at 150 %, not scaled up from 100 %.
+- **The helper** (`taskbar/`) is Windows-only: PowerShell 5.1 loads
+  `VlcDock.cs` with `Add-Type`, so it must stay C# 5.
+
+## The main window: 4 layouts of one size
+
+skins2 only carries a dragged size from one layout to the next when both have
+the same original size and limits (`GenericLayout::isTightlyCoupledWith`,
+used in `TopWindow::setActiveLayout`). So all layouts of the main window are
+**the same size**: 556 x 436 logical px, the full player (122) + EQ (116) +
+playlist (198) stacked.
+
+| Layout | Bar position | Panels |
+|---|---|---|
+| `strip-dn` (default) | top | below the strip |
+| `strip-up` | bottom | above the strip |
+| `full-dn` | top | below the full player |
+| `full-up` | bottom | above the full player |
+
+Where nothing is drawn the pixels are transparent. skins2 turns the drawn
+pixels into the window's shape (`SetWindowRgn` on Windows, the X Shape
+extension on X11), so the unused area is invisible and click-through.
+Consequences: the window cannot snap to screen edges (its invisible edges
+would snap; `magnet="0"`), and flipping between "dn" and "up" moves the bar
+to the other end of the window.
+
+Expand / collapse and the flip arrows are `main.setLayout(<id>)` actions.
+
+## State without layouts: flag windows
+
+Opening PL / EQ, the time mode and the theme are not layouts (that would
+multiply them). They are **tiny 1 x 1 windows** with no visible pixels:
+`eqflag`, `plflag`, `tflag`, `th0` ... `th5`. Shown = on.
+
+- Controls test them with `visible="plflag.isVisible and not eqflag.isVisible"`
+  (skins2 supports `and`, `or`, `not`; no parentheses; `not` binds tightest).
+- Buttons switch them: `plflag.show()`, `plflag.hide()`; actions chain with `;`.
+- VLC saves every window's visibility in `skins2-config`, so the state
+  survives restarts for free.
+- The playlist is placed twice (next to the bar, and beyond the EQ) with
+  complementary visibility, because a control cannot move.
+
+## Themes
+
+`THEMES` in `build_skin.py`: dark and light, each with 3 accents.
+`apply_theme(i)` sets the module-level colour names (`CYAN*` are the accent
+colours, named after the default theme). The generator renders the whole skin
+once per theme, into the same 4 layouts:
+
+- bitmap ids get the prefix `t<i>_` (`Skin.prefix`, applied by `Skin.add` and
+  the `Layout` methods);
+- every control of theme `i` gets `th<i>.isVisible and ...` (`Layout.theme_vis`);
+- the switcher selects a theme with `th<i>.show();th<j>.hide();...` (shows
+  first, so something is always drawn).
+
+Cost: about 1400 bitmaps and 2000 controls. See the next sections for what
+that broke and how it is handled.
+
+## Bitmaps: atlases
+
+VLC starts an image decoder module for every `<Bitmap>`. With 1400 separate
+PNGs, startup took 12 s. Small bitmaps are now packed into one atlas per
+theme (`pack_atlases`, shelf packing) and cut out with `<SubBitmap>`:
+1.5 s. VLC keeps the atlas in memory next to the cut-out copies, so large
+bitmaps (the progress fill frame sheets, wide stretch pieces; > 16384 px)
+stay separate files to avoid storing them twice.
+
+Memory (RSS of VLC): about 150 MB at 100 %, 240 MB at 150 %. Most of it is the
+fill frame sheets (`title_fill`, `seek`: one frame per percent, per theme).
+
+## Element ids
+
+**Every element has an explicit id** (`next_id`), and the build asserts that
+none is missing or repeated. Reason: VLC 3.0's `SkinParser::generateId()`
+writes generated ids (`_ReservedId_N`) into a 5-byte buffer with
+`snprintf(.., 4, ..)`, so only 3 digits survive. After 999 unnamed elements
+the ids repeat, the later control replaces the earlier one in the theme's
+control map, the earlier one is freed while its layout still uses it, and VLC
+crashes in `GenericLayout::refreshRect`. Two themes stayed under the limit,
+three crashed.
+
+## Clickable things
+
+- An `<Image>` runs `action` only for `move` / `resize*`; any other command runs
+  on **double-click** (`CtrlImage::handleEvent`). For a single click use a
+  `<Button>` or `<Checkbox>`.
+- A `<Text>` takes clicks over its whole rectangle (`CtrlText::mouseOver`).
+  Set `focus="false"` to let the click reach what is under it. The time
+  readouts (checkbox background + text) and the seek-by-title (slider +
+  text) rely on this.
+- A slider background: a click jumps there and starts dragging; the wheel
+  steps 5 % (`CtrlSliderBg`, `VarPercent` step 0.05).
+- Resize actions: only `resizeS`, `resizeE`, `resizeSE` exist.
+- Keyboard shortcuts reach VLC through the dialogs provider (`Dialogs::sendKey`,
+  normally the Qt module), so they need Qt installed (standard on Windows).
+
+## Rendering notes
+
+- X11 draws bitmaps without alpha blending; Windows uses `AlphaBlend`. Semi
+  transparent pixels look black on Linux. Window outlines use hard alpha
+  (`Canvas.done(hard_edges=True)`), small text is drawn on opaque crops of
+  the background (`label_on`), and the progress fill frames have hard edges.
+- An `<Image>`'s size in the default layout is its bitmap's size; stretching
+  only comes from `lefttop` / `rightbottom` anchors. That is why stretch pieces
+  (`hslice`, `nslice`) are full width and cannot be shrunk to a 1 px column.
+- Windows extracts the `.vlt` to disk; on its case-insensitive file system
+  `b_x.png` and `B_x.png` collide. Ids differing only by case are rejected by
+  the build.
+
+## The Windows helper (`taskbar/`)
+
+- `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): `intf=skins2`,
+  `skins2-last`, `one-instance=1`, `one-instance-when-started-from-file=1`,
+  `playlist-enqueue=0`, `media-library=0`, `skins2-taskbar`. It rewrites every
+  line of a key (vlcrc can hold a commented default and an active line).
+  Optionally it creates a Startup shortcut running the helper with `-Watch`
+  (and `-NoDock`).
+- `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
+  windows), reads the main window's region (`GetWindowRgn`): if the visible
+  box reaches the window bottom, the bar is at the bottom; a pixel test at the
+  strip's rounded corner tells the strip from the full player. Then it moves
+  the window so the strip sits in the taskbar, re-asserts `HWND_TOPMOST` when
+  the taskbar is above it, and steps aside for full-screen apps.
+- Start pinned: VLC never saves "always on top", so the helper posts a click
+  (`WM_MOUSEMOVE` / `WM_LBUTTONDOWN` / `UP`) on the skin's own pin button
+  1.5 s after VLC's window appears. The positions in `PinOnce` / `ClickPin` must
+  follow the generator's layout.
+- Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
+  own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`).
+
+## Building and testing
+
+```bash
+python3 source/build_skin.py --scale 1.5 --preview   # Python 3 + Pillow
+tools/setup-test-env.sh                               # once: VLC + Xvfb without sudo
+tools/vlc-test.sh start "$(tools/vlc-test.sh build 1)"
+tools/vlc-test.sh click 479 12 && tools/vlc-test.sh shot pl
+tools/doc-shots.sh                                    # regenerate docs/img
+```
+
+- [tools/README.md](../tools/README.md): the test harness.
+- The helper can only be compile-checked on Linux (Mono `mcs -langversion:5`
+  with small stubs for the UI Automation types); behaviour needs Windows.
+- Release: build all four scales (`--scale 1 / 1.25 / 1.5 / 2`), copy the
+  `.vlt` files to the repo root, run `tools/doc-shots.sh` if the look changed.
+
+## skins2 pitfalls we hit
+
+| Assumption | Reality (VLC 3.0) |
+|---|---|
+| A dragged width applies to the window | Per layout, unless layouts have identical original size and limits |
+| Controls can be named freely, or not at all | Unnamed elements get ids that repeat after 999, which crashes VLC |
+| One PNG per bitmap is fine | One image decoder per `<Bitmap>`: 1400 bitmaps = 12 s startup |
+| `<Image action="...">` reacts to a click | Only to a double-click (except move / resize) |
+| An image under a `<Text>` gets the click | The text takes it, unless `focus="false"` |
+| A semi-transparent overlay is invisible | X11 draws it opaque (no blending) |
+| The theme can set "always on top" | No attribute; not saved either |
+| Separate EQ / PL windows can share the width | They cannot; hence one window with 4 equal layouts |
+| `b_x.png` and `B_x.png` are different files | Not on Windows |

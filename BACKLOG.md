@@ -24,8 +24,8 @@ Last updated 2026-10-31. Status key:
 | 14 | Choose where PL / EQ open (above / below), bar must not move | **DONE** | Arrow on the PL / EQ header flips both panels to the other side; remembered across restarts. The bar no longer moves when panels open or close. Flipping itself moves the bar to the other end of the window (one-time re-drag). Both panels share the side; a per-panel side would need 4 more layouts. | done |
 | 1 | Double-click on a file opens a second VLC with the default skin | **DONE (untested on Windows)** | You start VLC from files / folders. `taskbar\Setup.cmd` writes `vlcrc`: `intf=skins2`, `skins2-last=<skin for the display scale>`, `one-instance=1`, `one-instance-when-started-from-file=1`, `playlist-enqueue=0`. Backs up the old file as `vlcrc.before-titlebar`. Cause of the bug: the instance started by the launcher was not started from a file and had `one-instance=0`, so it never listened for files and Explorer started a second, normal VLC. | done |
 | 3 | Show elapsed time, countdown on click | **DONE** | Elapsed by default; click the time (strip or full player) for time left. The time background is a checkbox bound to a flag window, the texts use `focus="false"` so the click reaches it (an Image only reacts to double-click, a Text takes the whole rectangle: both verified in source). Remembered across restarts. Tested in VLC. | done |
-| 4 | A-B loop in the full player | **LUA** or **PATCH** | skins2 has no A-B action (verified: no such action in the interpreter). Qt's A-B is implemented in the Qt GUI, not in the core. A Lua interface can implement it by watching the input time and seeking back (*unverified*, expect ~100 ms jitter). The skin button still needs a way to talk to it, see section 2. | L |
-| 5 | Replace the strip's slower/faster buttons with next/prev *folder* (speed buttons move to the full player, a layout-only change) | **LUA** or **PATCH** | No folder concept in skins2 actions (verified). A Lua interface can walk the playlist, compare the directory of each item URI, and jump (`vlc.playlist.goto`). Works for local files only. Button problem as in 4. | M-L |
+| 4 | A-B loop in the full player | **LUA** or **PATCH** | skins2 has no A-B action (verified: no such action in the interpreter). VLC 3.0 has no A-B code at all (T5); any A-B loop must be written by us. A Lua interface can implement it by watching the input time and seeking back (*unverified*, expect ~100 ms jitter). The skin button still needs a way to talk to it, see section 2. | L |
+| 5 | Replace the strip's slower/faster buttons with next/prev *folder* (speed buttons move to the full player, a layout-only change) | **LUA** or **PATCH** | No folder concept in skins2 actions (verified). A Lua interface can walk the playlist, compare the directory of each item URI, and jump (`vlc.playlist.gotoitem(id)`). Works for local files only. Button problem as in 4. | M-L |
 | 6 | Odd button resize on mouse-over (screenshot) | **DONE (needs a check on Windows)** | Cause: strip and full player bitmaps had ids differing only by case (`b_slower` / `B_slower`, `t_play` / `T_play` ...). VLC unpacks the .vlt to disk, and on Windows (case-insensitive) one PNG overwrote the other, so strip buttons showed the full player's larger images. Renamed to `fb_*` / `ft_*`; the build now fails on any case-only collision. Linux never showed it. | done |
 | 8 | Playlist: show duration, optional columns | **BLOCKED** | The skins2 Playtree control draws one text column (verified: no column support in `ctrl_tree`). Workarounds: (a) accept; (b) a Lua *playlist rename* that appends the duration to item titles (changes titles, clunky); (c) PATCH: add a column renderer to the Playtree control (large). | L / XL |
 | 9 | Empty space in the full player LCD, meaning of the numbers | **DONE** | Big number = time left, `12:22 / 18:34` = elapsed / total, `SPEED 1x` = playback speed. Full player is now 122 px (was 146): toggles and speed share one row under the bitrate line, empty boxes gone. Tested in VLC. | done |
@@ -37,7 +37,8 @@ Last updated 2026-10-31. Status key:
 | 15 | Clicking the taskbar hides the player even when pinned | **HELPER, needs info** | Windows behaviour: when the taskbar is clicked it moves itself to the top of the "always on top" group, so any pinned window lying over it is covered. VLC's pin (`vlc.onTop`) sets topmost once and never re-asserts it, so without the helper this is expected. The helper re-asserts topmost when the taskbar is above VLC (on every foreground change and every 250 ms), so with the helper the player should come back within a fraction of a second. If it does not: (a) check the helper is running (started via `VLC in taskbar.cmd`); (b) debug the z-order check on Windows. Stronger fix: (c) re-parent the strip into the taskbar window (`SetParent` onto `Shell_TrayWnd`, the technique TrafficMonitor uses on Windows 11), so the taskbar can never cover it. Cost: only while the bare strip shows (a child window is clipped to the taskbar, so panels / full player need it un-parented again), plus the cross-process input coupling risks of SetParent. Questions: helper running? Gone for good or back after a moment? Clicked an empty taskbar spot, an app icon, or VLC's own taskbar button (that one minimizes)? | S-M |
 | 16 | Project under version control | **DONE** | Git repository in `Titlebar-VLC-skin/`, first commit = state before the launcher setup. | done |
 | 17 | Seek from the strip (no rewind / fast-forward before) | **DONE** | The strip's title window is a seek slider over the song name: the played part fills it (201 frames plus a play-head line), a click jumps to that point and can drag, the mouse wheel steps 5 %. The title text uses `focus="false"` so the click reaches the slider. Verified in source (`CtrlSliderBg`: click = jump, wheel = variable step 0.05) and in VLC: a click at 50 % went to 1:41 of 3:20, at 25 % on a wider strip to 0:51. Keyboard also works: VLC's hotkeys (Shift / Alt / Ctrl + arrow keys) jump 3 s / 10 s / 1 min while the player has focus. | done |
-| 11 | Tray icon for the helper (replace the Ctrl+Alt+Shift+V hotkey) | **HELPER** | Listed in the original open items. | S |
+| 18 | Light / dark theme + 3 colours each, switch in the full player title bar | **DONE** | 6 themes rendered into the same layouts, shown via flag windows `th0..th5`; sun / moon toggles light / dark, dots pick the accent. Needed two fixes found in VLC's source: explicit ids for every element (generated ids repeat after 999 and crash VLC) and bitmap atlases (`<SubBitmap>`: startup 12 s -> 1.5 s). Cost: ~150 MB RSS at 100 %, 240 MB at 150 %. Tested in VLC: switching, persistence, panels in all themes. | done |
+| 11 | Tray icon for the helper (replace the Ctrl+Alt+Shift+V hotkey) | **DONE (T7, untested on Windows)** | NotifyIcon with Dock / Pin now / Open debug log / Quit; compile-checked. | done |
 | 12 | Taller strip for the taskbar (e.g. 36 px), hide the pin in taskbar mode | **SKIN + HELPER** | Listed in the original open items. | S |
 
 Numbers 1-10 follow your first list; N1-N3 your second list; 13-14 your third list (13 = width, 14 = panel side); 15 and 17 your fourth and fifth; 7a, 7b, 11, 12, 16 were added during analysis.
@@ -52,7 +53,8 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 
 - Runs inside VLC beside skins2, on Windows and Linux. Can read and control playback, the playlist, and the input (time, seek).
 - Good for: A-B loop, next/prev folder, EQ presets (via the Lua equalizer library), sleep timer, "remember position", extra hotkeys.
-- Hotkeys: libvlc exposes the integer variables `key-pressed` and `key-action` (verified in `src/misc/actions.c`). A Lua interface that adds a callback to `key-pressed` could implement custom hotkeys (*unverified in Lua: `vlc.var.add_callback` availability in 3.0.x*). This is the **only bridge that works without code outside VLC**, but it is keyboard-only.
+- Hotkeys: libvlc exposes the integer variables `key-pressed` and `key-action` (verified in `src/misc/actions.c`). **Verified (T5, docs/lua-api-notes.md): Lua in 3.0.x has no `vlc.var.add_callback`**, so a Lua interface must poll `key-action` in its loop and reset it. Keys reach VLC from the skin through the Qt dialogs provider (`Dialogs::sendKey`). This is the only bridge that works without code outside VLC, but it is keyboard-only.
+- Verified APIs (T5): `vlc.equalizer` (`setpreset`, `presets`, `equalizerset`, `preampset`), time via `vlc.var.get(vlc.object.input(), "time")` in microseconds, playlist via `vlc.playlist.get()` (item `path` = URI) and `vlc.playlist.gotoitem(id)`. Full notes with source references: [docs/lua-api-notes.md](docs/lua-api-notes.md).
 - Does not give the skin new buttons.
 
 ### B. Lua extension (`lua/extensions/*.lua`, shown in the View menu)
@@ -91,6 +93,8 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 
 ## 3. Suggested order
 
+Docs: user guide in README.md, internals in [docs/architecture.md](docs/architecture.md).
+
 1. **Windows test of the setup:** run `Setup.cmd`, then open a file from Explorer: skin, single window, Media Library gone, player pinned (pin lit).
 2. **Fix 15** (taskbar click hides the player): needs the answers to its questions.
 3. **Strip layout:** move slower / faster to the full player (part of 5). That frees 48 px in the strip for the title or for the folder buttons later.
@@ -124,13 +128,13 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 
 | ID | Task | Model | Depends on | Size |
 |----|------|-------|------------|------|
-| T1 | Test harness in the repo | Sonnet | - | M |
+| T1 | Test harness in the repo | **DONE** (merged; `tools/`) | - | M |
 | T2 | Move slower / faster to the full player | Sonnet | T1 | S |
-| T3 | Helper debug log (for 15) | Sonnet | - | S |
+| T3 | Helper debug log (for 15) | **DONE** (merged) | - | S |
 | T4 | Docs consistency pass | Haiku | after others | XS |
-| T5 | Lua API fact check (for 4, 5, 2) | Haiku | - | S |
+| T5 | Lua API fact check (for 4, 5, 2) | **DONE** (merged; `docs/lua-api-notes.md`) | - | S |
 | T6 | Lua interface prototype: A-B loop, folder jump, EQ presets via hotkeys | Sonnet | T1, T5, decision on 4/5/2 | L |
-| T7 | Tray icon for the helper (11) | Sonnet | - | M |
+| T7 | Tray icon for the helper (11) | **DONE** (merged) | - | M |
 | T8 | Taller taskbar strip option (12) | Sonnet | T1 | M |
 | T9 | Fix 15 (taskbar click hides the player) | Opus | Windows answers + T3 log | M |
 | T10 | Patched skins2 feasibility spike (option C) | Opus | decision on 4/5/2 | XL |

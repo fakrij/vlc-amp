@@ -27,6 +27,7 @@ tools/vlc-test.sh xvfb-stop
 | `shot <name> [x,y,w,h]` | Screenshot to `<run dir>/shots/<name>.png`, prints the path. Crop is in screen pixels; the default is the main window. |
 | `click <x> <y>` | Left click. Coordinates are relative to the main window's top-left, i.e. the skin's own pixel coordinates (the window is 556x436 at 100 %). |
 | `drag <x> <y> <dx> <dy>` | Press at x,y, move by dx,dy in 10 steps, release. Moving the window by its grip: `drag 10 12 50 60`. |
+| `park` | Moves the pointer off the skin (no hover state, tooltips disappear). |
 | `geometry` | `X Y W H` of the main window on the screen. |
 | `shape` | The X11 shape (the visible, clickable part) of the main window: bounding box, whether the bar is at the bottom, whether the full player is showing. Same rule as `ReadShape` in `taskbar/VlcDock.cs`. |
 | `quit` | Expands the strip if needed and clicks the full player's quit button, so VLC writes `skins2-config` into its `vlcrc`. Prints that line. |
@@ -67,6 +68,7 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
 - `vlc-env.sh`: paths and the environment for the extracted programs (sourced
   by both scripts).
 - `xshape.py`: reads the X11 shape (used by `shape` and `quit`).
+- `doc-shots.sh`: regenerates the screenshots in `docs/img` from real VLC.
 
 ## Gotchas (all handled by the scripts)
 
