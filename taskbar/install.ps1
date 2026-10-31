@@ -5,7 +5,8 @@
 #   3. waits until VLC is closed
 #   4. copies this folder to %LOCALAPPDATA%\Titlebar-VLC-skin (the skin must stay somewhere permanent)
 #   5. runs the setup from there (vlc-taskbar.ps1 -Setup: VLC settings, helper, media controls, Lua extras)
-#   6. adds Start menu entries: setup again, VLC in taskbar, uninstall, skin folder
+#   6. adds Start menu entries: setup again, VLC in taskbar, uninstall, skin folder, and "VLC (Titlebar)"
+#      (vlc.exe with --no-media-library: VLC's own launcher forces the Media Library on)
 $ErrorActionPreference = "Stop"
 $src  = (Resolve-Path (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "..")).Path   # the folder Install.cmd is in
 $dest = Join-Path $env:LOCALAPPDATA "Titlebar-VLC-skin"
@@ -72,7 +73,8 @@ if ($src.TrimEnd('\') -ne $dest.TrimEnd('\')) {
         ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
     # mirror: the folder holds only this package (your own edits of vlc-taskbar.ps1 there are replaced)
-    & robocopy.exe $src $dest /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+    # (file-associations.txt is written by the setup, it is not in the package: /XF keeps /MIR from deleting it)
+    & robocopy.exe $src $dest /MIR /XF file-associations.txt /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { Show-Msg "Copying to $dest failed (robocopy code $LASTEXITCODE)." "OK" "Error" | Out-Null; exit 1 }
 }
 
@@ -96,8 +98,20 @@ foreach ($e in @(
     $s.Save()
 }
 
+# VLC's own Start menu entry, desktop icon and a pinned taskbar icon start vlc.exe without the flag, so the
+# Media Library entry shows there. Those shortcuts are in the all-users Start menu or pinned (changing them needs
+# admin, or is not allowed for pins), so this extra per-user one is the way to start VLC without it.
+$s = $sh.CreateShortcut((Join-Path $menu "VLC (Titlebar).lnk"))
+$s.TargetPath = $vlc
+$s.Arguments = "--no-media-library"
+$s.WorkingDirectory = Split-Path -Parent $vlc
+$s.IconLocation = "$vlc,0"
+$s.Description = "VLC with the Titlebar skin, without the Media Library entry in the playlist"
+$s.Save()
+
 Write-Host "`nDone. Open a music file or folder to start VLC with the skin." -ForegroundColor Green
-Write-Host "Start menu > Titlebar VLC skin: setup again, VLC in taskbar, uninstall."
+Write-Host "Start menu > Titlebar VLC skin: VLC (Titlebar), setup again, VLC in taskbar, uninstall."
+Write-Host "Files opened from Explorer start without the Media Library entry. VLC's own Start menu entry and a pinned VLC icon still show it: use VLC (Titlebar)."
 Write-Host "You can delete the folder you ran Install.cmd from."
 Start-Sleep -Seconds 4
 exit 0

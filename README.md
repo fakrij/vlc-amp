@@ -61,8 +61,8 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
    - copies the skin to `%LOCALAPPDATA%\Titlebar-VLC-skin` (VLC points at the
      skin file there, so the folder you started from can be deleted);
    - runs the setup (`taskbar\vlc-taskbar.ps1 -Setup`), see below;
-   - adds Start menu entries (Titlebar VLC skin): setup again, VLC in taskbar,
-     uninstall, skin folder.
+   - adds Start menu entries (Titlebar VLC skin): **VLC (Titlebar)**, setup
+     again, VLC in taskbar, uninstall, skin folder.
 2. Open a music file or folder.
 
 The setup:
@@ -73,7 +73,14 @@ The setup:
   Explorer, and sends files you open to the running player (no second VLC
   window);
 - removes the "Media Library" entry from the playlist (it does nothing in a
-  skin);
+  skin). `media-library=0` in `vlcrc` is not enough on Windows either: VLC's
+  launcher (`vlc.exe`) puts `--media-library` before your own arguments, so
+  the setup also adds `--no-media-library` (a later argument wins) to the
+  commands Explorer uses for VLC's file types and the folder / audio CD / DVD
+  entries (per-user registry keys under `HKCU\Software\Classes`, listed in
+  `%LOCALAPPDATA%\Titlebar-VLC-skin\file-associations.txt`, no admin needed;
+  your choice of default app is not changed), to the helper's own VLC start,
+  and to the Start menu entry **VLC (Titlebar)**;
 - asks whether to start the helper with Windows. The helper pins the player
   on top each time VLC starts, gives VLC a taskbar button with previous /
   play / next on hover and, if you want, docks it in the taskbar;
@@ -90,8 +97,10 @@ Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
 **Undo**: Start menu > Titlebar VLC skin > **Uninstall Titlebar skin** (or
 `Uninstall.cmd`). It restores `vlcrc.before-titlebar` (keeping your last
 settings as `vlcrc.titlebar-removed`), stops the helper, removes its Startup
-shortcut, the Lua script, the Start menu entries and the installed folder,
-and offers to remove the media controls plugin. VLC stays installed.
+shortcut, the Lua script, the Start menu entries, the registry keys listed in
+`file-associations.txt` (only if they still have `--no-media-library`) and the
+installed folder, and offers to remove the media controls plugin. VLC stays
+installed.
 
 ### Linux (any distro)
 
@@ -407,6 +416,7 @@ start). Then restart VLC and pick Custom with the theme button.
 | Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `titlebar-helper.log.old`. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`Titlebar-150.vlt` for 150 %), or run Setup again. |
 | Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
+| Windows: the playlist shows a "Media Library" entry | VLC's launcher forces it on, so only starts with `--no-media-library` hide it. Opening a file from Explorer and the helper's start do that after Setup (run Setup again with VLC closed if you installed VLC or changed the default app later). VLC's own Start menu entry, its desktop icon and a VLC icon pinned to the taskbar start plain `vlc.exe`: use Start menu > Titlebar VLC skin > **VLC (Titlebar)**, or re-pin that one. Another app set as the default for the file type opens files its own way. |
 | Linux: the playlist shows a "Media Library" entry | Start VLC from the "VLC (Titlebar)" launcher (or `vlc --no-media-library`), not plain `vlc`. Run `linux/setup.sh` if the launcher is missing. |
 | Linux: opening a file starts a second VLC | Run `linux/setup.sh` (VLC closed); one instance works over D-Bus, so it needs a desktop session. |
 | Linux: the skin is too small / too big | `linux/setup.sh --scale 150` (100, 125, 150 or 200). |
@@ -469,6 +479,12 @@ These come from VLC's skin engine (skins2); details in
   150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is
   VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
   150 %), see [More themes](#more-themes).
+- Windows: VLC's own Start menu entry, desktop icon and pinned taskbar icon
+  still show the "Media Library" node (VLC's launcher forces it on, and those
+  shortcuts are in the all-users Start menu or pinned, so they cannot be
+  changed without admin rights). Use **VLC (Titlebar)** or open a file from
+  Explorer. Files opened by another app that is the default for their type are
+  not changed either.
 - Windows only: the taskbar helper and the media-controls plugin (Linux has
   MPRIS built in). On Linux the strip floats: no docking into a panel (GNOME
   has none; BACKLOG item 22c). Wayland runs through XWayland and is untested.
