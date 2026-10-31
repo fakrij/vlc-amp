@@ -104,6 +104,12 @@ What it does:
   the next VLC).
 - **Ctrl+Alt+Shift+V** undocks / re-docks (undocked, you can drag windows freely).
 - The skin's own pin button has no effect while docked.
+- A tray icon (dark square with a cyan bar, tooltip "Titlebar VLC helper") has a
+  right-click menu: **Dock in taskbar** (checked = docked, same as the hotkey;
+  greyed out with `-NoDock`), **Pin VLC on top now** (clicks the skin's pin
+  button again, which toggles it) and **Quit helper**. Set `$TrayIcon = $false`
+  in `vlc-taskbar.ps1` to turn it off. Windows may hide the icon under the `^`
+  overflow arrow until you drag it out.
 
 Settings are at the top of `taskbar\vlc-taskbar.ps1`: which skin file (`auto` =
 by display scaling), dock position (`start`, `left`, `right` = next to the

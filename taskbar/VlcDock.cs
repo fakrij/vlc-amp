@@ -16,9 +16,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Automation;
+using System.Windows.Forms;
 
 public static class VlcDock
 {
@@ -31,6 +34,7 @@ public static class VlcDock
     public static bool Dock = true;        // false = only StartPinned, no taskbar docking
     public static bool StartPinned = false;// click VLC's pin button once after each VLC start
     public static string LogPath = null;   // debug log file (null = no log)
+    public static bool TrayIcon = true;    // notification-area icon with a menu (dock, pin now, quit)
 
     // ---- state
     static bool enabled = true;
@@ -50,6 +54,11 @@ public static class VlcDock
     static IntPtr locHook = IntPtr.Zero, fgHook = IntPtr.Zero;
     static WinEventProc winEventDelegate = OnWinEvent; // keep alive (GC)
     static TimerProc timerDelegate = OnTimer;
+    static NotifyIcon tray;
+    static ContextMenu trayMenu;
+    static MenuItem dockItem, pinItem, logItem;
+    static Icon trayIcon;
+    static IntPtr trayIconHandle = IntPtr.Zero;
 
     // ---- Win32
     [StructLayout(LayoutKind.Sequential)]
@@ -89,6 +98,7 @@ public static class VlcDock
     [DllImport("user32.dll")] static extern void PostQuitMessage(int code);
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] static extern int GetWindowRgn(IntPtr h, IntPtr rgn);
+    [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr icon);
     [DllImport("gdi32.dll")] static extern IntPtr CreateRectRgn(int l, int t, int r, int b);
     [DllImport("gdi32.dll")] static extern int GetRgnBox(IntPtr rgn, out RECT r);
     [DllImport("gdi32.dll")] static extern bool PtInRegion(IntPtr rgn, int x, int y);
@@ -123,17 +133,27 @@ public static class VlcDock
         lastVlcSeen = DateTime.Now;
         Log("helper started: scale=" + Scale + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
             " dock=" + Dock + " startPinned=" + StartPinned + " exitWithVlc=" + ExitWithVlc);
+        if (TrayIcon) CreateTray();
 
-        MSG msg;
-        while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0)
+        try
         {
-            if (msg.message == WM_HOTKEY) { Toggle(); continue; }
-            TranslateMessage(ref msg);
-            DispatchMessage(ref msg);
+            // The tray icon's hidden window lives on this thread, so this loop also
+            // delivers its messages (no Application.Run needed).
+            MSG msg;
+            while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0)
+            {
+                if (msg.message == WM_HOTKEY) { Toggle(); continue; }
+                TranslateMessage(ref msg);
+                DispatchMessage(ref msg);
+            }
         }
-        UnregisterHotKey(IntPtr.Zero, 1);
-        if (locHook != IntPtr.Zero) UnhookWinEvent(locHook);
-        if (fgHook != IntPtr.Zero) UnhookWinEvent(fgHook);
+        finally
+        {
+            DisposeTray();   // also when VLC quit (not -Watch): no ghost icon left behind
+            UnregisterHotKey(IntPtr.Zero, 1);
+            if (locHook != IntPtr.Zero) UnhookWinEvent(locHook);
+            if (fgHook != IntPtr.Zero) UnhookWinEvent(fgHook);
+        }
     }
 
     static void Toggle()
@@ -148,6 +168,98 @@ public static class VlcDock
         }
         Tick();
     }
+
+    // ---------------------------------------------------------------- tray icon
+    // Uses the classic ContextMenu (a native popup menu): it needs no message filter, which
+    // a ContextMenuStrip would only get from Application.Run.
+    static void CreateTray()
+    {
+        try
+        {
+            dockItem = new MenuItem("Dock in taskbar", OnMenuDock);
+            pinItem = new MenuItem("Pin VLC on top now", OnMenuPin);
+            logItem = new MenuItem("Open debug log", OnMenuLog);
+            MenuItem quitItem = new MenuItem("Quit helper", OnMenuQuit);
+            trayMenu = new ContextMenu(new MenuItem[] { dockItem, pinItem, logItem, new MenuItem("-"), quitItem });
+            trayMenu.Popup += OnMenuPopup;
+
+            tray = new NotifyIcon();
+            tray.Icon = MakeTrayIcon();
+            tray.Text = "Titlebar VLC helper";
+            tray.ContextMenu = trayMenu;
+            tray.Visible = true;
+        }
+        catch (Exception)
+        {
+            DisposeTray();   // no icon is not fatal, the helper works without it
+        }
+    }
+
+    static void DisposeTray()
+    {
+        try
+        {
+            if (tray != null) { tray.Visible = false; tray.Dispose(); }
+            if (trayMenu != null) trayMenu.Dispose();
+            if (trayIcon != null) trayIcon.Dispose();
+            if (trayIconHandle != IntPtr.Zero) DestroyIcon(trayIconHandle);
+        }
+        catch (Exception) { }
+        tray = null; trayMenu = null; trayIcon = null; trayIconHandle = IntPtr.Zero;
+    }
+
+    // Small dark rounded square with a cyan bar (the strip), drawn at the system's small-icon size.
+    static Icon MakeTrayIcon()
+    {
+        int n = SystemInformation.SmallIconSize.Width;
+        if (n < 16) n = 16;
+        float r = n * 0.22f, d = r * 2, e = n - 1;
+        using (Bitmap bmp = new Bitmap(n, n))
+        using (Graphics g = Graphics.FromImage(bmp))
+        using (GraphicsPath path = new GraphicsPath())
+        using (SolidBrush back = new SolidBrush(Color.FromArgb(34, 38, 44)))
+        using (SolidBrush bar = new SolidBrush(Color.FromArgb(0, 200, 230)))
+        {
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            path.AddArc(0, 0, d, d, 180, 90);
+            path.AddArc(e - d, 0, d, d, 270, 90);
+            path.AddArc(e - d, e - d, d, d, 0, 90);
+            path.AddArc(0, e - d, d, d, 90, 90);
+            path.CloseFigure();
+            g.FillPath(back, path);
+            g.FillRectangle(bar, n * 0.2f, n * 0.42f, n * 0.6f, n * 0.16f);
+            trayIconHandle = bmp.GetHicon();
+        }
+        trayIcon = Icon.FromHandle(trayIconHandle);   // does not own the handle: DestroyIcon in DisposeTray
+        return trayIcon;
+    }
+
+    static void OnMenuPopup(object sender, EventArgs e)
+    {
+        dockItem.Enabled = Dock;
+        dockItem.Checked = Dock && enabled;
+        pinItem.Enabled = vlcPid != 0;
+        logItem.Visible = LogPath != null;
+        logItem.Enabled = LogPath != null && File.Exists(LogPath);
+    }
+
+    static void OnMenuLog(object sender, EventArgs e)
+    {
+        try { Process.Start(LogPath); }   // opens in the default text editor
+        catch (Exception) { }
+    }
+
+    static void OnMenuDock(object sender, EventArgs e) { if (Dock) Toggle(); }
+
+    static void OnMenuPin(object sender, EventArgs e)
+    {
+        IntPtr main;
+        RECT r;
+        if (!FindMain(FindSkinWindows(), out main, out r)) return;
+        ClickPin(main, r);
+    }
+
+    static void OnMenuQuit(object sender, EventArgs e) { PostQuitMessage(0); }
 
     static void OnTimer(IntPtr hwnd, uint msg, UIntPtr id, uint time) { Tick(); }
 
@@ -377,7 +489,13 @@ public static class VlcDock
         if (pinnedPid == vlcPid) return;
         if (mainSeenAt == DateTime.MinValue) { mainSeenAt = DateTime.Now; return; }
         if ((DateTime.Now - mainSeenAt).TotalMilliseconds < 1500) return;  // let the skin settle
-        pinnedPid = vlcPid;
+        ClickPin(main, r);
+    }
+
+    // The click itself, also used by the tray menu. It toggles the skin's pin button.
+    static void ClickPin(IntPtr main, RECT r)
+    {
+        pinnedPid = vlcPid;   // StartPinned must not click again for this VLC
 
         int hh = H(r);
         RECT box;
@@ -402,20 +520,27 @@ public static class VlcDock
         PostMessage(main, WM_LBUTTONUP, IntPtr.Zero, pos);
     }
 
+    static bool FindMain(List<IntPtr> wins, out IntPtr main, out RECT rMain)
+    {
+        main = IntPtr.Zero;
+        rMain = new RECT();
+        foreach (IntPtr h in wins)
+        {
+            main = h;
+            GetWindowRect(h, out rMain);
+        }
+        return main != IntPtr.Zero;
+    }
+
     static void Place()
     {
         CheckVlc();
         if (vlcPid == 0) return;
 
         List<IntPtr> wins = FindSkinWindows();
-        IntPtr main = IntPtr.Zero;
-        RECT rMain = new RECT();
-        foreach (IntPtr h in wins)
-        {
-            main = h;
-            GetWindowRect(h, out rMain);
-        }
-        if (main == IntPtr.Zero) return;
+        IntPtr main;
+        RECT rMain;
+        if (!FindMain(wins, out main, out rMain)) return;
         if (StartPinned) PinOnce(main, rMain);
         if (!Dock || !enabled) return;
 
