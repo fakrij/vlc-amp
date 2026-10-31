@@ -18,6 +18,7 @@ source/build_skin.py  --(Pillow)-->  Titlebar-NNN.vlt  (tar.gz: theme.xml + img/
                     VLC skins2 interface  <--  vlcrc (intf=skins2, skins2-last=...)  <--  taskbar/Setup.cmd
                                           |
                taskbar/VlcDock.cs (Windows) moves / pins VLC's window, read via its window region
+               linux/titlebar-pin.py (Linux X11 / XWayland) pins it on start by clicking the skin's pin
 ```
 
 - **The skin** is generated, never hand-edited. `build_skin.py` draws every
@@ -240,6 +241,60 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
   some commands (next, stop), so read `Status` again a moment later. JSON is
   read by a small built-in parser, so no System.Web.Extensions reference.
   Test it on Linux with `TB_VLC_ARGS` (see tools/README.md).
+
+### Linux: pin on start
+
+`linux/titlebar-pin.py` (Python 3 standard library + ctypes on libX11 / libXext)
+does what `PinOnce` does on Windows, with the same pin offsets (100 % values
+times the scale: strip pin centre `W - 34 + 11, 12`, full player `W - 82 + 9, 11`
+from the player's top; bar at the bottom: from `H - 24` / `H - 122`).
+
+- **Finding the window.** skins2 creates one X window per skin window, class
+  `("vlc", "Vlc")`, name `VLC (TopWindow)`; most are 1 x 1 or 10 x 10
+  parked windows. The script takes the viewable one with the largest area
+  (556 x 436 at 100 %), searching a few levels below the root because a window
+  manager reparents clients into frames. It waits until size and shape stay the
+  same for 1 s. In `--watch` mode it pairs the window with the VLC process by
+  `_NET_WM_PID` (a Flatpak sandbox's own PID is not in `/proc`, so a window with
+  an unknown PID is accepted).
+- **Strip or full, bar top or bottom.** The same rule as `ReadShape` /
+  `tools/xshape.py`, from the Shape extension's bounding rectangles
+  (`XShapeGetRectangles`): bar at the bottom when the shape reaches the
+  window's last row; the full player is showing when the point `(0, bar)` from
+  the bar's outer edge is inside the shape.
+- **Scale.** The window height is `436 * scale`, matched against the shipped
+  scales (100 / 125 / 150 / 200); else the `Titlebar-NNN.vlt` name from
+  `/proc/<pid>/cmdline` or `skins2-last` in vlcrc (native, Flatpak and Snap
+  paths); else the nearest scale.
+- **The click is synthetic and the pointer never moves.** Checked in
+  `x11/x11_loop.cpp`: `X11Loop::handleX11Event` never looks at `send_event`;
+  `ButtonPress` / `ButtonRelease` take their position from `xbutton.x/y` of the
+  event itself, and `TopWindow::processEvent(EvtMouse)` calls `findHitControl`,
+  which sends the `enter` event to the checkbox (so the state machine goes
+  `up -> upOver` by itself; `CtrlCheckbox` then handles `down` and `up` and runs
+  the command on release). `MotionNotify` is useless here: skins2 ignores its
+  coordinates and calls `XQueryPointer`, which is where the real pointer is. So
+  the script sends `ButtonPress`, `ButtonRelease` with `XSendEvent` (empty event
+  mask: the event goes to the client that owns the window, VLC), then a
+  `LeaveNotify` so the pin does not keep its hover look. Verified with real VLC
+  3.0.20: no XTest, no `xdotool` needed (the fallbacks the brief listed were
+  not necessary and are not implemented).
+- **Check.** `X11Window::toggleOnTop` sends `_NET_WM_STATE` (`ABOVE`, or
+  `STAYS_ON_TOP` when the window manager lists it) to the root for every skin
+  window, only when `_NET_SUPPORTED` lists the atom. The script treats
+  `_NET_WM_STATE_ABOVE` on the window as proof; it also skips the click when it
+  is already set. Without a window manager (Xvfb) nothing is set at all, so it
+  compares the pixels around the pin before and after (`XGetImage`). It
+  retries once when nothing changed and never clicks again when the pin
+  changed look, because a second click would unpin.
+- **Watch mode.** Polls `/proc/<pid>/comm` every 2 s (`vlc`, `cvlc`, ...), one
+  forked child per new VLC (identified by PID and start time) waits up to 60 s
+  for its window, so a broken X connection exits only the child. One watcher per
+  user (`flock` in `$XDG_RUNTIME_DIR`). The display comes from the VLC
+  process's own `DISPLAY` (read from `/proc/<pid>/environ`), then ours, then
+  `:0`; `--display` limits the watcher to VLCs on that display.
+- Not done on purpose: docking into a panel, or placing windows (Wayland does
+  not allow it, and GNOME has no panel to dock into).
 
 ## Building and testing
 
