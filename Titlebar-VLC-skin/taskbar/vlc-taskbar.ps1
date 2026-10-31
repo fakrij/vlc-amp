@@ -27,6 +27,7 @@ $OffsetY           = 0                  # nudge the strip up (-) or down (+) ins
 $HideVlcTaskbarButton = $true           # the player is in the taskbar already, so hide VLC's own taskbar button
 $StartVlc          = $true              # start VLC if it is not running (not in -Watch mode)
 $StartPinned       = $true              # pin VLC "always on top" each time it starts
+$FollowSystemTheme = $true             # dark / light skin theme follows Windows (the package's skin has Midnight + Paper)
 $FlipPanels        = $true              # docked strip with PL / EQ open below the screen edge: flip them to open above
 $DebugLog          = $DebugLog.IsPresent -or $false   # $true = log what the helper does to %TEMP%\titlebar-helper.log
 $TrayIcon          = $true              # notification-area icon with a menu (dock on / off, pin now, quit)
@@ -565,6 +566,7 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::OffsetY     = $OffsetY
 [VlcDock]::Dock        = -not $NoDock
 [VlcDock]::StartPinned = $StartPinned
+[VlcDock]::FollowTheme = $FollowSystemTheme
 [VlcDock]::FlipPanels  = $FlipPanels
 if ($DebugLog) { [VlcDock]::LogPath = Join-Path $env:TEMP "titlebar-helper.log" }
 if ($remote) { [VlcDock]::RemotePort = $remote.Port; [VlcDock]::RemotePassword = $remote.Password }

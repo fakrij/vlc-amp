@@ -38,6 +38,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     public static int OffsetY = 0;         // fine-tune vertical position of the strip
     public static bool ExitWithVlc = true; // false = keep waiting for the next VLC (started with Windows)
     public static bool Dock = true;        // false = only StartPinned, no taskbar docking
+    public static bool FollowTheme = false;// light / dark skin theme follows Windows (needs a skin built with the pair)
     public static bool StartPinned = false;// click VLC's pin button once after each VLC start
     public static bool FlipPanels = true;  // docked strip with PL / EQ open off the screen (below a bottom taskbar): click the flip arrow
     public static string LogPath = null;   // debug log file (null = no log)
@@ -1106,6 +1107,105 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         return true;
     }
 
+    // ---------------------------------------------------------------- follow the system theme (item 25)
+    // Needs a skin with two themes: th0 dark (Midnight), th1 light (Paper). skins2 cannot read
+    // Windows' setting, so: (a) while VLC is not running, the helper rewrites the th0 / th1 flags
+    // in vlcrc's skins2-config (VLC reads them at start; the helper never edits it while VLC runs,
+    // because VLC rewrites the line when it exits); (b) while VLC runs and the full player shows,
+    // a click on its theme button (the strip has none) when the colours disagree with Windows.
+    static DateTime nextThemeSync = DateTime.MinValue;
+    static DateTime lastThemeClick = DateTime.MinValue;
+
+    static bool AppsUseLightTheme()
+    {
+        try
+        {
+            using (Microsoft.Win32.RegistryKey k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                       @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+            {
+                object v = k != null ? k.GetValue("AppsUseLightTheme") : null;
+                return v is int && (int)v == 1;
+            }
+        }
+        catch (Exception) { return false; }
+    }
+
+    // Called with VLC not running, and by the script before it starts VLC.
+    public static void SyncVlcrcTheme()
+    {
+        DateTime now = DateTime.Now;
+        if (now < nextThemeSync) return;
+        nextThemeSync = now.AddSeconds(5);
+        try
+        {
+            string rc = Path.Combine(Environment.GetEnvironmentVariable("APPDATA") ?? "", @"vlc\vlcrc");
+            if (!File.Exists(rc)) return;
+            string[] lines = File.ReadAllLines(rc);
+            int want = AppsUseLightTheme() ? 1 : 0;
+            bool changed = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (!lines[i].StartsWith("skins2-config=")) continue;
+                bool found = false;
+                string line = System.Text.RegularExpressions.Regex.Replace(lines[i],
+                    @"\[""th([0-9]+)"" (""[^""]*"" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+) [01]\]",
+                    delegate(System.Text.RegularExpressions.Match m)
+                    {
+                        int idx = int.Parse(m.Groups[1].Value);
+                        if (idx == want) found = true;
+                        return "[\"th" + idx + "\" " + m.Groups[2].Value + " " + (idx == want ? "1" : "0") + "]";
+                    });
+                if (found && line != lines[i]) { lines[i] = line; changed = true; }
+            }
+            if (!changed) return;
+            File.WriteAllLines(rc, lines, new System.Text.UTF8Encoding(false));
+            Log("theme: vlcrc set to " + (want == 1 ? "light (th1)" : "dark (th0)") + " for the next VLC start");
+        }
+        catch (Exception ex) { Log("theme: vlcrc sync failed: " + ex.GetType().Name + ": " + ex.Message); }
+    }
+
+    static void FollowSystemTheme(IntPtr main, RECT r)
+    {
+        DateTime now = DateTime.Now;
+        if ((now - lastThemeClick).TotalSeconds < 5 || now < nextThemeSync) return;
+        nextThemeSync = now.AddSeconds(2);
+        ShapeInfo s = ReadShape(main, W(r), H(r));
+        if (!s.Full) return;   // only the full player has a theme button
+        bool wantLight = AppsUseLightTheme();
+        int sum = 0, count = 0;
+        int[] sxs; int sy;
+        DockShape.ThemeSamplePoints(s, W(r), H(r), out sxs, out sy);
+        foreach (int sx in sxs)
+        {
+            POINT sp; sp.X = r.Left + sx; sp.Y = r.Top + sy;
+            if (WindowFromPoint(sp) != main) return;   // something covers VLC: look again later
+            int c = GetPixelAt(sp.X, sp.Y);
+            if (c < 0) return;
+            sum += ((c & 0xFF) + ((c >> 8) & 0xFF) + ((c >> 16) & 0xFF)) / 3; count++;
+        }
+        if (count == 0) return;
+        bool isLight = sum / count >= 128;
+        if (isLight == wantLight) return;
+        int x, y;
+        DockShape.ThemePoint(s, W(r), H(r), out x, out y);
+        lastThemeClick = now;
+        Log("theme: skin is " + (isLight ? "light" : "dark") + " (brightness " + sum / count + "), Windows is " +
+            (wantLight ? "light" : "dark") + "; clicking the theme button at " + Pt(x, y));
+        PostClick(main, x, y);
+    }
+
+    static int GetPixelAt(int x, int y)
+    {
+        IntPtr dc = GetDC(IntPtr.Zero);
+        if (dc == IntPtr.Zero) return -1;
+        try { uint c = GetPixel(dc, x, y); return c == 0xFFFFFFFF ? -1 : (int)c; }
+        finally { ReleaseDC(IntPtr.Zero, dc); }
+    }
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(POINT p);
+    [DllImport("user32.dll")] static extern IntPtr GetDC(IntPtr hwnd);
+    [DllImport("user32.dll")] static extern int ReleaseDC(IntPtr hwnd, IntPtr dc);
+    [DllImport("gdi32.dll")] static extern uint GetPixel(IntPtr dc, int x, int y);
+
     // ---------------------------------------------------------------- start pinned
     // VLC never saves "always on top", so it starts unpinned. Clicking the skin's own pin
     // button (posted mouse messages, which skins2 handles like real clicks) keeps VLC's
@@ -1325,7 +1425,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     static void Place()
     {
         CheckVlc();
-        if (vlcPid == 0) return;
+        if (vlcPid == 0) { if (FollowTheme) SyncVlcrcTheme(); return; }
         FindVlcRoot(vlcPid);   // cached: skins2's root window, for the state log and KeepVisible
 
         List<IntPtr> wins = FindSkinWindows();
@@ -1340,6 +1440,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         SeenVisible(main, rMain);
         LogChange("dpi", "DPI: VLC's window " + DpiOf(main) + " dpi, " + W(rMain) + "x" + H(rMain) + " px; helper thread " + DpiAwareness());
         if (StartPinned) PinOnce(main, rMain);
+        if (FollowTheme) FollowSystemTheme(main, rMain);
         if (!docked)
         {
             // not docked (-NoDock, or Ctrl+Alt+Shift+V): only keep the bar in place when the panels flip
@@ -1670,6 +1771,22 @@ public static class DockShape
         int panelTop = s.BarAtBottom ? hh - s.Bar - Px(s.Eq ? EqH : PlH, sc) : s.Bar;
         y = panelTop + Px(10, sc);
         return true;
+    }
+
+    // Client point of the theme button (full player only): 122 px from the right edge, like the pin button.
+    public static void ThemePoint(ShapeInfo s, int ww, int hh, out int x, out int y)
+    {
+        double sc = s.Scale;
+        x = ww - Px(122, sc) + Px(9, sc);
+        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(11, sc);
+    }
+
+    // A few points on the full player's panel (left of the LCD): their brightness tells dark from light.
+    public static void ThemeSamplePoints(ShapeInfo s, int ww, int hh, out int[] xs, out int y)
+    {
+        double sc = s.Scale;
+        xs = new int[] { Px(20, sc), Px(40, sc), Px(60, sc) };
+        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(60, sc);
     }
 
     // Client point of the pin button: full player 82 px from the right edge, 5 px from its top;
