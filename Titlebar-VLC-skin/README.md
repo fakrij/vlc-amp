@@ -242,8 +242,10 @@ speed. Then the seek bar, transport, volume, PL and EQ.
 - Drag & drop files onto the player to play them.
 - Video: playing a video opens a separate video window (centred on the screen). Drag
   its title bar to move it, the bottom right corner (or the edges) to resize it; the
-  buttons in the title bar go full screen and shrink the window to its title bar (the
-  button there brings the video back). In full screen, moving the mouse shows a control
+  buttons in the title bar make it fill the screen (title bar and control panel stay), go
+  full screen without a frame, and shrink the window to its title bar (the button there
+  brings the video back). A control panel (seek bar, previous / play / next, time, volume)
+  is docked under the video. In full screen, moving the mouse shows a control
   panel (seek bar, previous / play / next, volume, leave full screen) that fades out. With no video the
   window has no pixels and is invisible. It starts at the video's size.
 

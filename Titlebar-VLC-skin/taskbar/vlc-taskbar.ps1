@@ -105,7 +105,7 @@ function Find-Vlc {
 # never attaches a video to it: a state saved by an older skin has no entry for it, and VLC saves
 # the shrunk title bar layout. $scale = display scaling as a fraction (1.25). Needs a saved state.
 function Repair-VideoWindow([System.Collections.Generic.List[string]]$lines, [double]$scale) {
-    $w = [int][Math]::Round(492 * $scale); $h = [int][Math]::Round(300 * $scale)
+    $w = [int][Math]::Round(556 * $scale); $h = [int][Math]::Round(386 * $scale)
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $l = $lines[$i]
         if (-not $l.StartsWith("skins2-config=") -or $l.Length -le 14) { continue }

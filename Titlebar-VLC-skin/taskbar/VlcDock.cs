@@ -1150,14 +1150,14 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
                 // video to it (a config saved by an older skin has no entry, or a hidden one).
                 string vid = lines[i];
                 if (vid.IndexOf("[\"video\" ") < 0 && vid.Length > "skins2-config=".Length)
-                    vid += "[\"video\" \"video-l\" 600 300 " + (int)Math.Round(492 * Scale) + " " + (int)Math.Round(300 * Scale) + " 1]";
+                    vid += "[\"video\" \"video-l\" 600 300 " + (int)Math.Round(556 * Scale) + " " + (int)Math.Round(386 * Scale) + " 1]";
                 else
                 {
                     // shown, and never saved as the shrunk title bar (VLC saves the active layout, and
                     // the next video would then open as a bar)
                     vid = System.Text.RegularExpressions.Regex.Replace(vid,
                         @"\[""video"" ""video-min"" (-?[0-9]+ -?[0-9]+) [0-9]+ [0-9]+ [01]\]",
-                        "[\"video\" \"video-l\" ${1} " + (int)Math.Round(492 * Scale) + " " + (int)Math.Round(300 * Scale) + " 1]");
+                        "[\"video\" \"video-l\" ${1} " + (int)Math.Round(556 * Scale) + " " + (int)Math.Round(386 * Scale) + " 1]");
                     vid = System.Text.RegularExpressions.Regex.Replace(vid,
                         @"(\[""video"" ""[^""]*"" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+ )0\]", "${1}1]");
                 }

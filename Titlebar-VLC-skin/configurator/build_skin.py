@@ -1128,10 +1128,15 @@ def build(skin, W, BH=BAR_DEFAULT):
     # Video window: skins2 draws video only inside a Video control. The window is "shown" all the
     # time, but every control in it needs vlc.hasVout, so with no video it has no pixels and no
     # window shape (invisible, like the flag windows). It grows to the video (autoresize).
-    VB, VT = 6, 24                                         # frame width, title bar height (logical px)
-    VW, VH = 480 + 2 * VB, VT + 270 + VB
-    vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(2 * VB + 160), maxw=P(3840),
-                  minh=P(VT + VB + 90), maxh=P(2160))
+    # frame width, title bar height, docked control panel height (logical px); the video starts 16:9
+    # and the layout is as wide as the full player, so the seek bar bitmap fits like there
+    VB, VT, PH = 6, 24, 50
+    VW = W
+    VIDH = 306
+    PBASE = VT + VIDH                                      # top of the docked control panel
+    VH = PBASE + PH + VB
+    vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(420), maxw=P(3840),
+                  minh=P(VT + VB + PH + 90), maxh=P(2160))
     MW = 140                                               # minimized: the title bar alone
     mlay = Layout(skin, "video-min", P(MW), P(VT))
     # Full screen: skins2 shows the window "fullscreenController" over the video when the mouse
@@ -1175,13 +1180,26 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_dots(c, 4, 4, rows=2)                        # title bar grip, left
         grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
         nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
-               actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+               actions={"mr": "resizeE", "br": "resizeSE"})
         rt = dict(lt="righttop", rb="righttop")
         vlay.checkbox("vb_max", P(VW - 94), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
-                      "Fill the screen (keeps the title bar)", "Back to the window size", **rt)
+                      "Fill the screen (title bar and control panel stay)", "Back to the window size", **rt)
         vlay.button("vb_full", P(VW - 64), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
         vlay.button("vb_min", P(VW - 34), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
-        vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VH - VT - VB))
+        # docked control panel under the video: seek bar, transport, time, volume (kept at the bottom
+        # and stretched with the window)
+        bl = dict(lt="leftbottom", rb="leftbottom")
+        vlay.slider("s_seek_vid", P(8), P(PBASE + 4), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+                    "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, lt="leftbottom", rb="rightbottom")
+        vlay.button("fb_prev", P(8), P(PBASE + 22), "playlist.previous()", "Previous", **bl)
+        vlay.checkbox("ft_play", P(38), P(PBASE + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+        vlay.button("fb_next", P(78), P(PBASE + 22), "playlist.next()", "Next", **bl)
+        vlay.text(P(124), P(PBASE + 25), P(190), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+                  sample="1:02 / 4:12", focus=False, **bl)
+        vlay.image("ic_speaker", P(VW - 118), P(PBASE + 27), lt="rightbottom", rb="rightbottom", action="none")
+        vlay.slider("s_vol_vid", P(VW - 102), P(PBASE + 29), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
+                    "volume", "Volume $V%", bg="vol90", nbvert=P(90), lt="rightbottom", rb="rightbottom")
+        vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH))
         c = Canvas(MW, VT)
         panel_bg(c, 0, 0, MW, VT, 6)
         grip_dots(c, 4, 4, rows=2)
@@ -1216,7 +1234,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
                           yoffset=0, layouts=[fl], dragdrop=False))
     skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts),
-                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[vlay, mlay],
+                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[mlay, vlay],                  # last = default
                          dragdrop=False),
                     dict(id="fullscreenController", visible="false", position="South", yoffset=0,
                          layouts=[flay], dragdrop=False)] + flags

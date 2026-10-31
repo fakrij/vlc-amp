@@ -330,7 +330,7 @@ rc_get() {
 repair_video_window() {
     awk -v pct="$1" '
     /^skins2-config=./ {
-        w = int(492 * pct / 100 + 0.5); h = int(300 * pct / 100 + 0.5)
+        w = int(556 * pct / 100 + 0.5); h = int(386 * pct / 100 + 0.5)
         if (index($0, "[\"video\" ") == 0) $0 = $0 "[\"video\" \"video-l\" 600 300 " w " " h " 1]"
         while (match($0, /\["video" "video-min" -?[0-9]+ -?[0-9]+ [0-9]+ [0-9]+ [01]\]/)) {
             e = substr($0, RSTART, RLENGTH); split(e, f, " ")
