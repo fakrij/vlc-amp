@@ -25,7 +25,7 @@ using System.Threading;
 using System.Windows.Automation;
 using System.Windows.Forms;
 
-public static class VlcDock
+public static partial class VlcDock   // partial: the taskbar button is at the end of this file
 {
     // ---- settings (set from PowerShell before Run)
     public static double Scale = 1.0;      // skin build scale: 1.0 = Titlebar-100.vlt
@@ -151,6 +151,7 @@ public static class VlcDock
             " remote=" + (Remote.Configured ? "port " + RemotePort : "off"));
         StartRemote();
         if (TrayIcon) CreateTray();
+        TaskbarStart();  // own taskbar button (end of this file)
 
         try
         {
@@ -167,6 +168,7 @@ public static class VlcDock
         finally
         {
             remoteStop = true;
+            TaskbarStop();
             DisposeTray();   // also when VLC quit (not -Watch): no ghost icon left behind
             UnregisterHotKey(IntPtr.Zero, 1);
             if (locHook != IntPtr.Zero) UnhookWinEvent(locHook);
@@ -997,4 +999,970 @@ static class MiniJson
         }
         throw new FormatException("unterminated JSON string");
     }
+}
+
+// =======================================================================================
+// Own taskbar button (BACKLOG item 19): prev / play-pause / next when hovering it, the track
+// progress in the button, a hover preview with title / artist / time, VLC's icon.
+//
+// Why a button of our own: skins2's taskbar button belongs to its hidden 0 x 0 root window
+// inside vlc.exe, and Windows sends thumbnail-button clicks only to the window that owns the
+// button. So the helper shows a button for an invisible window of its own (and VLC's is
+// hidden with skins2-taskbar=0, which Setup / the launcher set when this is on).
+//
+//   the window   WS_POPUP + WS_EX_APPWINDOW, 192 x 108 at -32000,-32000, layered with alpha 0
+//                and click-through: it has a taskbar button but is never seen. DWM is told to
+//                use our bitmap for its thumbnail (DWMWA_FORCE_ICONIC_REPRESENTATION) and not
+//                to peek at it (DWMWA_DISALLOW_PEEK: there is nothing to peek at).
+//   app id       PKEY_AppUserModel_ID = the id Windows derives for vlc.exe itself (VLC 3 sets
+//                none, nor does its installer on the shortcuts), so the button groups with a
+//                pinned VLC; plus RelaunchCommand / DisplayName / Icon = vlc.exe, so pinning
+//                this button pins VLC and not PowerShell. See TaskbarAppIdFor.
+//   click        the shell activates our window; we hand the activation to VLC's main skin
+//                window (restoring VLC first if it was minimized) and drop to the bottom.
+//   close        "Close window" (taskbar menu, thumbnail X) = quit VLC: WM_SYSCOMMAND SC_CLOSE
+//                to skins2's root window, which calls libvlc_Quit (win32_factory.cpp), the same
+//                as VLC's own taskbar button. WM_CLOSE would not do: skins2 does not handle it
+//                and DefWindowProc would destroy the window under VLC's feet.
+//
+// Lifecycle: TaskbarStart() / TaskbarStop() from Run(); a 250 ms timer creates the window
+// while VLC runs with the skin (its root window exists) and the web interface is configured,
+// and destroys it when VLC is gone. Everything runs on the helper's UI thread.
+// =======================================================================================
+public static partial class VlcDock
+{
+    // ---- settings (set from PowerShell before Run)
+    public static bool TaskbarButton = false;    // own taskbar button with hover controls (needs RemotePort)
+    public static string TaskbarAppId = "auto";  // "auto" = the id Windows derives from vlc.exe's path; "" = none; else this id
+
+    // ---- state (UI thread only)
+    static TimerProc tbTimerDelegate = OnTaskbarTimer;   // keep alive (GC)
+    static UIntPtr tbTimer = UIntPtr.Zero;
+    static TaskbarWindow tbWindow;
+    static uint tbPid;                          // VLC process tbWindow belongs to
+    static IntPtr tbRoot = IntPtr.Zero;         // skins2's hidden root window ...
+    static uint tbRootPid;                      // ... of this process
+    static IntPtr tbRootTabRemoved = IntPtr.Zero;   // root window whose own taskbar button we removed
+    static DateTime tbRetryAt = DateTime.MinValue;
+    static ITaskbarList3 tbList;
+
+    const uint TB_WM_SYSCOMMAND = 0x112;
+    const int TB_SC_CLOSE = 0xF060, TB_SC_RESTORE = 0xF120;
+
+    static void TaskbarStart()
+    {
+        if (!TaskbarButton) return;
+        if (!Remote.Configured)
+        {
+            Log("taskbar button: off (VLC's web interface is not set up; run Setup)");
+            return;
+        }
+        tbTimer = SetTimer(IntPtr.Zero, UIntPtr.Zero, 250, tbTimerDelegate);
+        Log("taskbar button: on (app id setting \"" + TaskbarAppId + "\")");
+    }
+
+    static void TaskbarStop()
+    {
+        if (tbTimer != UIntPtr.Zero) { TbNative.KillTimer(IntPtr.Zero, tbTimer); tbTimer = UIntPtr.Zero; }
+        TaskbarDestroy();
+        if (tbList != null)
+        {
+            try { Marshal.ReleaseComObject(tbList); }
+            catch (Exception) { }
+            tbList = null;
+        }
+    }
+
+    static void OnTaskbarTimer(IntPtr hwnd, uint msg, UIntPtr id, uint time)
+    {
+        try { TaskbarUpdate(); }
+        catch (Exception ex) { Log("taskbar button: " + ex.GetType().Name + ": " + ex.Message); }
+    }
+
+    static void TaskbarUpdate()
+    {
+        uint pid = vlcPid;
+        IntPtr root = pid != 0 ? FindVlcRoot(pid) : IntPtr.Zero;
+        if (tbWindow != null && (root == IntPtr.Zero || pid != tbPid)) TaskbarDestroy();
+        if (root == IntPtr.Zero) return;
+        if (tbWindow == null)
+        {
+            if (DateTime.Now < tbRetryAt) return;
+            if (!TaskbarCreate(pid)) { tbRetryAt = DateTime.Now.AddSeconds(10); return; }
+        }
+        HideVlcOwnButton(root);
+        tbWindow.Refresh(Remote.Status, DateTime.Now);
+    }
+
+    static bool TaskbarCreate(uint pid)
+    {
+        string exe = TbNative.ProcessPath(pid);
+        string appId = TaskbarAppIdFor(exe);
+        TaskbarWindow w = new TaskbarWindow();
+        try
+        {
+            w.Create(exe, appId);
+        }
+        catch (Exception ex)
+        {
+            Log("taskbar button: could not create the window: " + ex.GetType().Name + ": " + ex.Message);
+            w.Destroy();
+            return false;
+        }
+        tbWindow = w;
+        tbPid = pid;
+        Log("taskbar button: created " + Describe(w.Handle) + " for VLC pid " + pid + ", exe \"" + (exe ?? "?") +
+            "\", app id \"" + (appId ?? "(none)") + "\"");
+        return true;
+    }
+
+    static void TaskbarDestroy()
+    {
+        if (tbWindow == null) return;
+        try { tbWindow.Destroy(); }
+        catch (Exception) { }
+        tbWindow = null;
+        tbPid = 0;
+        tbRootTabRemoved = IntPtr.Zero;
+        Log("taskbar button: removed");
+    }
+
+    // skins2's root window: class SkinWindowClass, no owner, title "VLC Media Player" (its other
+    // windows are titled "VlC Media Player"; win32_factory.cpp / win32_window.cpp). Normally the
+    // owner of the main skin window; while VLC is minimized its windows are hidden, so then by title.
+    static IntPtr FindVlcRoot(uint pid)
+    {
+        if (tbRoot != IntPtr.Zero && tbRootPid == pid && TbNative.IsWindow(tbRoot)) return tbRoot;
+        IntPtr found = IntPtr.Zero;
+        IntPtr main;
+        RECT r;
+        if (FindMain(FindSkinWindows(), out main, out r))
+        {
+            IntPtr owner = TbNative.GetWindow(main, TbNative.GW_OWNER);
+            if (IsSkinRoot(owner, pid)) found = owner;
+        }
+        if (found == IntPtr.Zero)
+        {
+            TbNative.EnumWindows(delegate (IntPtr h, IntPtr l)
+            {
+                if (!IsSkinRoot(h, pid)) return true;
+                found = h;
+                return false;
+            }, IntPtr.Zero);
+        }
+        if (found != tbRoot && found != IntPtr.Zero) Log("taskbar button: VLC root window " + Describe(found));
+        tbRoot = found;
+        tbRootPid = pid;
+        return found;
+    }
+
+    static bool IsSkinRoot(IntPtr h, uint pid)
+    {
+        if (h == IntPtr.Zero) return false;
+        uint p;
+        TbNative.GetWindowThreadProcessId(h, out p);
+        if (p != pid || ClassOf(h) != "SkinWindowClass") return false;
+        if (TbNative.GetWindow(h, TbNative.GW_OWNER) != IntPtr.Zero) return false;
+        StringBuilder sb = new StringBuilder(32);
+        TbNative.GetWindowText(h, sb, 32);
+        return sb.ToString() == "VLC Media Player";
+    }
+
+    // skins2-taskbar=1 (Setup not run again): VLC's own button would sit next to ours, in the
+    // same group. Take it off the taskbar (once per root window).
+    static void HideVlcOwnButton(IntPtr root)
+    {
+        if (root == tbRootTabRemoved || tbList == null || tbWindow == null || !tbWindow.Ready) return;
+        tbRootTabRemoved = root;
+        if ((TbNative.GetWindowLong(root, TbNative.GWL_EXSTYLE) & TbNative.WS_EX_APPWINDOW) == 0) return;
+        int hr = tbList.DeleteTab(root);
+        Log("taskbar button: VLC shows its own taskbar button (skins2-taskbar=1; run Setup), removed it: hr=0x" +
+            hr.ToString("X8"));
+    }
+
+    // ---- what the button does
+    static void TaskbarClicked(int id)
+    {
+        string cmd = id == 1 ? "pl_previous" : id == 2 ? "pl_pause" : id == 3 ? "pl_next" : null;
+        if (cmd == null) return;
+        Log("taskbar button: " + cmd);
+        Remote.SendAsync(cmd);
+    }
+
+    // Our window was activated (taskbar click, its thumbnail, Alt+Tab): we are the foreground
+    // process now, so we may hand the foreground to VLC.
+    static void TaskbarActivated()
+    {
+        IntPtr root = tbRoot;
+        uint pid = vlcPid;
+        if (root == IntPtr.Zero || pid == 0) return;
+        TbNative.AllowSetForegroundWindow(pid);
+        if (TbNative.IsIconic(root))
+        {
+            // VLC minimized (skin's minimize button = ShowWindow(root, SW_MINIMIZE)): restore it
+            // through skins2 itself (its root window handles SC_RESTORE), and wait for it.
+            UIntPtr res;
+            TbNative.SendMessageTimeout(root, TB_WM_SYSCOMMAND, new IntPtr(TB_SC_RESTORE), IntPtr.Zero,
+                                        TbNative.SMTO_ABORTIFHUNG, 1000, out res);
+            Log("taskbar button: VLC was minimized, restored");
+        }
+        IntPtr main;
+        RECT r;
+        if (FindMain(FindSkinWindows(), out main, out r))
+        {
+            bool ok = TbNative.SetForegroundWindow(main);
+            Log("taskbar button: activated, VLC to the front " + Describe(main) + (ok ? "" : " FAILED"));
+        }
+        else Log("taskbar button: activated, but VLC's main window is not visible");
+        if (tbWindow != null)
+            TbNative.SetWindowPos(tbWindow.Handle, TbNative.HWND_BOTTOM, 0, 0, 0, 0,
+                                  TbNative.SWP_NOMOVE | TbNative.SWP_NOSIZE | TbNative.SWP_NOACTIVATE);
+    }
+
+    static void TaskbarClose()
+    {
+        IntPtr root = tbRoot;
+        if (root == IntPtr.Zero) return;
+        Log("taskbar button: close, VLC quits (SC_CLOSE to " + Describe(root) + ")");
+        TbNative.PostMessage(root, TB_WM_SYSCOMMAND, new IntPtr(TB_SC_CLOSE), IntPtr.Zero);
+    }
+
+    // ---- app id
+    // Windows groups taskbar buttons by AppUserModelID. VLC 3 never sets one (nothing in
+    // bin/winvlc.c or modules/gui; the installer's shortcuts have none), so Windows derives
+    // it from the exe path, for the running vlc.exe and for a pinned VLC shortcut alike: the
+    // path with a known folder replaced by its GUID, e.g.
+    //   {6D809377-6AF0-444B-8957-A3773F02200E}\VideoLAN\VLC\vlc.exe   (C:\Program Files)
+    // which is also the AppID that Get-StartApps lists for VLC. Using that id puts our button
+    // into VLC's group (pinned icon, jump list). If it is not the right one, the button simply
+    // stands on its own; $TaskbarAppId in the ps1 can then set the right id by hand.
+    static string TaskbarAppIdFor(string exe)
+    {
+        string id = TaskbarAppId ?? "auto";
+        if (id != "auto") return id.Length > 0 ? id : null;
+        if (exe == null) return null;
+        string derived = VlcTaskbarView.ImplicitAppId(exe, KnownFolderRoots());
+        return derived.Length <= 128 ? derived : "VideoLAN.VLC.TitlebarHelper";   // AUMIDs are at most 128 characters
+    }
+
+    static List<KeyValuePair<string, string>> KnownFolderRoots()
+    {
+        List<KeyValuePair<string, string>> l = new List<KeyValuePair<string, string>>();
+        string pf64 = Environment.GetEnvironmentVariable("ProgramW6432");   // also set in 32-bit processes on 64-bit Windows
+        string pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+        if (string.IsNullOrEmpty(pf64)) pf86 = Environment.GetEnvironmentVariable("ProgramFiles");   // 32-bit Windows (unverified)
+        AddRoot(l, pf64, "{6D809377-6AF0-444B-8957-A3773F02200E}");                    // FOLDERID_ProgramFilesX64
+        AddRoot(l, pf86, "{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}");                    // FOLDERID_ProgramFilesX86
+        AddRoot(l, Environment.SystemDirectory, "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}"); // FOLDERID_System
+        AddRoot(l, Environment.GetEnvironmentVariable("windir"), "{F38BF404-1D43-42F2-9305-67DE0B28FC23}"); // FOLDERID_Windows
+        AddRoot(l, Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}");                              // FOLDERID_LocalAppData
+        AddRoot(l, Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}");                              // FOLDERID_RoamingAppData
+        AddRoot(l, Environment.GetEnvironmentVariable("USERPROFILE"), "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"); // FOLDERID_Profile
+        return l;
+    }
+
+    static void AddRoot(List<KeyValuePair<string, string>> l, string path, string guid)
+    {
+        if (!string.IsNullOrEmpty(path)) l.Add(new KeyValuePair<string, string>(path, guid));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // The invisible window that owns the button. A NativeWindow: its messages arrive through
+    // the helper's own GetMessage loop (no Application.Run).
+    sealed class TaskbarWindow : NativeWindow
+    {
+        static readonly uint WM_TASKBARBUTTONCREATED = TbNative.RegisterWindowMessage("TaskbarButtonCreated");
+        const int WM_ACTIVATE = 0x0006, WM_CLOSE = 0x0010, WM_SETTINGCHANGE = 0x001A, WM_COMMAND = 0x0111,
+                  WM_SYSCOMMAND = 0x0112, WM_DWMSENDICONICTHUMBNAIL = 0x0323, WM_FORWARD = 0x8000 + 19;   // WM_APP + 19
+        const int SC_SIZE = 0xF000, SC_MOVE = 0xF010, SC_MINIMIZE = 0xF020, SC_MAXIMIZE = 0xF030, SC_CLOSE = 0xF060;
+        const int THBN_CLICKED = 0x1800;
+
+        IntPtr bigIcon = IntPtr.Zero, smallIcon = IntPtr.Zero;
+        IntPtr[] glyphs;                // prev, play, pause, next (VlcTaskbarView.Glyph*)
+        bool lightTheme;
+        bool ready;                     // TaskbarButtonCreated seen, buttons added
+        VlcStatus shown = VlcStatus.Offline;
+        string title;
+        int buttonState = -1;           // what the thumbnail buttons show (enabled / playing / theme bits)
+        int progressFlag = -1;
+        long progressPermille = -1;
+        string thumbKey;
+
+        public bool Ready { get { return ready; } }
+
+        public void Create(string exe, string appId)
+        {
+            CreateParams cp = new CreateParams();
+            cp.Caption = VlcTaskbarView.DefaultTitle;
+            cp.Style = unchecked((int)(TbNative.WS_POPUP | TbNative.WS_SYSMENU | TbNative.WS_MINIMIZEBOX));
+            cp.ExStyle = TbNative.WS_EX_APPWINDOW | TbNative.WS_EX_LAYERED | TbNative.WS_EX_TRANSPARENT;
+            cp.X = -32000; cp.Y = -32000;
+            cp.Width = 192; cp.Height = 108;   // 16:9, so DWM offers a card-shaped thumbnail
+            CreateHandle(cp);                  // throws Win32Exception on failure
+            IntPtr h = Handle;
+            TbNative.SetLayeredWindowAttributes(h, 0, 0, TbNative.LWA_ALPHA);   // fully transparent
+
+            if (exe != null && TbNative.ExtractIconEx(exe, 0, out bigIcon, out smallIcon, 1) > 0)
+            {
+                if (bigIcon != IntPtr.Zero) TbNative.SendMessage(h, TbNative.WM_SETICON, new IntPtr(1), bigIcon);     // ICON_BIG
+                if (smallIcon != IntPtr.Zero) TbNative.SendMessage(h, TbNative.WM_SETICON, IntPtr.Zero, smallIcon); // ICON_SMALL
+            }
+            SetAppProperties(h, exe, appId);
+
+            int on = 1;
+            TbNative.DwmSetWindowAttribute(h, TbNative.DWMWA_FORCE_ICONIC_REPRESENTATION, ref on, 4);
+            TbNative.DwmSetWindowAttribute(h, TbNative.DWMWA_HAS_ICONIC_BITMAP, ref on, 4);
+            TbNative.DwmSetWindowAttribute(h, TbNative.DWMWA_DISALLOW_PEEK, ref on, 4);
+            // only matters if the helper runs elevated: let Explorer's messages through
+            TbNative.ChangeWindowMessageFilterEx(h, WM_TASKBARBUTTONCREATED, TbNative.MSGFLT_ALLOW, IntPtr.Zero);
+            TbNative.ChangeWindowMessageFilterEx(h, (uint)WM_COMMAND, TbNative.MSGFLT_ALLOW, IntPtr.Zero);
+
+            lightTheme = VlcTaskbarView.SystemUsesLightTheme();
+            glyphs = MakeGlyphs(lightTheme);
+            TbNative.ShowWindow(h, TbNative.SW_SHOWNOACTIVATE);   // now the taskbar button appears
+            // bottom of the z-order: when another window closes, Windows activates the next
+            // one in z-order, and that should not be ours (it would pull VLC forward)
+            TbNative.SetWindowPos(h, TbNative.HWND_BOTTOM, 0, 0, 0, 0,
+                                  TbNative.SWP_NOMOVE | TbNative.SWP_NOSIZE | TbNative.SWP_NOACTIVATE);
+        }
+
+        public void Destroy()
+        {
+            IntPtr h = Handle;
+            if (h != IntPtr.Zero)
+            {
+                ClearAppProperties(h);   // the docs ask for this before the window goes
+                DestroyHandle();
+            }
+            if (bigIcon != IntPtr.Zero) TbNative.DestroyIcon(bigIcon);
+            if (smallIcon != IntPtr.Zero) TbNative.DestroyIcon(smallIcon);
+            bigIcon = smallIcon = IntPtr.Zero;
+            FreeGlyphs(glyphs);
+            glyphs = null;
+            ready = false;
+        }
+
+        // Called every 250 ms with the newest status.
+        public void Refresh(VlcStatus s, DateTime now)
+        {
+            IntPtr h = Handle;
+            if (h == IntPtr.Zero) return;
+            shown = s ?? VlcStatus.Offline;
+            string t = VlcTaskbarView.ButtonTitle(shown);
+            if (t != title) { TbNative.SetWindowText(h, t); title = t; }
+            if (!ready) return;
+            UpdateButtons(false);
+            UpdateProgress(now);
+            string key = VlcTaskbarView.ThumbnailKey(shown, now);
+            if (key != thumbKey)
+            {
+                thumbKey = key;
+                TbNative.DwmInvalidateIconicBitmaps(h);   // DWM asks again when it shows the preview
+            }
+        }
+
+        void OnButtonCreated()
+        {
+            if (tbList == null)
+            {
+                tbList = (ITaskbarList3)new CTaskbarList();
+                int hr0 = tbList.HrInit();
+                if (hr0 < 0) Log("taskbar button: ITaskbarList3.HrInit hr=0x" + hr0.ToString("X8"));
+            }
+            buttonState = -1; progressFlag = -1; progressPermille = -1;
+            tbRootTabRemoved = IntPtr.Zero;   // after an Explorer restart VLC's own button may be back
+            int hr = tbList.ThumbBarAddButtons(Handle, 3, Buttons(shown));
+            Log("taskbar button: button created, ThumbBarAddButtons hr=0x" + hr.ToString("X8"));
+            if (hr >= 0) buttonState = ButtonState(shown);
+            ready = true;
+            UpdateProgress(DateTime.Now);
+        }
+
+        int ButtonState(VlcStatus s)
+        {
+            return (s.Ok ? 1 : 0) | (s.State == VlcState.Playing ? 2 : 0) | (lightTheme ? 4 : 0);
+        }
+
+        THUMBBUTTON[] Buttons(VlcStatus s)
+        {
+            bool playing = s.State == VlcState.Playing;
+            uint flags = s.Ok ? TbNative.THBF_ENABLED : TbNative.THBF_DISABLED;
+            THUMBBUTTON[] b = new THUMBBUTTON[3];
+            b[0] = Button(1, glyphs[VlcTaskbarView.GlyphPrev], "Previous", flags);
+            b[1] = Button(2, glyphs[playing ? VlcTaskbarView.GlyphPause : VlcTaskbarView.GlyphPlay], playing ? "Pause" : "Play", flags);
+            b[2] = Button(3, glyphs[VlcTaskbarView.GlyphNext], "Next", flags);
+            return b;
+        }
+
+        static THUMBBUTTON Button(uint id, IntPtr icon, string tip, uint flags)
+        {
+            THUMBBUTTON b = new THUMBBUTTON();
+            b.dwMask = TbNative.THB_ICON | TbNative.THB_TOOLTIP | TbNative.THB_FLAGS;
+            b.iId = id;
+            b.hIcon = icon;
+            b.szTip = tip;
+            b.dwFlags = flags;
+            return b;
+        }
+
+        void UpdateButtons(bool force)
+        {
+            int state = ButtonState(shown);
+            if (!force && state == buttonState) return;
+            int hr = tbList.ThumbBarUpdateButtons(Handle, 3, Buttons(shown));
+            if (hr >= 0) buttonState = state;
+            else Log("taskbar button: ThumbBarUpdateButtons hr=0x" + hr.ToString("X8"));
+        }
+
+        // Green while playing, yellow while paused, none when stopped / no length (streams).
+        void UpdateProgress(DateTime now)
+        {
+            VlcStatus s = shown;
+            int flag = VlcTaskbarView.ProgressFlag(s);
+            long total = (long)s.Length * 1000;
+            long done = VlcTaskbarView.ElapsedMs(s, now);
+            long permille = flag == TbNative.TBPF_NOPROGRESS || total <= 0 ? -1 : done * 1000 / total;
+            if (flag == progressFlag && permille == progressPermille) return;
+            IntPtr h = Handle;
+            // a value switches the state to NORMAL only from NOPROGRESS, so value first, then state
+            if (flag != TbNative.TBPF_NOPROGRESS) tbList.SetProgressValue(h, (ulong)done, (ulong)total);
+            if (flag != progressFlag) tbList.SetProgressState(h, flag);
+            progressFlag = flag;
+            progressPermille = permille;
+        }
+
+        // DWM wants a thumbnail no larger than maxW x maxH: a 32-bit top-down DIB section with
+        // premultiplied alpha. GDI+ draws straight into the DIB's memory as Format32bppPArgb.
+        void SendThumbnail(int maxW, int maxH)
+        {
+            if (maxW <= 0 || maxH <= 0) return;
+            int w = maxW, h = maxH;
+            VlcTaskbarView.FitCard(ref w, ref h);
+            TbNative.BITMAPINFOHEADER bi = new TbNative.BITMAPINFOHEADER();
+            bi.biSize = (uint)Marshal.SizeOf(typeof(TbNative.BITMAPINFOHEADER));
+            bi.biWidth = w;
+            bi.biHeight = -h;          // top-down, like GDI+'s rows
+            bi.biPlanes = 1;
+            bi.biBitCount = 32;
+            bi.biCompression = 0;      // BI_RGB
+            IntPtr bits;
+            IntPtr hbmp = TbNative.CreateDIBSection(IntPtr.Zero, ref bi, 0, out bits, IntPtr.Zero, 0);
+            if (hbmp == IntPtr.Zero || bits == IntPtr.Zero) { Log("taskbar button: CreateDIBSection failed"); return; }
+            try
+            {
+                using (Bitmap bmp = new Bitmap(w, h, w * 4, System.Drawing.Imaging.PixelFormat.Format32bppPArgb, bits))
+                using (Graphics g = Graphics.FromImage(bmp))
+                    VlcTaskbarView.DrawThumbnail(g, w, h, Remote.Status, DateTime.Now);
+                int hr = TbNative.DwmSetIconicThumbnail(Handle, hbmp, 0);
+                if (hr < 0) Log("taskbar button: DwmSetIconicThumbnail " + w + "x" + h + " hr=0x" + hr.ToString("X8"));
+            }
+            finally { TbNative.DeleteObject(hbmp); }   // DWM keeps its own copy
+        }
+
+        void OnThemeChanged()
+        {
+            bool light = VlcTaskbarView.SystemUsesLightTheme();
+            if (light == lightTheme) return;
+            IntPtr[] old = glyphs;
+            lightTheme = light;
+            glyphs = MakeGlyphs(light);
+            if (ready) UpdateButtons(true);
+            FreeGlyphs(old);   // only after the taskbar has the new ones
+        }
+
+        static IntPtr[] MakeGlyphs(bool light)
+        {
+            int n = TbNative.GetSystemMetrics(TbNative.SM_CXSMICON);
+            if (n < 16) n = 16;
+            Color c = light ? Color.FromArgb(32, 33, 36) : Color.White;
+            IntPtr[] icons = new IntPtr[4];
+            for (int k = 0; k < 4; k++)
+            {
+                using (Bitmap bmp = VlcTaskbarView.GlyphBitmap(k, n, c))
+                    icons[k] = bmp.GetHicon();
+            }
+            return icons;
+        }
+
+        static void FreeGlyphs(IntPtr[] icons)
+        {
+            if (icons == null) return;
+            foreach (IntPtr i in icons) if (i != IntPtr.Zero) TbNative.DestroyIcon(i);
+        }
+
+        void SetAppProperties(IntPtr h, string exe, string appId)
+        {
+            TbNative.IPropertyStore ps = OpenProps(h);
+            if (ps == null) return;
+            try
+            {
+                // relaunch first, the id last (setting the id makes the taskbar read the others)
+                if (exe != null)
+                {
+                    SetProp(ps, TbNative.PID_RelaunchCommand, "\"" + exe + "\"");
+                    SetProp(ps, TbNative.PID_RelaunchDisplayNameResource, VlcTaskbarView.DefaultTitle);
+                    SetProp(ps, TbNative.PID_RelaunchIconResource, exe + ",0");
+                }
+                if (appId != null) SetProp(ps, TbNative.PID_ID, appId);
+                ps.Commit();
+            }
+            finally { Marshal.ReleaseComObject(ps); }
+        }
+
+        void ClearAppProperties(IntPtr h)
+        {
+            TbNative.IPropertyStore ps = OpenProps(h);
+            if (ps == null) return;
+            try
+            {
+                SetProp(ps, TbNative.PID_ID, null);
+                SetProp(ps, TbNative.PID_RelaunchCommand, null);
+                SetProp(ps, TbNative.PID_RelaunchDisplayNameResource, null);
+                SetProp(ps, TbNative.PID_RelaunchIconResource, null);
+                ps.Commit();
+            }
+            catch (Exception) { }
+            finally { Marshal.ReleaseComObject(ps); }
+        }
+
+        static TbNative.IPropertyStore OpenProps(IntPtr h)
+        {
+            Guid iid = TbNative.IID_IPropertyStore;
+            TbNative.IPropertyStore ps;
+            int hr = TbNative.SHGetPropertyStoreForWindow(h, ref iid, out ps);
+            if (hr < 0 || ps == null) { Log("taskbar button: SHGetPropertyStoreForWindow hr=0x" + hr.ToString("X8")); return null; }
+            return ps;
+        }
+
+        // value null = VT_EMPTY (removes the property)
+        static void SetProp(TbNative.IPropertyStore ps, uint pid, string value)
+        {
+            TbNative.PROPERTYKEY key = new TbNative.PROPERTYKEY();
+            key.fmtid = TbNative.FMTID_AppUserModel;
+            key.pid = pid;
+            TbNative.PROPVARIANT pv = new TbNative.PROPVARIANT();
+            if (value != null) { pv.vt = TbNative.VT_LPWSTR; pv.p = Marshal.StringToCoTaskMemUni(value); }
+            try
+            {
+                int hr = ps.SetValue(ref key, ref pv);
+                if (hr < 0) Log("taskbar button: property " + pid + " hr=0x" + hr.ToString("X8"));
+            }
+            finally { if (pv.p != IntPtr.Zero) Marshal.FreeCoTaskMem(pv.p); }   // the store keeps its own copy
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            try
+            {
+                if (OnMessage(ref m)) return;
+            }
+            catch (Exception ex) { Log("taskbar button: message 0x" + m.Msg.ToString("X") + ": " + ex.GetType().Name + ": " + ex.Message); }
+            base.WndProc(ref m);
+        }
+
+        bool OnMessage(ref Message m)
+        {
+            int msg = m.Msg;
+            long wp = m.WParam.ToInt64();
+            if ((uint)msg == WM_TASKBARBUTTONCREATED) { OnButtonCreated(); return true; }   // also after Explorer restarts
+            switch (msg)
+            {
+                case WM_COMMAND:
+                    if (((wp >> 16) & 0xFFFF) != THBN_CLICKED) return false;
+                    TaskbarClicked((int)(wp & 0xFFFF));
+                    return true;
+                case WM_DWMSENDICONICTHUMBNAIL:
+                    long lp = m.LParam.ToInt64();
+                    SendThumbnail((int)((lp >> 16) & 0xFFFF), (int)(lp & 0xFFFF));   // HIWORD = width, LOWORD = height
+                    return true;
+                case WM_ACTIVATE:
+                    if ((wp & 0xFFFF) != 0) TbNative.PostMessage(Handle, (uint)WM_FORWARD, IntPtr.Zero, IntPtr.Zero);   // after activation completes
+                    return false;
+                case WM_FORWARD:
+                    TaskbarActivated();
+                    return true;
+                case WM_SYSCOMMAND:
+                    int sc = (int)(wp & 0xFFF0);
+                    if (sc == SC_CLOSE) { TaskbarClose(); return true; }
+                    // the window must stay as it is: no minimize (a click on the active button), maximize, move, size
+                    return sc == SC_MINIMIZE || sc == SC_MAXIMIZE || sc == SC_MOVE || sc == SC_SIZE;
+                case WM_CLOSE:
+                    TaskbarClose();   // never DestroyWindow from outside: TaskbarDestroy does that
+                    return true;
+                case WM_SETTINGCHANGE:
+                    if (m.LParam != IntPtr.Zero && Marshal.PtrToStringUni(m.LParam) == "ImmersiveColorSet") OnThemeChanged();
+                    return false;
+            }
+            return false;
+        }
+
+    }
+}
+
+// What the taskbar button shows: pure functions (no Win32), so they can be tested anywhere.
+public static class VlcTaskbarView
+{
+    public const string DefaultTitle = "VLC media player";
+    public const int GlyphPrev = 0, GlyphPlay = 1, GlyphPause = 2, GlyphNext = 3;
+
+    // Midnight
+    static readonly Color Back = Color.FromArgb(0x1b, 0x1c, 0x1e);
+    static readonly Color Track = Color.FromArgb(0x2e, 0x31, 0x35);
+    static readonly Color Accent = Color.FromArgb(0x5f, 0xd3, 0xe8);
+    static readonly Color Text = Color.FromArgb(0xe8, 0xea, 0xed);
+    static readonly Color Dim = Color.FromArgb(0x9a, 0xa0, 0xa6);
+
+    // "Artist - Title", "Title", or "VLC media player" when nothing is loaded / VLC does not answer
+    public static string ButtonTitle(VlcStatus s)
+    {
+        if (s == null || !s.Ok || s.State == VlcState.Offline) return DefaultTitle;
+        string t = (s.Title ?? "").Trim(), a = (s.Artist ?? "").Trim();
+        if (t.Length == 0) return DefaultTitle;
+        return a.Length > 0 ? a + " - " + t : t;
+    }
+
+    // Milliseconds into the track now: VLC reports whole seconds every 500 ms, so count on
+    // from the last report while playing (at most 5 s, in case the reports stop).
+    public static long ElapsedMs(VlcStatus s, DateTime now)
+    {
+        if (s == null || !s.Ok) return 0;
+        long ms = (long)s.Time * 1000;
+        if (s.State == VlcState.Playing && s.At != DateTime.MinValue)
+        {
+            double d = (now - s.At).TotalMilliseconds;
+            if (d > 0) ms += (long)Math.Min(d, 5000);
+        }
+        if (s.Length > 0 && ms > (long)s.Length * 1000) ms = (long)s.Length * 1000;
+        return ms < 0 ? 0 : ms;
+    }
+
+    // ITaskbarList3 progress state: TBPF_NORMAL (2) playing, TBPF_PAUSED (8) paused, else TBPF_NOPROGRESS (0)
+    public static int ProgressFlag(VlcStatus s)
+    {
+        if (s == null || !s.Ok || s.Length <= 0) return 0;
+        if (s.State == VlcState.Playing) return 2;
+        if (s.State == VlcState.Paused) return 8;
+        return 0;
+    }
+
+    public static string FormatTime(long seconds)
+    {
+        if (seconds < 0) seconds = 0;
+        long h = seconds / 3600, m = seconds / 60 % 60, sec = seconds % 60;
+        return h > 0 ? h + ":" + m.ToString("00") + ":" + sec.ToString("00") : m + ":" + sec.ToString("00");
+    }
+
+    // "1:23 / 4:56", or "1:23" without a length (streams)
+    public static string TimeText(VlcStatus s, DateTime now)
+    {
+        long el = ElapsedMs(s, now) / 1000;
+        return s != null && s.Length > 0 ? FormatTime(el) + " / " + FormatTime(s.Length) : FormatTime(el);
+    }
+
+    // Changes whenever the preview would look different (the time once a second).
+    public static string ThumbnailKey(VlcStatus s, DateTime now)
+    {
+        if (s == null || !s.Ok) return "offline";
+        return s.State + "|" + s.Title + "|" + s.Artist + "|" + TimeText(s, now) + "|" + s.PlaylistId;
+    }
+
+    // Our own window's taskbar group: Windows' id for an exe without an explicit one is its
+    // path with the known folder it is in replaced by that folder's GUID (longest match), else
+    // the full path. roots: (folder path, "{GUID}").
+    public static string ImplicitAppId(string exe, IList<KeyValuePair<string, string>> roots)
+    {
+        string best = null, guid = null;
+        foreach (KeyValuePair<string, string> r in roots)
+        {
+            string dir = (r.Key ?? "").TrimEnd('\\');
+            if (dir.Length == 0 || exe.Length <= dir.Length + 1 || exe[dir.Length] != '\\') continue;
+            if (!exe.StartsWith(dir, StringComparison.OrdinalIgnoreCase)) continue;
+            if (best == null || dir.Length > best.Length) { best = dir; guid = r.Value; }
+        }
+        return best == null ? exe : guid + exe.Substring(best.Length);
+    }
+
+    public static bool SystemUsesLightTheme()
+    {
+        try
+        {
+            using (Microsoft.Win32.RegistryKey k = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                       @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+            {
+                object v = k != null ? k.GetValue("SystemUsesLightTheme") : null;
+                return v is int && (int)v == 1;
+            }
+        }
+        catch (Exception) { return false; }
+    }
+
+    // Keep the preview card-shaped (about 16:9) inside what DWM allows.
+    public static void FitCard(ref int w, ref int h)
+    {
+        int ch = (int)Math.Round(w * 0.5625);
+        if (ch <= h) { h = Math.Max(1, ch); return; }
+        w = Math.Max(1, Math.Min(w, (int)Math.Round(h / 0.5625)));
+    }
+
+    // Thumbnail-button image: n x n, transparent, glyph in colour c.
+    public static Bitmap GlyphBitmap(int kind, int n, Color c)
+    {
+        Bitmap bmp = new Bitmap(n, n, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        using (Graphics g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.Transparent);
+            DrawGlyph(g, kind, 0, 0, n, c);
+        }
+        return bmp;
+    }
+
+    public static void DrawGlyph(Graphics g, int kind, float x, float y, float n, Color c)
+    {
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        using (SolidBrush b = new SolidBrush(c))
+        {
+            float t = y + n * 0.22f, bo = y + n * 0.78f, mid = y + n * 0.5f;
+            switch (kind)
+            {
+                case GlyphPlay:
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.28f, y + n * 0.18f), new PointF(x + n * 0.28f, y + n * 0.82f),
+                                                    new PointF(x + n * 0.82f, mid) });
+                    break;
+                case GlyphPause:
+                    g.FillRectangle(b, x + n * 0.24f, t, n * 0.18f, bo - t);
+                    g.FillRectangle(b, x + n * 0.58f, t, n * 0.18f, bo - t);
+                    break;
+                case GlyphPrev:
+                    g.FillRectangle(b, x + n * 0.18f, t, n * 0.13f, bo - t);
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.82f, t), new PointF(x + n * 0.82f, bo),
+                                                    new PointF(x + n * 0.33f, mid) });
+                    break;
+                default:   // next
+                    g.FillRectangle(b, x + n * 0.69f, t, n * 0.13f, bo - t);
+                    g.FillPolygon(b, new PointF[] { new PointF(x + n * 0.18f, t), new PointF(x + n * 0.18f, bo),
+                                                    new PointF(x + n * 0.67f, mid) });
+                    break;
+            }
+        }
+    }
+
+    // The hover preview: title (up to 2 lines), artist, state + time, progress bar.
+    public static void DrawThumbnail(Graphics g, int w, int h, VlcStatus s, DateTime now)
+    {
+        if (s == null) s = VlcStatus.Offline;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;   // opaque background: no ClearType needed
+        g.Clear(Back);
+
+        float pad = Math.Max(5f, h * 0.08f);
+        float barH = Math.Max(3f, (float)Math.Round(h * 0.04f));
+        float inner = w - 2 * pad;
+        RectangleF bar = new RectangleF(pad, h - pad - barH, inner, barH);
+
+        bool item = s.Ok && s.State != VlcState.Offline && (s.Title ?? "").Trim().Length > 0;
+        string title = item ? s.Title.Trim() : DefaultTitle;
+        string artist = item ? (s.Artist ?? "").Trim() : (s.Ok ? "Nothing playing" : "Not connected");
+        string state = !s.Ok ? "" : s.State == VlcState.Paused ? "Paused" : s.State == VlcState.Stopped ? "Stopped" : "";
+
+        using (Font titleFont = new Font("Segoe UI", Math.Max(9f, h * 0.15f), FontStyle.Bold, GraphicsUnit.Pixel))
+        using (Font smallFont = new Font("Segoe UI", Math.Max(8f, h * 0.115f), FontStyle.Regular, GraphicsUnit.Pixel))
+        using (SolidBrush text = new SolidBrush(Text))
+        using (SolidBrush dim = new SolidBrush(Dim))
+        using (SolidBrush accent = new SolidBrush(Accent))
+        using (SolidBrush track = new SolidBrush(Track))
+        using (StringFormat wrap = new StringFormat(StringFormatFlags.LineLimit))
+        using (StringFormat one = new StringFormat(StringFormatFlags.NoWrap))
+        {
+            wrap.Trimming = StringTrimming.EllipsisWord;
+            one.Trimming = StringTrimming.EllipsisCharacter;
+            float smallH = smallFont.GetHeight(g), titleH = titleFont.GetHeight(g);
+
+            // bottom up: progress bar, time line
+            float timeY = bar.Top - pad * 0.5f - smallH;
+            if (item && s.Length > 0)
+            {
+                g.FillRectangle(track, bar);
+                float f = (float)Math.Min(1.0, ElapsedMs(s, now) / (s.Length * 1000.0));
+                if (f > 0) g.FillRectangle(accent, bar.Left, bar.Top, Math.Max(1f, bar.Width * f), bar.Height);
+            }
+            if (item)
+            {
+                float gs = smallH * 0.8f;
+                int kind = s.State == VlcState.Playing ? GlyphPlay : GlyphPause;
+                if (s.State != VlcState.Stopped) DrawGlyph(g, kind, pad - gs * 0.2f, timeY + (smallH - gs) / 2, gs, Accent);
+                float tx = pad + gs * 0.9f;
+                g.DrawString(TimeText(s, now), smallFont, accent, new RectangleF(tx, timeY, inner - (tx - pad), smallH + 2), one);
+            }
+            if (state.Length > 0)
+            {
+                using (StringFormat right = new StringFormat(StringFormatFlags.NoWrap))
+                {
+                    right.Alignment = StringAlignment.Far;
+                    g.DrawString(state, smallFont, dim, new RectangleF(pad, timeY, inner, smallH + 2), right);
+                }
+            }
+
+            // top down: title (2 lines when there is room), artist
+            float room = timeY - pad * 0.5f - pad - (artist.Length > 0 ? smallH : 0);
+            bool oneLine = g.MeasureString(title, titleFont, new PointF(0, 0), one).Width <= inner;
+            int lines = !oneLine && room >= titleH * 2 ? 2 : 1;
+            float titleBox = titleH * lines;
+            g.DrawString(title, titleFont, text, new RectangleF(pad, pad, inner, titleBox + 1), lines == 2 ? wrap : one);
+            if (artist.Length > 0)
+                g.DrawString(artist, smallFont, dim, new RectangleF(pad, pad + titleBox + 1, inner, smallH + 2), one);
+        }
+    }
+}
+
+// ---- Win32 / COM for the taskbar button (kept apart from VlcDock's own declarations)
+static class TbNative
+{
+    public const uint WS_POPUP = 0x80000000, WS_SYSMENU = 0x80000, WS_MINIMIZEBOX = 0x20000;
+    public const int WS_EX_APPWINDOW = 0x40000, WS_EX_LAYERED = 0x80000, WS_EX_TRANSPARENT = 0x20;
+    public const int GWL_EXSTYLE = -20;
+    public const uint GW_OWNER = 4;
+    public const uint LWA_ALPHA = 2;
+    public const int SW_SHOWNOACTIVATE = 4;
+    public const uint WM_SETICON = 0x80;
+    public const uint SWP_NOSIZE = 0x1, SWP_NOMOVE = 0x2, SWP_NOACTIVATE = 0x10;
+    public static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+    public const uint SMTO_ABORTIFHUNG = 2;
+    public const uint MSGFLT_ALLOW = 1;
+    public const int SM_CXSMICON = 49;
+    public const int DWMWA_FORCE_ICONIC_REPRESENTATION = 7, DWMWA_HAS_ICONIC_BITMAP = 10, DWMWA_DISALLOW_PEEK = 11;
+    public const uint THB_ICON = 0x2, THB_TOOLTIP = 0x4, THB_FLAGS = 0x8;
+    public const uint THBF_ENABLED = 0x0, THBF_DISABLED = 0x1;
+    public const int TBPF_NOPROGRESS = 0, TBPF_NORMAL = 2, TBPF_PAUSED = 8;
+    const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+    // PKEY_AppUserModel_* = {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}, pid (propkey.h)
+    public static readonly Guid FMTID_AppUserModel = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
+    public const uint PID_RelaunchCommand = 2, PID_RelaunchIconResource = 3, PID_RelaunchDisplayNameResource = 4, PID_ID = 5;
+    public static readonly Guid IID_IPropertyStore = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+    public const ushort VT_LPWSTR = 31;
+
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PROPERTYKEY { public Guid fmtid; public uint pid; }
+
+    // PROPVARIANT: vt + 3 reserved WORDs, then a union of up to 2 pointers (16 bytes on x86, 24 on x64)
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PROPVARIANT { public ushort vt, r1, r2, r3; public IntPtr p; public IntPtr p2; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BITMAPINFOHEADER
+    {
+        public uint biSize; public int biWidth; public int biHeight; public ushort biPlanes; public ushort biBitCount;
+        public uint biCompression; public uint biSizeImage; public int biXPelsPerMeter; public int biYPelsPerMeter;
+        public uint biClrUsed; public uint biClrImportant;
+    }
+
+    [ComImport, Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IPropertyStore
+    {
+        [PreserveSig] int GetCount(out uint count);
+        [PreserveSig] int GetAt(uint index, out PROPERTYKEY key);
+        [PreserveSig] int GetValue(ref PROPERTYKEY key, out PROPVARIANT pv);
+        [PreserveSig] int SetValue(ref PROPERTYKEY key, ref PROPVARIANT pv);
+        [PreserveSig] int Commit();
+    }
+
+    [DllImport("user32.dll")] public static extern bool KillTimer(IntPtr h, UIntPtr id);
+    [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr h, uint cmd);
+    [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr h, int index);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder sb, int max);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern bool SetWindowText(IntPtr h, string text);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern uint RegisterWindowMessage(string name);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool AllowSetForegroundWindow(uint pid);
+    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
+    [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeout(IntPtr h, uint msg, IntPtr wParam, IntPtr lParam,
+                                                                             uint flags, uint timeout, out UIntPtr result);
+    [DllImport("user32.dll")] public static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);
+    [DllImport("user32.dll")] public static extern bool ChangeWindowMessageFilterEx(IntPtr h, uint msg, uint action, IntPtr info);
+    [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
+    [DllImport("user32.dll")] public static extern bool DestroyIcon(IntPtr icon);
+    [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr obj);
+    [DllImport("gdi32.dll")] public static extern IntPtr CreateDIBSection(IntPtr hdc, ref BITMAPINFOHEADER bmi, uint usage,
+                                                                          out IntPtr bits, IntPtr section, uint offset);
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)] public static extern uint ExtractIconEx(string file, int index,
+                                                                                                  out IntPtr large, out IntPtr small, uint count);
+    [DllImport("shell32.dll")] public static extern int SHGetPropertyStoreForWindow(IntPtr h, ref Guid iid,
+                                                                                    [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
+    [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int value, int size);
+    [DllImport("dwmapi.dll")] public static extern int DwmSetIconicThumbnail(IntPtr h, IntPtr hbmp, uint flags);
+    [DllImport("dwmapi.dll")] public static extern int DwmInvalidateIconicBitmaps(IntPtr h);
+    [DllImport("kernel32.dll")] static extern IntPtr OpenProcess(uint access, bool inherit, uint pid);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern bool QueryFullProcessImageName(IntPtr h, uint flags,
+                                                                                                        StringBuilder sb, ref uint size);
+
+    // Full path of a process's exe; works across 32 / 64 bit (Process.MainModule does not). null on failure.
+    public static string ProcessPath(uint pid)
+    {
+        IntPtr h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+        if (h == IntPtr.Zero) return null;
+        try
+        {
+            StringBuilder sb = new StringBuilder(1024);
+            uint size = (uint)sb.Capacity;
+            return QueryFullProcessImageName(h, 0, sb, ref size) ? sb.ToString() : null;
+        }
+        finally { CloseHandle(h); }
+    }
+}
+
+// ITaskbarList3 (shobjidl_core.h): ITaskbarList, ITaskbarList2 and ITaskbarList3 methods in
+// vtable order. HWNDs and handles as IntPtr, so it works in 32- and 64-bit PowerShell.
+[ComImport, Guid("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface ITaskbarList3
+{
+    // ITaskbarList
+    [PreserveSig] int HrInit();
+    [PreserveSig] int AddTab(IntPtr hwnd);
+    [PreserveSig] int DeleteTab(IntPtr hwnd);
+    [PreserveSig] int ActivateTab(IntPtr hwnd);
+    [PreserveSig] int SetActiveAlt(IntPtr hwnd);
+    // ITaskbarList2
+    [PreserveSig] int MarkFullscreenWindow(IntPtr hwnd, int fullscreen);
+    // ITaskbarList3
+    [PreserveSig] int SetProgressValue(IntPtr hwnd, ulong completed, ulong total);
+    [PreserveSig] int SetProgressState(IntPtr hwnd, int flags);
+    [PreserveSig] int RegisterTab(IntPtr hwndTab, IntPtr hwndMdi);
+    [PreserveSig] int UnregisterTab(IntPtr hwndTab);
+    [PreserveSig] int SetTabOrder(IntPtr hwndTab, IntPtr hwndInsertBefore);
+    [PreserveSig] int SetTabActive(IntPtr hwndTab, IntPtr hwndMdi, uint reserved);
+    [PreserveSig] int ThumbBarAddButtons(IntPtr hwnd, uint count, [MarshalAs(UnmanagedType.LPArray)] THUMBBUTTON[] buttons);
+    [PreserveSig] int ThumbBarUpdateButtons(IntPtr hwnd, uint count, [MarshalAs(UnmanagedType.LPArray)] THUMBBUTTON[] buttons);
+    [PreserveSig] int ThumbBarSetImageList(IntPtr hwnd, IntPtr himl);
+    [PreserveSig] int SetOverlayIcon(IntPtr hwnd, IntPtr icon, [MarshalAs(UnmanagedType.LPWStr)] string description);
+    [PreserveSig] int SetThumbnailTooltip(IntPtr hwnd, [MarshalAs(UnmanagedType.LPWStr)] string tip);
+    [PreserveSig] int SetThumbnailClip(IntPtr hwnd, IntPtr clip);
+}
+
+// CLSID_TaskbarList
+[ComImport, Guid("56FDF344-FD6D-11d0-958A-006097C9A090"), ClassInterface(ClassInterfaceType.None)]
+class CTaskbarList { }
+
+// THUMBBUTTON (shobjidl_core.h, pshpack8 = natural alignment): 540 bytes on x86, 552 on x64
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+struct THUMBBUTTON
+{
+    public uint dwMask;
+    public uint iId;
+    public uint iBitmap;
+    public IntPtr hIcon;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szTip;
+    public uint dwFlags;
 }

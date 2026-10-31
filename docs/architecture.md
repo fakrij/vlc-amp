@@ -410,6 +410,63 @@ grows. Never run it against your real home unless you want the changes.
   some commands (next, stop), so read `Status` again a moment later. JSON is
   read by a small built-in parser, so no System.Web.Extensions reference.
   Test it on Linux with `TB_VLC_ARGS` (see tools/README.md).
+- Taskbar button (item 19; the `partial` part of `VlcDock` at the end of
+  `VlcDock.cs`, plus `VlcTaskbarView`, `TbNative`, `ITaskbarList3`). skins2's own
+  taskbar button belongs to its hidden root window: class `SkinWindowClass`,
+  title "VLC Media Player" (the other skin windows say "VlC Media Player"),
+  0 x 0 at -200,-200, owner of every skin window (`win32/win32_factory.cpp`,
+  `win32_window.cpp`). Windows sends thumbnail-button clicks (`WM_COMMAND` +
+  `THBN_CLICKED`) only to the window that owns the button, so the helper owns
+  a button instead: an invisible top-level window (`WS_POPUP`,
+  `WS_EX_APPWINDOW`, layered with alpha 0, click-through, 192 x 108 at
+  -32000,-32000, kept at the bottom of the z-order), and VLC's button is off
+  (`skins2-taskbar=0`: Setup writes it when the helper starts with Windows, the
+  launcher passes `--no-skins2-taskbar`; if VLC still shows one, the helper
+  removes it with `ITaskbarList::DeleteTab`). After the registered
+  `TaskbarButtonCreated` message (again after an Explorer restart) it adds 3
+  thumbnail buttons with `ITaskbarList3` (icons drawn at runtime at
+  `SM_CXSMICON`, white or dark per `SystemUsesLightTheme`), and keeps the
+  play / pause icon, the title ("Artist - Title") and the progress
+  (`SetProgressValue`, interpolated between the 500 ms polls; NORMAL playing,
+  PAUSED paused, NOPROGRESS stopped / streams / offline) up to date on a 250 ms
+  timer. No overlay icon (the progress colour already shows the state). Hover
+  preview: `DWMWA_FORCE_ICONIC_REPRESENTATION` + `DWMWA_HAS_ICONIC_BITMAP`;
+  `WM_DWMSENDICONICTHUMBNAIL` (max width in the high word of `lParam`, height
+  in the low word) is answered with a card GDI+ draws straight into a 32-bit
+  top-down DIB section as `Format32bppPArgb` (premultiplied, as DWM requires),
+  `DwmSetIconicThumbnail`; `DwmInvalidateIconicBitmaps` whenever the card's
+  text changes (once a second while playing). Peek is switched off
+  (`DWMWA_DISALLOW_PEEK`): there is nothing to show. Clicks:
+  activating our window (button, preview, Alt+Tab) makes the helper the
+  foreground process, so it may `SetForegroundWindow` VLC's main skin window;
+  a minimized VLC (skin minimize = `ShowWindow(root, SW_MINIMIZE)`, which hides
+  the owned skin windows) is first restored with `WM_SYSCOMMAND SC_RESTORE` to
+  the root window, which skins2 handles (`Win32Factory::Win32Proc`). "Close
+  window" = `WM_SYSCOMMAND SC_CLOSE` to the root window = `libvlc_Quit`, the
+  same as VLC's own button. `WM_CLOSE` would be wrong: skins2 does not handle
+  it, so `DefWindowProc` would destroy the window under VLC. The button exists
+  while VLC's root window exists and the web interface is configured.
+- App id of that button (`TaskbarAppIdFor`). Windows groups buttons by
+  AppUserModelID. VLC 3 sets none: nothing in `bin/winvlc.c` or the Qt module,
+  and the installer's shortcuts (`extras/package/win32/NSIS/vlc.win32.nsi.in`)
+  carry none. Windows then derives one from the exe path, a known folder
+  replaced by its GUID, for example
+  `{6D809377-6AF0-444B-8957-A3773F02200E}\VideoLAN\VLC\vlc.exe` (Program Files,
+  64-bit) or `{7C5A40EF-...}\...` (Program Files (x86)); `Get-StartApps` lists
+  the same form. The helper computes that id for the running vlc.exe
+  (`QueryFullProcessImageName`; longest matching known folder, else the full
+  path) and sets it with `SHGetPropertyStoreForWindow`, after
+  `RelaunchCommand` = `"vlc.exe"`, `RelaunchDisplayNameResource` = "VLC media
+  player", `RelaunchIconResource` = `vlc.exe,0` (so pinning the button pins
+  VLC, not PowerShell); they are cleared before the window is destroyed.
+  *Unverified on Windows*: that the taskbar uses exactly this id for a pinned
+  VLC. If it does not, the button stands next to the pinned icon instead of on
+  it (nothing else breaks), and `$TaskbarAppId` sets the id by hand. A fixed
+  id of our own would never group with a pinned VLC.
+- With `skins2-taskbar=0` and no helper, a minimized VLC is only reachable
+  through skins2's own tray icon (`skins2-systray`, on by default,
+  `src/skin_main.cpp`; double-click restores). That is why Setup turns VLC's
+  button off only when the helper starts with Windows.
 
 ### Linux: pin on start
 
