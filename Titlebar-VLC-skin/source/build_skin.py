@@ -600,6 +600,10 @@ class Layout:
         return self._add(Node("Slider", sid=sid, x=x, y=y, points=points, thumb=thumb, value=value,
                               tip=tip, bg=bg, nbvert=nbvert, lt=lt, rb=rb, thickness=thickness))
 
+    def video(self, x, y, w, h):
+        """skins2 shows video only inside a Video control; it grows with the layout."""
+        return self._add(Node("Video", x=x, y=y, w=w, h=h, lt="lefttop", rb="rightbottom"))
+
     def anchor(self, x, y, priority, points="(0,0)"):
         return self._add(Node("Anchor", x=x, y=y, priority=priority, points=points))
 
@@ -1108,6 +1112,13 @@ def build(skin, W, BH=BAR_DEFAULT):
     # (th0, th1, ...) is shown; the layouts themselves are shared, so the width stays shared.
     layouts = [Layout(skin, "%s-%s" % (mode, d), PW, P(HT), minw=P(M["min_w"]), maxw=P(4000))
                for mode in ("full", "strip") for d in ("up", "dn")]   # last = default: strip-dn
+    # Video window: skins2 draws video only inside a Video control. The window is "shown" all the
+    # time, but every control in it needs vlc.hasVout, so with no video it has no pixels and no
+    # window shape (invisible, like the flag windows). It grows to the video (autoresize).
+    VB = 6                                                 # frame width (logical px)
+    VW, VH = 480 + 2 * VB, 270 + 2 * VB
+    vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(2 * VB + 160), maxw=P(3840),
+                  minh=P(2 * VB + 90), maxh=P(2160))
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
         apply_theme(ti)
@@ -1136,6 +1147,16 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.oy, lay.vis = P(pl_far), PL_ON + " and " + EQ_ON
             add_pl(lay, mode, d, sfx + "_f")
             lay.oy, lay.vis, lay.theme_vis = 0, None, None
+        vlay.theme_vis = ("th%d.isVisible" % ti if ti else
+                          " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
+        vlay.vis = "vlc.hasVout"
+        c = Canvas(VW, VH)
+        panel_bg(c, 0, 0, VW, VH, 6)
+        grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
+        nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
+               actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+        vlay.video(P(VB), P(VB), P(VW - 2 * VB), P(VH - 2 * VB))
+        vlay.vis, vlay.theme_vis = None, None
     apply_theme(0)
     skin.prefix = ""
 
@@ -1146,7 +1167,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         fl.image("flag_px", 0, 0)
         flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
                           yoffset=0, layouts=[fl], dragdrop=False))
-    skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts)] + flags
+    skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts),
+                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[vlay],
+                         dragdrop=False)] + flags
 
 
 # ---------------------------------------------------------------- XML
@@ -1167,12 +1190,14 @@ def next_id(kind):
 
 def node_xml(n, ind):
     sp = "  " * ind
-    if n.kind in ("Image", "Button", "Checkbox", "Text"):
+    if n.kind in ("Image", "Button", "Checkbox", "Text", "Video"):
         n.xid = next_id(n.kind)
     common = 'x=%s y=%s lefttop=%s rightbottom=%s' % (q(n.x), q(n.y), q(getattr(n, "lt", "lefttop")),
                                                       q(getattr(n, "rb", "lefttop")))
     if getattr(n, "vis", None):
         common += ' visible=%s' % q(n.vis)
+    if n.kind == "Video":
+        return [sp + '<Video id=%s %s width=%s height=%s autoresize="true"/>' % (q(n.xid), common, q(n.w), q(n.h))]
     if n.kind == "Image":
         return [sp + '<Image id=%s image=%s %s action=%s action2=%s resize="mosaic"/>' % (
             q(n.xid), q(n.bid), common, q(n.action), q(n.action2))]

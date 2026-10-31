@@ -198,6 +198,9 @@ speed. Then the seek bar, transport, volume, PL and EQ.
   flipping, the bar is at the other end of the player's area, so drag it back
   once (on Windows the taskbar helper moves it back for you).
 - Drag & drop files onto the player to play them.
+- Video: playing a video opens a separate, resizable video window (centred on the
+  screen; drag the frame to move it, the bottom right corner to resize it). With
+  no video it has no pixels and is invisible. The window grows to the video's size.
 
 ### Keyboard
 

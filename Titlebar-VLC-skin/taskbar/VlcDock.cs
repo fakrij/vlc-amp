@@ -1414,10 +1414,18 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     {
         main = IntPtr.Zero;
         rMain = new RECT();
+        // The skin's video window (shown while a video plays) is a second window of any size; the
+        // main window is always DockShape.WinH logical px high, whatever the scale.
+        double[] scales = { Scale, 1.0, 1.25, 1.5, 2.0 };
         foreach (IntPtr h in wins)
         {
+            RECT r;
+            GetWindowRect(h, out r);
+            bool isMain = false;
+            foreach (double sc in scales) if (Math.Abs(H(r) - DockShape.WinH * sc) <= 2) isMain = true;
+            if (main != IntPtr.Zero && !isMain) continue;
             main = h;
-            GetWindowRect(h, out rMain);
+            rMain = r;
         }
         return main != IntPtr.Zero;
     }
