@@ -119,3 +119,7 @@ The extracted tree has the Qt plugin (`libqt_plugin.so`), which skin keyboard in
 - Audio is a dummy output: it plays, but you hear nothing.
 
 `tools/check-windows-helper.sh` (WSL): compiles `taskbar/VlcDock.cs` with the Windows C# compiler and parses the PowerShell scripts; run it after every helper edit.
+
+Windows-only checks, run from WSL after `tools/check-windows-helper.sh` (it builds the DLL the second one loads):
+`powershell.exe -File tools/test-repair-video-window.ps1 -Src taskbar/vlc-taskbar.ps1` (Setup's `Repair-VideoWindow`) and
+`powershell.exe -File tools/test-sync-vlcrc.ps1` (the helper's `SyncVlcrcTheme`, on a temporary `APPDATA`; pass full Windows paths).
