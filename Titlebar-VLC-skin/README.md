@@ -196,7 +196,7 @@ speed. Then the seek bar, transport, volume, PL and EQ.
 - Equalizer: ON switch, preamp and 10 bands.
 - Arrow on the header: open both panels on the other side of the bar. After
   flipping, the bar is at the other end of the player's area, so drag it back
-  once.
+  once (on Windows the taskbar helper moves it back for you).
 - Drag & drop files onto the player to play them.
 
 ### Keyboard
@@ -301,6 +301,14 @@ What the helper does:
   never moves it while you hold a mouse button. Docked next to Start, the right
   edge stays at Start: drag the right edge to make the strip wider, and when you
   let go it slides left so the right edge is back next to Start.
+- Keeps the bar where it is when you flip the panels (the arrow on the PL / EQ
+  header). Docked, the strip stays in the taskbar; not docked (`-NoDock`, or
+  docking off with Ctrl+Alt+Shift+V), the window moves by the panels' height so
+  the bar does not jump, but never off the screen.
+- Keeps the docked player visible: if Windows minimizes VLC (it then shows only
+  through VLC's tray icon), the helper restores it at once. The full player's
+  own minimize button still works: VLC then stays minimized until you click its
+  taskbar button or its tray icon. Not docked, the helper leaves minimizing alone.
 - Tray icon (dark square with a cyan bar) with a right-click menu: **Dock in
   taskbar** (same as **Ctrl+Alt+Shift+V**), **Pin VLC on top now**, **Play /
   pause** and **Playback** (A-B loop, next / previous folder, next EQ preset;
@@ -452,7 +460,7 @@ start). Then restart VLC and pick Custom with the theme button.
 | Problem | What to do |
 |---|---|
 | Double-clicking a file opens a second, normal VLC | Run `taskbar\Setup.cmd` (with VLC closed). |
-| The player disappears when I click the taskbar | Make sure the helper runs (tray icon). If it still happens, turn the log on (below) and send `%TEMP%\titlebar-helper.log`. |
+| The player disappears when I click the taskbar | Make sure the helper runs (tray icon); docked, it restores a minimized player at once. If it still happens, turn the log on (below), send `%TEMP%\titlebar-helper.log`, and say what you clicked and whether a single or only a double click on VLC's tray icon brought the player back. |
 | Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `titlebar-helper.log.old`. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`Titlebar-150.vlt` for 150 %), or run Setup again. |
 | Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
@@ -507,12 +515,17 @@ on, `%TEMP%\titlebar-helper.log`):
 ### Second Windows test (docking)
 
 For the fixes after the first test (flashing, resizing, unpin, collapsing with
-PL / EQ open, taskbar click). Debug log on (`$DebugLog = $true`), helper restarted
+PL / EQ open, taskbar click) and after the second (panels flip, player hidden
+by a taskbar click: steps 9-15). Debug log on (`$DebugLog = $true`), helper restarted
 (tray menu > Quit helper, then `VLC in taskbar.cmd`, or sign out and in).
 
 1. The log's first line, `helper started: scale=1.5 barHeight=36 ...`, must
    match the skin VLC shows (`Titlebar-taskbar-150.vlt` = 1.5 and 36; plain
-   `Titlebar-150.vlt` = 24). Note both if they differ.
+   `Titlebar-150.vlt` = 24). Note both if they differ. The same line ends with
+   `skinFile=... (vlcrc skins2-last ...)` and `dpi: thread per-monitor DPI
+   aware`; the next lines include `DPI: VLC's window 120 dpi, 734x545 px`
+   (at 125 %: physical pixels). That `DPI:` line must appear once, not again
+   and again with another size (the cause of the flashing in the second test).
 2. Docked strip, 30 s without touching it: no flashing. The log has
    `shape: strip-...`, one `move (...) by a drag on VLC's grip` and
    `move: done, VLC moved itself`, and then no more `move` lines.
@@ -532,11 +545,40 @@ PL / EQ open, taskbar click). Debug log on (`$DebugLog = $true`), helper restart
    `z-order: raise VLC to topmost: the taskbar came above VLC`).
 8. A full-screen video in another app: the player steps behind it and comes
    back after.
-9. Send `%TEMP%\titlebar-helper.log` (and `titlebar-helper.log.old`), and say which step
-   went wrong. Lines worth a look: `the drag ended at ... not ...` more than
-   twice in a row, `moving the window from outside from now on`,
-   `WARNING: raised VLC above the taskbar`, `Start button: lookup failed`,
-   `height fits a strip of N px, not the configured height`.
+9. Flip the panels (docked): open PL, click the arrow on its header twice. The
+   strip stays in the taskbar; at most a short flicker (the log has
+   `shape: strip-dn ...` / `strip-up ...` and a `move (...)` line each time;
+   the helper flips them back above the strip, `flip: ...`).
+10. Flip the panels (not docked): Ctrl+Alt+Shift+V (docking off), drag the
+    strip to the middle of the screen, open PL, click its flip arrow a few
+    times. The bar stays where it is and the playlist opens above / below it
+    (log: `flip: strip-up -> dn: the bar moved ... moving VLC by ... px`,
+    then `flip: done`). Same with the full player and PL / EQ open, also with
+    both open. Near the top or bottom edge of the screen the panels stay on
+    the screen and the bar moves as little as needed (`clamped`). Flip and at
+    once drag the strip away: the helper does not pull it back. Expand /
+    collapse: no extra move. Ctrl+Alt+Shift+V again docks it.
+11. Docked, click an empty spot of the taskbar, then another app's icon, then
+    Start, Search and the clock, 5 times each. The strip never stays hidden. If
+    it vanishes for a moment, the log says why: `VLC hidden: ...`,
+    `VLC window event: root window ... minimized`, `restore: ...`,
+    `VLC visible again after N s`. Note which click did it.
+12. Expand to the full player and click its minimize button: VLC stays
+    minimized (log: `... its minimize button: left minimized`); its taskbar
+    button or tray icon brings it back.
+13. Win+D twice, and Win+M: the strip comes back (or stays); note what the log
+    says.
+14. Send `%TEMP%\titlebar-helper.log` (and `titlebar-helper.log.old`), and say which step
+    went wrong. Lines worth a look: `the drag ended at ... not ...` more than
+    twice in a row, `moving the window from outside from now on`,
+    `WARNING: raised VLC above the taskbar`, `Start button: lookup failed`,
+    `height fits a strip of N px, not the configured height`,
+    `the taskbar is still above VLC after the raise`, `VLC hidden: ...`,
+    `restore: ...`, `VLC hidden although its root window is not minimized`,
+    and the `foreground: ...` lines just before them.
+15. If the player still disappears: does a **single** click on VLC's own tray
+    icon bring it back, or only a **double** click? (Single = VLC was only
+    covered; double = it was minimized.)
 
 ## Limits
 
@@ -547,7 +589,7 @@ These come from VLC's skin engine (skins2); details in
 - No A-B loop, EQ presets or "next folder" *buttons* (skins2 has no such
   actions): they are keyboard shortcuts and tray menu entries, see
   [Lua extras](#lua-extras).
-- Flipping the panel side moves the bar once.
+- Flipping the panel side moves the bar once (not with the Windows helper running).
 - The player's invisible area does not snap to screen edges.
 - Memory: VLC with this skin uses about 136 MB at 100 % scaling and 146 MB at
   150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is

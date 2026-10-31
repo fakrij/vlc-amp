@@ -504,6 +504,19 @@ if ($Setup) { Invoke-Setup; exit 0 }
 
 $skinPath = Get-SkinPath -Taskbar:(-not $NoDock)   # same choice as Setup made, so scale and bar height match VLC's skin
 $skinInfo = Get-SkinInfo $skinPath
+$skinFrom = "$(if ($skinPath) { Split-Path -Leaf $skinPath } else { 'none' }) (helper's choice)"
+# When the helper does not start VLC itself (-Watch, or VLC already runs), VLC uses skins2-last from
+# vlcrc: Setup's choice, or the last skin VLC had loaded when it exited. Its name gives scale and strip
+# height (second Windows test: VLC showed Titlebar-125.vlt, 24 px, while the helper assumed the 36 px build).
+if ($Watch -or -not $StartVlc -or (Get-Process vlc -ErrorAction SilentlyContinue)) {
+    $vlcrc = Join-Path $env:APPDATA "vlc\vlcrc"
+    $rcSkin = $null
+    if (Test-Path $vlcrc) { try { $rcSkin = Get-VlcSetting ([IO.File]::ReadAllLines($vlcrc)) "skins2-last" } catch { } }
+    if ($rcSkin -and (Split-Path -Leaf $rcSkin) -like 'Titlebar-*.vlt') {
+        $skinInfo = Get-SkinInfo $rcSkin
+        $skinFrom = "$(Split-Path -Leaf $rcSkin) (vlcrc skins2-last; helper's choice was $(if ($skinPath) { Split-Path -Leaf $skinPath } else { 'none' }))"
+    }
+}
 $scale = $skinInfo.Scale
 
 # Only one helper at a time
@@ -537,6 +550,7 @@ if (-not ('VlcDock' -as [type])) {
 
 [VlcDock]::Scale       = $scale
 [VlcDock]::BarHeight   = $skinInfo.BarHeight
+[VlcDock]::SkinFile    = $skinFrom
 [VlcDock]::DockTo      = $DockTo
 [VlcDock]::Gap         = $Gap
 [VlcDock]::OffsetY     = $OffsetY
