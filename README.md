@@ -62,13 +62,18 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
    - removes the "Media Library" entry from the playlist (it does nothing in
      a skin);
    - asks whether to start the helper with Windows. The helper pins the player
-     on top each time VLC starts and, if you want, docks it in the taskbar.
+     on top each time VLC starts and, if you want, docks it in the taskbar;
+   - turns on VLC's built-in web interface for this computer only
+     (`127.0.0.1`, port 48080, protected by a random password that is stored
+     in `vlcrc`). The helper uses it to read what VLC is playing and to send
+     commands; nothing is reachable from the network.
 
    Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
 3. Open a music file or folder.
 
-**Undo**: close VLC, copy `vlcrc.before-titlebar` back over `vlcrc`, and
-delete "Titlebar VLC helper" from the Startup folder (Win+R, `shell:startup`).
+**Undo**: close VLC, copy `vlcrc.before-titlebar` back over `vlcrc` (this also
+switches the web interface off again), and delete "Titlebar VLC helper" from
+the Startup folder (Win+R, `shell:startup`).
 
 ### Manual (any OS)
 

@@ -30,7 +30,8 @@ usage: vlc-test.sh <command> [args]
 
 Environment: TITLEBAR_TEST_CACHE (cache dir), TB_DISPLAY_NUM (default 99),
 TB_SCREEN (default 1280x1024x24), TB_KEEP_CONFIG=1 (keep VLC's config on start),
-TB_INSTANCE (default "default"; separate pid files / config / shots per name).
+TB_INSTANCE (default "default"; separate pid files / config / shots per name),
+TB_VLC_ARGS (extra VLC options for `start`, split on spaces, e.g. "--extraintf http").
 Several agents at the same time: give each its own TB_INSTANCE and TB_DISPLAY_NUM.
 EOF
 }
@@ -132,8 +133,10 @@ cmd_start() {
     stop_ours "$RUN/vlc.pid" vlc
     xvfb_start
     [ -n "${TB_KEEP_CONFIG:-}" ] || rm -rf "$XDG_CONFIG_HOME/vlc"
+    local extra=()
+    [ -z "${TB_VLC_ARGS:-}" ] || read -ra extra <<<"$TB_VLC_ARGS"   # extra VLC options, split on spaces
     vlc --intf skins2 --skins2-last="$vlt" --aout dummy --no-video --no-media-library \
-        --no-video-title-show -v "${files[@]}" >"$RUN/vlc.log" 2>&1 &
+        --no-video-title-show -v ${extra[@]+"${extra[@]}"} "${files[@]}" >"$RUN/vlc.log" 2>&1 &
     echo $! >"$RUN/vlc.pid"
     local i
     for i in $(seq 1 75); do

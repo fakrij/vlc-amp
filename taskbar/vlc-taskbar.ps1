@@ -20,6 +20,7 @@ $StartVlc          = $true              # start VLC if it is not running (not in
 $StartPinned       = $true              # pin VLC "always on top" each time it starts
 $DebugLog          = $DebugLog.IsPresent -or $false   # $true = log what the helper does to %TEMP%\titlebar-helper.log
 $TrayIcon          = $true              # notification-area icon with a menu (dock on / off, pin now, quit)
+$VlcControl        = $true              # read VLC's state and send it commands through its local web interface (Setup enables it)
 # -----------------------------------------
 
 $ErrorActionPreference = "Stop"
@@ -92,6 +93,46 @@ function Set-VlcModule([System.Collections.Generic.List[string]]$lines, $section
     Set-VlcOption $lines $section $key ($mods -join ':')
 }
 
+# The value of the last active "key=value" line of vlcrc (commented-out defaults do not count),
+# or $null when there is none.
+function Get-VlcSetting($lines, $key) {
+    $val = $null
+    foreach ($l in $lines) {
+        if ($l -match ('^\s*' + [regex]::Escape($key) + '=(.*)$')) { $val = $Matches[1].Trim() }
+    }
+    if ($val) { return $val }
+    return $null
+}
+
+# A random password of letters and digits (only used to lock VLC's local web interface).
+function New-Password($length = 24) {
+    $alphabet = [char[]]'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
+    $buf = New-Object byte[] 1
+    $pw = ""
+    while ($pw.Length -lt $length) {
+        $rng.GetBytes($buf)
+        if ($buf[0] -lt 248) { $pw += $alphabet[$buf[0] % 62] }   # 248 = 4 x 62: no modulo bias
+    }
+    $rng.Dispose()
+    return $pw
+}
+
+# Port and password of VLC's web interface, read from vlcrc (Setup wrote them). $null when the
+# web interface is not set up: the helper then leaves the control channel off.
+function Get-VlcRemote {
+    $rc = Join-Path $env:APPDATA "vlc\vlcrc"
+    if (-not (Test-Path $rc)) { return $null }
+    try { $lines = [IO.File]::ReadAllLines($rc) } catch { return $null }
+    $mods = @((Get-VlcSetting $lines "extraintf") -split ':' | ForEach-Object { $_.Trim() })
+    $password = Get-VlcSetting $lines "http-password"
+    if (-not ($mods -contains 'http' -or $mods -contains 'luahttp') -or -not $password) { return $null }
+    $port = 8080   # VLC's default
+    $p = Get-VlcSetting $lines "http-port"
+    if ($p -match '^\d+$') { $port = [int]$p }
+    return @{ Port = $port; Password = $password }
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
@@ -124,6 +165,12 @@ function Invoke-Setup {
     Set-VlcOption $lines "core"   "playlist-enqueue" "0"                       # ... and start playing
     Set-VlcOption $lines "core"   "media-library" "0"                          # no "Media Library" entry in the playlist
     Set-VlcOption $lines "skins2" "skins2-taskbar" $(if ($dock) { "0" } else { "1" })  # docked: no extra VLC button
+    Set-VlcModule $lines "core"   "extraintf" "http"                           # VLC's web interface: the helper reads the
+    Set-VlcOption $lines "core"   "http-host" "127.0.0.1"                      # playing state and sends commands through it,
+    Set-VlcOption $lines "core"   "http-port" "48080"                          # on this computer only, on an unusual port
+    if (-not (Get-VlcSetting $lines "http-password")) {                        # locked with a random password (kept if set)
+        Set-VlcOption $lines "lua" "http-password" (New-Password 24)           # (the key lives in vlcrc's [lua] section)
+    }
     [IO.File]::WriteAllLines($rc, $lines, (New-Object System.Text.UTF8Encoding $false))  # vlcrc: UTF-8 without BOM
 
     $startup = [Environment]::GetFolderPath("Startup")
@@ -143,6 +190,7 @@ function Invoke-Setup {
         Remove-Item $lnk
     }
     Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" +
+        "VLC's web interface is on for this computer only (127.0.0.1, port 48080, password in vlcrc); the helper uses it.`n`n" +
         "To undo: restore $rc.before-titlebar (VLC closed) and delete the shortcut in $startup.") | Out-Null
 }
 
@@ -184,6 +232,10 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::Dock        = -not $NoDock
 [VlcDock]::StartPinned = $StartPinned
 if ($DebugLog) { [VlcDock]::LogPath = Join-Path $env:TEMP "titlebar-helper.log" }
+if ($VlcControl) {
+    $remote = Get-VlcRemote   # $null (control channel stays off, silently) unless Setup enabled the web interface
+    if ($remote) { [VlcDock]::RemotePort = $remote.Port; [VlcDock]::RemotePassword = $remote.Password }
+}
 [VlcDock]::TrayIcon    = $TrayIcon
 [VlcDock]::ExitWithVlc = -not $Watch
 [VlcDock]::Run()   # returns when VLC exits (not in -Watch mode)

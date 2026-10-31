@@ -49,6 +49,7 @@ numbers in `cmd_quit`.
 | `TB_SCREEN` | `1280x1024x24` | Xvfb screen. |
 | `TB_INSTANCE` | `default` | Name of the session: pid files, logs, VLC's private home and screenshots live in `<cache>/run-<name>/`. |
 | `TB_KEEP_CONFIG` | unset | `1` = do not reset VLC's config on `start`. |
+| `TB_VLC_ARGS` | unset | Extra VLC options for `start`, split on spaces (no quoting), for example `--extraintf http --http-host 127.0.0.1 --http-port 48080 --http-password x` to test the helper's control channel. |
 
 Several agents at the same time (they share the downloaded packages): give
 each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
