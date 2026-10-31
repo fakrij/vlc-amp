@@ -10,6 +10,15 @@
 #   -DebugLog write a log to %TEMP%\titlebar-helper.log (or set the $DebugLog line below to $true)
 param([switch]$Setup, [switch]$Watch, [switch]$NoDock, [switch]$DebugLog)
 
+# Written for Windows PowerShell 5.1 (Add-Type compiles VlcDock.cs as C# 5 against .NET Framework).
+# Started from PowerShell 7 (pwsh), hand over to powershell.exe with the same switches.
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    $argv = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $MyInvocation.MyCommand.Path)
+    foreach ($sw in 'Setup', 'Watch', 'NoDock', 'DebugLog') { if ((Get-Variable $sw -ValueOnly).IsPresent) { $argv += "-$sw" } }
+    & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" @argv
+    exit $LASTEXITCODE
+}
+
 # ---------------- settings ----------------
 $Skin              = "auto"             # "auto" = pick the skin file from the Windows display scale (the taller Titlebar-taskbar-NNN.vlt when docking and it exists), or a file name
 $DockTo            = "start"            # start = left of the Start button | left = left end of taskbar | right = next to the tray icons
