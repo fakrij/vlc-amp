@@ -101,6 +101,21 @@ function Find-Vlc {
     return $null
 }
 
+# The skin's video window must be "shown" in the saved window state (skins2-config), or skins2
+# never attaches a video to it: a state saved by an older skin has no entry for it, and VLC saves
+# the shrunk title bar layout. $scale = display scaling as a fraction (1.25). Needs a saved state.
+function Repair-VideoWindow([System.Collections.Generic.List[string]]$lines, [double]$scale) {
+    $w = [int][Math]::Round(492 * $scale); $h = [int][Math]::Round(300 * $scale)
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $l = $lines[$i]
+        if (-not $l.StartsWith("skins2-config=") -or $l.Length -le 14) { continue }
+        if ($l.IndexOf('["video" ') -lt 0) { $l += '["video" "video-l" 600 300 ' + $w + ' ' + $h + ' 1]' }
+        $l = [regex]::Replace($l, '\["video" "video-min" (-?\d+ -?\d+) \d+ \d+ [01]\]', ('["video" "video-l" $1 ' + $w + ' ' + $h + ' 1]'))
+        $l = [regex]::Replace($l, '(\["video" "[^"]*" -?\d+ -?\d+ -?\d+ -?\d+ )0\]', '${1}1]')
+        $lines[$i] = $l
+    }
+}
+
 # Set "key=value" in VLC's vlcrc: rewrites every line for that key (the commented-out
 # default "#key=..." and any active one; vlcrc can have both), or adds it to its [section].
 function Set-VlcOption([System.Collections.Generic.List[string]]$lines, $section, $key, $value) {
@@ -436,6 +451,9 @@ function Invoke-Setup {
     }
     Set-VlcOption $lines "core"   "intf" "skins2"                              # skin instead of the normal VLC window
     Set-VlcOption $lines "skins2" "skins2-last" $skinPath
+    $skinScale = 1.0
+    if ($skinPath -match '-(\d+)\.vlt$') { $skinScale = [double]$Matches[1] / 100 }
+    Repair-VideoWindow $lines $skinScale
     Set-VlcOption $lines "core"   "one-instance" "1"                           # files opened from Explorer go to the
     Set-VlcOption $lines "core"   "one-instance-when-started-from-file" "1"    # running player, no second window
     Set-VlcOption $lines "core"   "playlist-enqueue" "0"                       # ... and start playing

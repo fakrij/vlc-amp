@@ -324,6 +324,25 @@ rc_get() {
     END { sub(/^[ \t]+/, "", v); sub(/[ \t\r]+$/, "", v); print v }' "$WORK"
 }
 
+# The skin's video window must be "shown" in the saved window state (skins2-config), or skins2
+# never attaches a video to it: a state saved by an older skin has no entry for it, and VLC
+# saves the shrunk title bar layout. $1 = display scaling in percent. Needs a saved state.
+repair_video_window() {
+    awk -v pct="$1" '
+    /^skins2-config=./ {
+        w = int(492 * pct / 100 + 0.5); h = int(300 * pct / 100 + 0.5)
+        if (index($0, "[\"video\" ") == 0) $0 = $0 "[\"video\" \"video-l\" 600 300 " w " " h " 1]"
+        while (match($0, /\["video" "video-min" -?[0-9]+ -?[0-9]+ [0-9]+ [0-9]+ [01]\]/)) {
+            e = substr($0, RSTART, RLENGTH); split(e, f, " ")
+            $0 = substr($0, 1, RSTART - 1) "[\"video\" \"video-l\" " f[3] " " f[4] " " w " " h " 1]" substr($0, RSTART + RLENGTH)
+        }
+        while (match($0, /\["video" "[^"]*" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+ 0\]/)) {
+            $0 = substr($0, 1, RSTART + RLENGTH - 3) "1]" substr($0, RSTART + RLENGTH)
+        }
+    }
+    { print }' "$WORK" >"$WORK.new" && mv "$WORK.new" "$WORK"
+}
+
 # ---------------------------------------------------------- scale detection
 
 NOTES=""
@@ -649,6 +668,7 @@ fi
 
 rc_edit set    core   intf "skins2"                                  # skin instead of the normal VLC window
 rc_edit set    skins2 skins2-last "$SKIN"
+repair_video_window "$SCALE"
 rc_edit set    core   one-instance 1                                 # files opened from the file manager go to the
 rc_edit set    core   one-instance-when-started-from-file 1          # running player (over D-Bus), no second window
 rc_edit set    core   playlist-enqueue 0                             # ... and start playing

@@ -52,6 +52,48 @@ the Windows comparison images in `docs/img/windows-sim/` come from
   and control VLC. Windows: optional plugin, installed by Setup (see
   [Media controls](#media-controls)). Linux: built into VLC.
 
+## Requirements
+
+- **VLC 3.0.x** with its skins2 interface (tested with 3.0.20). VLC 4 and other
+  players are not supported. The Windows installer of VLC includes skins2; on
+  Debian / Ubuntu install `vlc-plugin-skins2` next to `vlc`.
+- **Windows**: Windows 10 or 11, 64-bit or 32-bit VLC. Everything the setup and
+  the helper need ships with Windows (Windows PowerShell 5.1, .NET Framework 4);
+  nothing else to install. `winget` is only used to install VLC when it is
+  missing. Taskbar docking is made for Windows 11; the taskbar button and hover
+  buttons need Windows 7 or newer, the media controls plugin Windows 10 1607 or
+  newer (and the Visual C++ 2022 runtime, which the setup offers), the Custom
+  colour picker Windows 10 1803 or newer.
+- **Linux**: any distro, on X11 or Wayland (through XWayland, not tested yet).
+  `linux/setup.sh` needs only a POSIX shell with `awk`, `sed` and `grep`;
+  start-pinned and the light / dark script use `python3` / `gdbus` /
+  `gsettings` when present.
+- **Screen**: four builds for 100 %, 125 %, 150 % and 200 % display scaling;
+  the setup picks the closest.
+- **Memory**: about 10 MB more than VLC's default skin at 100 % scaling
+  (see [Limits](#limits)).
+- Building the skin yourself (not needed for the downloads) needs Python 3 with
+  Pillow.
+
+### Without the helper and the setup
+
+The skin is a normal VLC skin file and works on its own. If you only pick the
+`.vlt` file (see [Manual](#manual-any-os)) you get the whole player: the strip,
+the full player, playlist, equalizer, themes, resizing, and the video window with
+its full-screen control panel. What the companion pieces add:
+
+| Needs | What it adds |
+|---|---|
+| Windows helper (`taskbar\`) | the strip docked in the taskbar, pinned on top at every start, VLC's taskbar button with hover buttons and progress, the tray menu, the light / dark theme following Windows |
+| Setup (Windows `Install.cmd`, Linux `linux/setup.sh`) | VLC uses the skin when you open files from the file manager, one player instead of several, no "Media Library" entry, the web interface for the helper, the Lua extras (A-B loop, folder jump, EQ presets as keys) and the Windows media controls plugin |
+| Neither | the skin alone; start VLC with it by hand |
+
+Two small caveats of the skin alone: VLC's own launcher adds the "Media Library"
+entry (start `vlc --no-media-library`), and a video may not open its window the
+if VLC has already saved window positions for an older skin (VLC then keeps the
+new video window hidden). Run the setup, which repairs that saved entry; with
+the helper running it is repaired whenever VLC is closed.
+
 ## Install
 
 ### Windows (recommended)
