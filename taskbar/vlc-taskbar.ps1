@@ -92,6 +92,96 @@ function Set-VlcModule([System.Collections.Generic.List[string]]$lines, $section
     Set-VlcOption $lines $section $key ($mods -join ':')
 }
 
+# ---- Windows media controls: the third-party plugin vlc-win10smtc (GPL-3.0) ----
+# https://github.com/spmn/vlc-win10smtc - media keys, the volume / media flyout, Quick Settings, lock screen.
+# Pinned release; the hashes are the zip digests published by GitHub for that release.
+$SmtcVersion = "v5.0.0"
+$SmtcSha256  = @{
+    x64   = "2de0bc5d560635bb7be4dc7825461dcd8d1afe9fb9d865ea141ff145df163fa6"
+    x86   = "bb183b2c84b90a8e1ca867c7780340562b061dd8c748493b4d9687caab5d4ab4"
+    arm64 = "a2d2e6788af7b1a4914f9ce9feb7d9fa2dc1f2c8bf7e60ac88b7232a5b09753a"
+}
+
+# x64 / x86 / arm64 from the PE header of vlc.exe (the plugin must match VLC, not Windows)
+function Get-ExeArch($exe) {
+    $b = [IO.File]::ReadAllBytes($exe)
+    $pe = [BitConverter]::ToInt32($b, 0x3C)
+    switch ([BitConverter]::ToUInt16($b, $pe + 4)) {
+        0x8664 { return "x64" }
+        0x014C { return "x86" }
+        0xAA64 { return "arm64" }
+    }
+    return $null
+}
+
+# Visual C++ 2015-2022 runtime (14.30+ = 2022) for one architecture, as the plugin needs it
+function Test-VcRuntime($arch) {
+    foreach ($key in "HKLM:\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\$arch",
+                     "HKLM:\SOFTWARE\WOW6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\$arch") {
+        try {
+            $k = Get-ItemProperty -Path $key -ErrorAction Stop
+            if ($k.Installed -eq 1 -and ($k.Major -gt 14 -or ($k.Major -eq 14 -and $k.Minor -ge 30))) { return $true }
+        } catch { }
+    }
+    return $false
+}
+
+# Run a script block's text as administrator (one UAC prompt) and wait for it
+function Invoke-Elevated($script) {
+    $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($script))
+    $p = Start-Process powershell.exe -Verb RunAs -Wait -PassThru -WindowStyle Hidden `
+        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $enc"
+    return $p.ExitCode
+}
+
+# Returns $true when the plugin is in VLC's plugins\misc folder afterwards
+function Install-SmtcPlugin($vlcExe) {
+    $ProgressPreference = "SilentlyContinue"   # PowerShell 5.1 downloads very slowly with the progress bar
+    $dir = Join-Path (Split-Path $vlcExe) "plugins\misc"
+    $dll = Join-Path $dir "libwin10smtc_plugin.dll"
+    if (Test-Path $dll) { return $true }
+    $arch = Get-ExeArch $vlcExe
+    if (-not $arch) { Show-Msg "Unknown VLC architecture; media controls not installed." | Out-Null; return $false }
+
+    if (-not (Test-VcRuntime $arch)) {
+        $ok = (Show-Msg ("The media controls plugin needs the Microsoft Visual C++ runtime ($arch), which is not installed.`n`n" +
+            "Download it from Microsoft and install it now?") "YesNo") -eq "Yes"
+        if (-not $ok) { return $false }
+        $exe = Join-Path $env:TEMP "vc_redist.$arch.exe"
+        Invoke-WebRequest -UseBasicParsing "https://aka.ms/vs/17/release/vc_redist.$arch.exe" -OutFile $exe
+        $sig = Get-AuthenticodeSignature $exe
+        if ($sig.Status -ne "Valid" -or $sig.SignerCertificate.Subject -notmatch "O=Microsoft Corporation") {
+            Show-Msg "The downloaded runtime is not signed by Microsoft; not installed." | Out-Null; return $false
+        }
+        Start-Process $exe -ArgumentList "/install /passive /norestart" -Verb RunAs -Wait
+        if (-not (Test-VcRuntime $arch)) { Show-Msg "The Visual C++ runtime did not install; media controls skipped." | Out-Null; return $false }
+    }
+
+    $name = "libwin10smtc_plugin_$($SmtcVersion)_$arch.zip"
+    $zip = Join-Path $env:TEMP $name
+    $tmp = Join-Path $env:TEMP "titlebar-smtc"
+    Invoke-WebRequest -UseBasicParsing "https://github.com/spmn/vlc-win10smtc/releases/download/$SmtcVersion/$name" -OutFile $zip
+    if ((Get-FileHash $zip -Algorithm SHA256).Hash -ne $SmtcSha256[$arch]) {
+        Remove-Item $zip
+        Show-Msg "The downloaded plugin does not match the expected checksum; not installed." | Out-Null; return $false
+    }
+    if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
+    Expand-Archive $zip $tmp
+    $src = Get-ChildItem $tmp -Recurse -Filter "libwin10smtc_plugin.dll" | Select-Object -First 1
+    if (-not $src) { Show-Msg "libwin10smtc_plugin.dll not found in the download." | Out-Null; return $false }
+
+    try {   # portable VLC: the folder is writable, no admin needed
+        Copy-Item $src.FullName $dll -ErrorAction Stop
+    } catch {
+        $q = { param($t) "'" + ($t -replace "'", "''") + "'" }   # quote a path for the elevated command
+        Invoke-Elevated ("New-Item -ItemType Directory -Force -Path $(& $q $dir) | Out-Null; " +
+            "Copy-Item -LiteralPath $(& $q $src.FullName) -Destination $(& $q $dll) -Force") | Out-Null
+    }
+    Remove-Item -Recurse -Force $tmp, $zip
+    if (-not (Test-Path $dll)) { Show-Msg "Could not copy the plugin into $dir (admin rights refused?)." | Out-Null; return $false }
+    return $true
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
@@ -106,6 +196,21 @@ function Invoke-Setup {
     if ($autostart) {
         $dock = (Show-Msg ("Also dock the player in the taskbar, left of the Start button?`n`n" +
             "No = the player stays where you put it (for example in a window title bar).") "YesNo") -eq "Yes"
+    }
+
+    # Windows media controls (optional; the plugin is downloaded from GitHub)
+    $smtc = $false
+    $vlcExe = Find-Vlc
+    if ($vlcExe) {
+        $plugged = Test-Path (Join-Path (Split-Path $vlcExe) "plugins\misc\libwin10smtc_plugin.dll")
+        if ($plugged -or (Show-Msg ("Add Windows media controls to VLC? Media keys, the media panel next to the volume, " +
+            "Quick Settings and the lock screen then show and control VLC.`n`n" +
+            "This downloads the free plugin vlc-win10smtc $SmtcVersion from GitHub and asks for admin rights " +
+            "once to copy it into VLC's folder.") "YesNo") -eq "Yes") {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            try { $smtc = Install-SmtcPlugin $vlcExe }
+            catch { Show-Msg "Media controls not installed: $($_.Exception.Message)" | Out-Null }
+        }
     }
 
     $rc = Join-Path $env:APPDATA "vlc\vlcrc"
@@ -124,6 +229,7 @@ function Invoke-Setup {
     Set-VlcOption $lines "core"   "playlist-enqueue" "0"                       # ... and start playing
     Set-VlcOption $lines "core"   "media-library" "0"                          # no "Media Library" entry in the playlist
     Set-VlcOption $lines "skins2" "skins2-taskbar" $(if ($dock) { "0" } else { "1" })  # docked: no extra VLC button
+    if ($smtc) { Set-VlcModule $lines "core" "extraintf" "win10smtc" }            # start the media controls plugin
     [IO.File]::WriteAllLines($rc, $lines, (New-Object System.Text.UTF8Encoding $false))  # vlcrc: UTF-8 without BOM
 
     $startup = [Environment]::GetFolderPath("Startup")
@@ -142,7 +248,9 @@ function Invoke-Setup {
     } elseif (Test-Path $lnk) {
         Remove-Item $lnk
     }
-    Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" +
+    $extra = ""
+    if ($smtc) { $extra = "Media controls are on (media keys, the media panel, lock screen).`n`n" }
+    Show-Msg ("Done. VLC now uses $(Split-Path -Leaf $skinPath). Open a music file or folder to start it.`n`n" + $extra +
         "To undo: restore $rc.before-titlebar (VLC closed) and delete the shortcut in $startup.") | Out-Null
 }
 

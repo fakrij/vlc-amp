@@ -155,6 +155,15 @@ three crashed.
   follow the generator's layout.
 - Tray icon (NotifyIcon with a classic `ContextMenu`, pumped by the helper's
   own `GetMessage` loop) and an opt-in log (`LogPath`, `-DebugLog`).
+- Media controls (Setup only): the third-party control-interface plugin
+  `libwin10smtc_plugin.dll` (vlc-win10smtc, pinned version and SHA-256 in
+  `vlc-taskbar.ps1`) goes into `<VLC>\plugins\misc`, and `win10smtc` into the
+  colon-separated `extraintf` list (`Set-VlcModule` keeps other entries).
+  VLC starts `extraintf` modules whatever the main interface is
+  (`src/libvlc.c`), so it runs next to skins2 and has its own hidden window.
+- Linux needs none of this for media controls: the `vlc` launcher always adds
+  `--dbus` (and `--media-library`, which overrides `media-library=0` in
+  vlcrc; `bin/vlc.c`), so MPRIS is on. Tested with the skin.
 
 ## Building and testing
 

@@ -45,6 +45,9 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
   time mode and theme across restarts.
 - **Taskbar mode** (Windows): a helper docks the strip in the taskbar, left of
   the Start button, and keeps it on top. See [Taskbar mode](#taskbar-mode).
+- **Media controls**: keyboard media keys and the system's media panel show
+  and control VLC. Windows: optional plugin, installed by Setup (see
+  [Media controls](#media-controls)). Linux: built into VLC.
 
 ![Light theme with playlist](docs/img/light-strip-playlist.png)
 
@@ -62,13 +65,16 @@ All screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`.
    - removes the "Media Library" entry from the playlist (it does nothing in
      a skin);
    - asks whether to start the helper with Windows. The helper pins the player
-     on top each time VLC starts and, if you want, docks it in the taskbar.
+     on top each time VLC starts and, if you want, docks it in the taskbar;
+   - asks whether to add Windows media controls (see [Media controls](#media-controls)).
 
    Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
 3. Open a music file or folder.
 
 **Undo**: close VLC, copy `vlcrc.before-titlebar` back over `vlcrc`, and
 delete "Titlebar VLC helper" from the Startup folder (Win+R, `shell:startup`).
+The media controls plugin can stay (VLC ignores it when it is not switched on)
+or be deleted: `libwin10smtc_plugin.dll` in VLC's `plugins\misc` folder.
 
 ### Manual (any OS)
 
@@ -156,6 +162,31 @@ Settings are at the top of `taskbar\vlc-taskbar.ps1`: skin file (`auto` =
 by display scaling), dock position (`start`, `left`, `right` = next to the
 tray icons), gap, vertical nudge, start pinned, tray icon, debug log.
 
+## Media controls
+
+**Windows.** VLC 3 does not talk to Windows' media controls by itself. Setup
+can add the free third-party plugin
+[vlc-win10smtc](https://github.com/spmn/vlc-win10smtc) (GPL-3.0, version
+v5.0.0). With it, the keyboard's media keys, the media panel that appears with
+the volume, the media card in Quick Settings and the lock screen show the
+title and control VLC. Setup:
+
+- downloads the plugin that matches VLC (64-bit, 32-bit or ARM) from GitHub
+  and checks its SHA-256 checksum;
+- if needed, offers to install Microsoft's Visual C++ runtime, which the
+  plugin requires (downloaded from Microsoft, signature checked);
+- asks for admin rights once to copy `libwin10smtc_plugin.dll` into
+  `<VLC folder>\plugins\misc`;
+- switches it on in VLC (`extraintf=win10smtc`).
+
+By hand: download the zip for your VLC from the plugin's releases page, copy
+the DLL into `plugins\misc`, then in VLC: Tools > Preferences > All >
+Interface > Control interfaces > tick **Windows SMTC integration** > Save.
+
+**Linux.** Built into VLC (MPRIS over D-Bus), nothing to install: the
+desktop's media widget, media keys and `playerctl` control the skinned player.
+Tested with this skin.
+
 ## Troubleshooting
 
 | Problem | What to do |
@@ -164,6 +195,7 @@ tray icons), gap, vertical nudge, start pinned, tray icon, debug log.
 | The player disappears when I click the taskbar | Make sure the helper runs (tray icon). If it still happens, turn the log on (below) and send `%TEMP%\titlebar-helper.log`. |
 | Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `titlebar-helper.log.old`. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`Titlebar-150.vlt` for 150 %), or run Setup again. |
+| Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
 | Back to the normal VLC look | Menu (≡) > Interface > Preferences > Use native style, or the Undo steps above. |
 
 ## Limits
