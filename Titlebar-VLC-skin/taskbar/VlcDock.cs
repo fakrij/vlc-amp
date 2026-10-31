@@ -1146,6 +1146,16 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             for (int i = 0; i < lines.Length; i++)
             {
                 if (!lines[i].StartsWith("skins2-config=")) continue;
+                // The video window must be "shown" in the saved state, or skins2 never attaches a
+                // video to it (a config saved by an older skin has no entry, or a hidden one).
+                string vid = lines[i];
+                if (vid.IndexOf("[\"video\" ") < 0 && vid.Length > "skins2-config=".Length)
+                    vid += "[\"video\" \"video-l\" 600 300 492 282 1]";
+                else
+                    vid = System.Text.RegularExpressions.Regex.Replace(vid,
+                        @"(\[""video"" ""[^""]*"" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+ )0\]", "${1}1]");
+                if (vid != lines[i]) { lines[i] = vid; changed = true; Log("theme: vlcrc: video window set to shown"); }
+                if (!FollowTheme) continue;
                 bool found = false;
                 string line = System.Text.RegularExpressions.Regex.Replace(lines[i],
                     @"\[""th([0-9]+)"" (""[^""]*"" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+) [01]\]",
@@ -1159,7 +1169,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             }
             if (!changed) return;
             File.WriteAllLines(rc, lines, new System.Text.UTF8Encoding(false));
-            Log("theme: vlcrc set to " + (want == 1 ? "light (th1)" : "dark (th0)") + " for the next VLC start");
+            if (FollowTheme) Log("theme: vlcrc set to " + (want == 1 ? "light (th1)" : "dark (th0)") + " for the next VLC start");
         }
         catch (Exception ex) { Log("theme: vlcrc sync failed: " + ex.GetType().Name + ": " + ex.Message); }
     }
@@ -1433,7 +1443,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     static void Place()
     {
         CheckVlc();
-        if (vlcPid == 0) { if (FollowTheme) SyncVlcrcTheme(); return; }
+        if (vlcPid == 0) { SyncVlcrcTheme(); return; }
         FindVlcRoot(vlcPid);   // cached: skins2's root window, for the state log and KeepVisible
 
         List<IntPtr> wins = FindSkinWindows();
