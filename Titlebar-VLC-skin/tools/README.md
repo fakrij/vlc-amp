@@ -117,3 +117,5 @@ The extracted tree has the Qt plugin (`libqt_plugin.so`), which skin keyboard in
 
 - Only for Linux skins2; it cannot test the Windows helper (`taskbar/`).
 - Audio is a dummy output: it plays, but you hear nothing.
+
+`tools/check-windows-helper.sh` (WSL): compiles `taskbar/VlcDock.cs` with the Windows C# compiler and parses the PowerShell scripts; run it after every helper edit.
