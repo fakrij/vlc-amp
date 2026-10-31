@@ -75,7 +75,9 @@ once per theme, into the same 4 layouts:
 
 - bitmap ids get the prefix `t<i>_` (`Skin.prefix`, applied by `Skin.add` and
   the `Layout` methods);
-- every control of theme `i` gets `th<i>.isVisible and ...` (`Layout.theme_vis`);
+- every control of theme `i` gets `th<i>.isVisible and ...` (`Layout.theme_vis`); theme 0 instead
+  gets `not th1.isVisible and ... not th5.isVisible`, so a saved state with no theme flag
+  shown (nothing drawn = no window shape = invisible and unmovable) falls back to theme 0;
 - the switcher selects a theme with `th<i>.show();th<j>.hide();...` (shows
   first, so something is always drawn).
 

@@ -847,7 +847,10 @@ def build(skin, W):
         make_bitmaps()
         for lay in layouts:
             mode, d = lay.id.split("-")
-            lay.theme_vis = "th%d.isVisible" % ti
+            # theme 0 is also the fallback: a saved state with no theme flag shown must not
+            # leave the window empty (nothing drawn = no shape = invisible, cannot be moved)
+            lay.theme_vis = ("th%d.isVisible" % ti if ti else
+                             " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
             sfx = "_%s_%s" % (mode, d)
             bh = BH if mode == "strip" else FH
             top = 0 if d == "dn" else HT - bh                     # bar position
