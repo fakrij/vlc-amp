@@ -50,7 +50,8 @@ pixels into the window's shape (`SetWindowRgn` on Windows, the X Shape
 extension on X11), so the unused area is invisible and click-through.
 Consequences: the window cannot snap to screen edges (its invisible edges
 would snap; `magnet="0"`), and flipping between "dn" and "up" moves the bar
-to the other end of the window.
+to the other end of the window (on Windows the helper moves the window back,
+see [The Windows helper](#the-windows-helper-taskbar)).
 
 Expand / collapse and the flip arrows are `main.setLayout(<id>)` actions.
 
@@ -391,8 +392,11 @@ grows. Never run it against your real home unless you want the changes.
   shapes of the real skin) decides from the visible height: strip `bar`,
   `bar + EQ`, `bar + PL`, `bar + EQ + PL` or full `122 + ...` tells strip /
   full and which panels are open, and the visible part touching the window's
-  top or bottom gives "dn" / "up" (the full player with both panels fills the
-  window: direction kept from before). The old pixel test at the strip's
+  top or bottom gives "dn" / "up". The full player with both panels fills the
+  window; then the seam tells: where the full player meets the panel next to it,
+  both have rounded corners, so the left edge is transparent in rows `f-1` / `f`
+  ("dn", `f` = 122 x scale) or `hh-f-1` / `hh-f` ("up"); without such a seam
+  (square corners) the direction is kept from before. The old pixel test at the strip's
   rounded corner only breaks ties (bar 40: strip + PL = full + EQ). A height
   that fits a strip of another height than `BarHeight` is taken as such (the
   helper's skin file differs from VLC's; with the old test that made a strip
@@ -411,6 +415,70 @@ grows. Never run it against your real home unless you want the changes.
   (2 drags without effect, or 4 misses in a row). No moves while a mouse
   button is down (`GetAsyncKeyState`): with `DockTo=start` the right edge goes
   back to Start after a resize, so the strip grows to the left.
+- DPI: `powershell.exe` is DPI-unaware and VLC is DPI-aware, so Windows scales
+  what an unaware thread sees of VLC's windows (at 125 %: 587 x 436 instead of
+  734 x 545, positions and the Start button / 1.25). A thread handling a message
+  for a window takes that window's awareness, so before T25 the helper read VLC
+  in either system depending on the path that called `Place`, and moved it back
+  and forth (the flashing of the second Windows test; drags missed by the
+  ratio). `Run` makes the helper's thread per-monitor aware first
+  (`SetThreadDpiAwarenessContext(PER_MONITOR_AWARE_V2)`, else V1; so its own
+  windows are too), and every entry point that touches windows sets it again
+  (`DpiEnter` / `DpiLeave`: `Tick`, the tray menu, the hotkey, the taskbar
+  button's timer and activation, the WinEvent log). Everything is then in
+  physical pixels, like `GetWindowRgn` and VLC's client coordinates for the
+  posted drags and clicks. Before Windows 10 1607: `SetProcessDpiAwareness(2)`,
+  else `SetProcessDPIAware`. Logged: `dpi:` in `helper started`, and
+  `DPI: VLC's window N dpi, W x H px; helper thread ...` on change. The script
+  also reads VLC's actual skin from `skins2-last` in vlcrc when it does not
+  start VLC itself (`-Watch`), for `Scale` / `BarHeight` (`skinFile=` in the log).
+- Panels flip (item 32): the PL / EQ header arrow switches `strip-dn` <->
+  `strip-up` (`full-dn` <-> `full-up`), which moves the bar by about the window
+  height minus the bar. `KeepBarOnFlip` compares each shape with the last one of
+  known direction: same kind (strip / full), other side, same window size and
+  position = a flip, and `DockShape.FlipOffset` gives the move (`BarTop` = the
+  bar's top row from the visible rows: at 125 % the full player ends one row
+  above the window's bottom). Not docked, the window is moved by that much with
+  the same posted drag as above, clamped (`ClampVisible`) so the visible part
+  stays on the monitor's work area. Docked, `Place` already keeps the strip in
+  the taskbar (and the full player's visible part above it). Not while a mouse
+  button is down (that also cancels a move on its way), not on strip <-> full,
+  not when the window moved as well, at most 2 s. The timer runs every 50 ms
+  while the mouse is over VLC's window (else 250 ms), so the jump after a click
+  is short. Tested under Mono with real shapes (`Titlebar-100/125`,
+  `Titlebar-taskbar-100/150` and the T21 captures, classic style too): for all
+  80 dn / up pairs the bar's pixel rows land on the same screen rows.
+- VLC hidden (item 33). From the 3.0.x source: skins2 hides its windows only
+  by minimizing its root window (`Win32Factory::minimize` =
+  `ShowWindow(root, SW_MINIMIZE)`, from `vlc.minimize()` or a
+  `WM_SYSCOMMAND SC_MINIMIZE` to the root; Windows then hides every window the
+  root owns), on a skin change (`hideAll`), or by a skin's `window.hide()`. Its
+  window procedures handle no `WM_ACTIVATE` / `WM_ACTIVATEAPP` / `WM_KILLFOCUS`
+  (`win32_loop.cpp`, `Win32Factory::Win32Proc`): activation changes do nothing in
+  skins2. The tray icon: a single click is `WindowManager::raiseAll` =
+  `SetForegroundWindow` on each skin window (brings back a covered window, not
+  a minimized one), a double click is `CmdRestore` = `ShowWindow(root,
+  SW_RESTORE)`, the same as `SC_RESTORE` to the root. With `skins2-taskbar=0` the
+  root keeps `WS_EX_TOOLWINDOW` from `init()` and never gets a taskbar button
+  (only `addInTaskBar` gives it `WS_EX_APPWINDOW`; T12's `DeleteTab` only runs on
+  a `WS_EX_APPWINDOW` root). While docked, `KeepVisible` (decision in
+  `HidePolicy`) sends `SC_RESTORE` to the root (and `ShowWindowAsync(SW_SHOWNOACTIVATE)`
+  if it is still minimized) when the main window is not visible and the root is
+  minimized, unless the minimize came from the full player's own minimize button
+  (the full player was showing and the mouse is on it: then it stays minimized
+  until the taskbar button or tray icon restores it; the strip has no minimize
+  button). Not while a mouse button is down, at most once a second, and it
+  gives up after 6 restores in a minute. Hidden without a minimized root is only
+  logged. Not docked: never restored. The log has every foreground change (with
+  the process and VLC's root / main state: visible, minimized, topmost, DWM
+  cloaked), WinEvents for minimize / restore / show / hide / cloak of VLC's root
+  and main windows (`EVENT_SYSTEM_MINIMIZESTART`, `EVENT_OBJECT_HIDE`, ...,
+  with mouse position and foreground), the windows still above VLC when a raise
+  above the taskbar did not take (then it is inserted again: `NOTOPMOST`, then
+  `TOPMOST`), and `WM_ACTIVATE` / `WM_SYSCOMMAND` reaching the helper's own
+  taskbar window. *Unverified on Windows*: what actually hides the player after
+  a taskbar click; if the log shows it is only covered (a single tray click
+  helps), the next step is item 15's `SetParent` onto the taskbar.
 - Z-order: VLC's pin is the `WS_EX_TOPMOST` of its 1 x 1 flag windows
   (`WindowManager::setOnTop` sets every top-level skin window; the helper never
   touches those). The main window is kept topmost while VLC is pinned or the
