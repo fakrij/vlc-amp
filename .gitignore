@@ -1,1 +1,3 @@
 *:Zone.Identifier
+# Claude Code working folders (agent worktrees)
+.claude/

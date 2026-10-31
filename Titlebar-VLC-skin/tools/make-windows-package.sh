@@ -15,8 +15,10 @@ dirty=$(git status --porcelain -- "${paths[@]}")
 
 rm -rf "${PKG:?}" "${PKG:?}.zip"
 mkdir -p "$PKG"
-# git archive applies .gitattributes, so .ps1 / .cmd / .cs get CRLF line endings
 git archive --format=tar HEAD -- "${paths[@]}" | tar -x -C "$PKG"
+# Windows scripts need CRLF. Done here, not by .gitattributes: git archive ignores the
+# attributes of a subfolder (this project is a subfolder of the git repository).
+find "$PKG" -type f \( -name '*.ps1' -o -name '*.cs' -o -name '*.cmd' \) -exec sed -i 's/\r*$/\r/' {} +
 sed 's/$/\r/' > "$PKG/READ ME FIRST.txt" <<'TXT'
 Titlebar - a VLC skin
 
