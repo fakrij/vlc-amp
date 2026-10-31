@@ -139,7 +139,10 @@ three crashed.
 
 - `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): `intf=skins2`,
   `skins2-last`, `one-instance=1`, `one-instance-when-started-from-file=1`,
-  `playlist-enqueue=0`, `media-library=0`, `skins2-taskbar`. It rewrites every
+  `playlist-enqueue=0`, `media-library=0`, `skins2-taskbar`, and the control
+  channel's `extraintf` (`http`, merged into the colon-separated list with
+  `Set-VlcModule`), `http-host=127.0.0.1`, `http-port=48080` (both `[core]`) and
+  a random `http-password` (`[lua]`, kept if already set). It rewrites every
   line of a key (vlcrc can hold a commented default and an active line).
   Optionally it creates a Startup shortcut running the helper with `-Watch`
   (and `-NoDock`).
@@ -164,6 +167,19 @@ three crashed.
 - Linux needs none of this for media controls: the `vlc` launcher always adds
   `--dbus` (and `--media-library`, which overrides `media-library=0` in
   vlcrc; `bin/vlc.c`), so MPRIS is on. Tested with the skin.
+- Control channel: `VlcRemote` (end of `VlcDock.cs`) talks to VLC's Lua web
+  interface. The script reads port and password from vlcrc (`Get-VlcRemote`;
+  off, silently, when `extraintf` has no `http` or no password is set) and
+  passes them in as `RemotePort` / `RemotePassword`. A background thread polls
+  `requests/status.json` every 500 ms while VLC runs (2 s while it does not
+  answer) with 1 s timeouts, Basic auth with an empty user name, no proxy.
+  `VlcDock.Remote.Status` (any thread) holds state, time and length in whole
+  seconds, title (tag, else file name), artist; `Remote.Send("pl_pause" |
+  "pl_next" | "pl_previous" | "seek", val)` sends a command (`SendAsync` from
+  UI code). VLC answers a command with the status from before its effect for
+  some commands (next, stop), so read `Status` again a moment later. JSON is
+  read by a small built-in parser, so no System.Web.Extensions reference.
+  Test it on Linux with `TB_VLC_ARGS` (see tools/README.md).
 
 ## Building and testing
 
