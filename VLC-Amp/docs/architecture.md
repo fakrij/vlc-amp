@@ -715,13 +715,42 @@ from the player's top; bar at the bottom: from `H - 24` / `H - 122`).
 
 ## Lua interface (`lua/intf/vlcamp.lua`)
 
-A-B loop, next / previous folder, equalizer presets and a bitrate for lossless
-files: things a skins2 button cannot do (a button can only run skins2's own
+A-B loop, next / previous folder, equalizer presets, a bitrate for lossless
+files and durations in the playlist: things a skins2 button cannot do (a button can only run skins2's own
 action list). A Lua *interface* script runs inside VLC next to the skin, on
 Windows and Linux alike. Facts below were checked in the VLC 3.0.x source
 (`modules/control/hotkeys.c`, `src/misc/actions.c`, `modules/lua/*`,
 `share/lua/*`, `modules/gui/skins2/src/vlcproc.cpp`) and by running real
 VLC 3.0.20 under the test harness (`tools/`).
+
+### Playlist durations
+
+The Playtree control draws one text column per item: `input_item_GetTitleFbName`
+(the title meta, else the name; `modules/gui/skins2/vars/playtree.cpp:355`,
+`src/input/item.c:280-300`, empty title = name). It redraws an item on the
+playlist's `item-change` variable (`vlcproc.cpp:175`), which a meta change
+raises (`src/playlist/item.c:228-233, 316`). Every entry of
+`vlc.playlist.get()` carries an `item` userdata of the `input_item` metatable
+(`modules/lua/libs/playlist.c`, `luaopen_input_item`), whose `set_meta` works
+on any item, not only the playing one (`modules/lua/libs/input.c:354-441`).
+
+So every 2 s the script walks the playlist and sets the title of each item with
+a known `duration` (seconds, `-1` = unknown) to `<title or name> (m:ss)`
+(`h:mm:ss` from an hour). It remembers the original title meta per item id
+(`""` when there was none) and the text it set; a title that differs from that
+text (VLC re-read the tags, the user renamed it) is decorated afresh. The
+playing item is never decorated: on a track change the original title goes
+back at once (strip, web interface, MPRIS and SMTC read the current item's
+title) and the previous item is decorated in the same tick. Why a suffix: the
+skin's SORT button runs `playlist_RecursiveNodeSort(..., SORT_TITLE, ...)`
+(`commands/cmd_playtree.cpp:41`), so a prefix would sort by length. A title that
+already ends in ` (m:ss)` (a playlist saved with lengths) is stripped first.
+`lua-config` `vlcamp={durations='off'}` turns it off (the interface gets its
+own table as the global `config`, `modules/lua/intf.c:323-353`).
+Verified in VLC 3.0.20 under the harness (2026-11-01): unplayed items show
+lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
+strip, Next moves the plain title along, SORT sorts by name, no doubled
+suffixes, `off` shows none.
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 

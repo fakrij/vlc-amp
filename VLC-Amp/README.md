@@ -302,12 +302,23 @@ do; other distributions are not checked).
 | **Previous folder**: start of the previous folder | `Ctrl+Shift+Left` | Playback > Previous folder |
 | **Next / previous equalizer preset** (turns the equalizer on; the EQ panel follows) | `Ctrl+Shift+Up` / `Down` | hotkey only |
 | **Bitrate for FLAC** and other lossless files (shown by the full player; VLC shows none) | automatic | |
+| **Durations in the playlist**: "Song (3:42)" for every item whose length VLC knows | automatic | |
 
 - Folders are the directories of local files; streams are skipped. A folder
   must be in one piece in the playlist.
 - The A-B loop turns about 0.2 s after B, and stops when the track changes.
   The skin has no place to show the loop or preset name; they are written to
   VLC's log (start VLC with `-v`). The EQ panel shows the preset's sliders.
+- Durations: the skin's playlist can show only one text column (the title),
+  so the script appends the length to each item's title in VLC's memory
+  (files are not touched). The playing item keeps its real title, so the
+  strip, the taskbar card and the media controls show it plain; it gets its
+  length back when another track plays. Lengths appear once VLC has read a
+  file (a moment after adding it); streams have none. The SORT button still
+  sorts by name. A playlist saved with SAVE keeps the lengths in its titles
+  (they are not doubled when it is loaded again). Turn it off with
+  `lua-config=vlcamp={durations='off'}` in `vlcrc` (or
+  `--lua-config "vlcamp={durations='off'}"`).
 - The sample rate keeps showing whole kHz ("44" for 44.1 kHz): that is how
   VLC's skin engine formats it.
 - The default keys live in `lua/vlcrc-keys.txt`; both setups write them into

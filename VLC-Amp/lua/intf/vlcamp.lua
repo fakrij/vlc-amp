@@ -6,6 +6,8 @@ Adds what the skins2 engine cannot do with buttons:
   * Next / previous folder (local files, from the playlist order)
   * Next / previous equalizer preset
   * A bitrate for lossless files (FLAC, WAV, ...), so the skin's "kbps" is not 0
+  * Durations in the playlist: "Title (3:42)" (not on the playing item;
+    off with --lua-config "vlcamp={durations='off'}")
 
 Start it next to the skin:
     vlc --intf skins2 --extraintf luaintf --lua-intf vlcamp
@@ -333,6 +335,78 @@ local function bitrate_tick(input)
 end
 
 ----------------------------------------------------------------------
+-- Durations in the playlist: skins2's Playtree draws one text column, the
+-- item's title (input_item_GetTitleFbName), and redraws an item on the
+-- playlist's "item-change" event, which a meta change raises. So the title of
+-- every item with a known length gets " (m:ss)" appended. The playing item
+-- keeps its real title: the strip, the web interface (taskbar card), MPRIS and
+-- SMTC all show the current title. The suffix (not a prefix) keeps the
+-- playlist's SORT button, which sorts by title, sorting by name.
+-- Off with --lua-config "vlcamp={durations='off'}".
+----------------------------------------------------------------------
+local PL_EVERY_US = 2000000                    -- full playlist pass
+local PL_SUFFIX = "^(.-) %(%d+:%d%d%)$"        -- a title we (or a saved playlist) decorated
+local PL_SUFFIX_H = "^(.-) %(%d+:%d%d:%d%d%)$"
+local pl = { on = true, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
+
+local function fmt_len(sec)
+    sec = math.floor(sec + 0.5)
+    local h, m, s = math.floor(sec / 3600), math.floor(sec / 60) % 60, sec % 60
+    if h > 0 then return string.format("%d:%02d:%02d", h, m, s) end
+    return string.format("%d:%02d", m, s)
+end
+
+local function strip_len(title)
+    return title:match(PL_SUFFIX_H) or title:match(PL_SUFFIX) or title
+end
+
+-- Put the real title back on the playing item (cheap: done on every tick when the track changes)
+local function pl_restore(id, item)
+    local e = pl.items[id]
+    if not e or not item then return end
+    item:set_meta("title", e.orig)             -- "" = no title tag: the file name shows again
+    pl.items[id] = nil
+end
+
+local function pl_pass(cur)
+    local seen = {}
+    local function walk(node, depth)
+        if depth > 32 then return end
+        if node.children then
+            for _, c in ipairs(node.children) do walk(c, depth + 1) end
+        elseif node.id and node.item and node.duration and node.duration > 0 then
+            seen[node.id] = true
+            local e = pl.items[node.id]
+            if node.id == cur then
+                if e then pl_restore(node.id, node.item) end
+            elseif not e or node.name ~= e.shown then         -- new item, or its title changed since
+                local metas = node.item:metas() or {}
+                local orig = strip_len(metas.title or "")
+                local shown = strip_len(node.name or "") .. " (" .. fmt_len(node.duration) .. ")"
+                if node.name ~= shown then node.item:set_meta("title", shown) end
+                pl.items[node.id] = { orig = orig, shown = shown }
+            end
+        end
+    end
+    local root = vlc.playlist.get("playlist")
+    if root then walk(root, 0) end
+    for id in pairs(pl.items) do if not seen[id] then pl.items[id] = nil end end   -- removed items
+end
+
+local function pl_tick()
+    if not pl.on then return end
+    local cur = vlc.playlist.current()
+    if cur ~= pl.cur then                      -- track changed: real title back at once
+        pl.cur = cur
+        if cur and pl.items[cur] then pl_restore(cur, vlc.input.item()) end
+        pl.next_pass = 0                       -- and decorate the previous one now
+    end
+    if now() < pl.next_pass then return end
+    pl.next_pass = now() + PL_EVERY_US
+    pl_pass(cur)
+end
+
+----------------------------------------------------------------------
 -- Dispatch and main loop
 ----------------------------------------------------------------------
 local handlers = {}
@@ -362,6 +436,7 @@ local function tick(lib)
     end
     guarded("A-B loop", ab_tick)
     guarded("equalizer", eq_tick)
+    guarded("playlist durations", pl_tick)
     local input = vlc.object.input()
     if input then guarded("bitrate", bitrate_tick, input) end
 end
@@ -373,8 +448,11 @@ local function main()
     register("eq_next",     function() eq_step(1) end)
     register("eq_prev",     function() eq_step(-1) end)
 
+    local cfg = (type(config) == "table") and config or {}
+    pl.on = cfg.durations ~= "off"
     local lib = vlc.object.libvlc()
-    log("interface started (A-B loop, folder jump, equalizer presets, bitrate)")
+    log("interface started (A-B loop, folder jump, equalizer presets, bitrate"
+        .. (pl.on and ", playlist durations" or "") .. ")")
     while true do
         guarded("tick", tick, lib)
         local period = (ab.state == "ab") and POLL_FAST_US or POLL_IDLE_US
