@@ -30,5 +30,5 @@ w = a.width
 ys = sorted({i // w for i, (pa, pb) in enumerate(zip(a.get_flattened_data(), b.get_flattened_data())) if pa != pb})
 print("rows with differences:", ys[0], "-", ys[-1], "(%d rows)" % len(ys))
 Image.merge("RGB", [ImageChops.difference(a, b).getchannel(c).point(lambda v: 255 if v else 0)
-                    for c in "RGB"]).save("/tmp/claude-1000/-home-jirif-dev-vlc/86c0d79e-80a2-49a5-9cf6-3529d4d5c254/scratchpad/work/diff.png")
+                    for c in "RGB"]).save("diff.png")   # in the current folder
 print("pillow freetype:", features.version("freetype2"), "zlib:", features.version("zlib"))

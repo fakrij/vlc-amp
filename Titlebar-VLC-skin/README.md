@@ -39,7 +39,8 @@ the Windows comparison images in `docs/img/windows-sim/` come from
 
 - **Look**: Midnight (dark, cyan-blue). Every extra theme costs VLC memory, so
   the skin ships with this one only. Other colour schemes, a light look and a
-  Custom colour can be built in (see [More themes](#more-themes)).
+  Custom colour can be built in (see [More themes](#more-themes)), or made in
+  the browser with the [online configurator](#online-configurator).
 
 - **Remembered**: VLC remembers the position, width, open panels, panel side,
   time mode and theme across restarts.
@@ -486,6 +487,17 @@ Interface > Control interfaces > tick **Windows SMTC integration** > Save.
 **Linux.** Built into VLC (MPRIS over D-Bus), nothing to install: the
 desktop's media widget, media keys and `playerctl` control the skinned player.
 Tested with this skin.
+
+### Online configurator
+
+**<https://fakrij.github.io/titlebar-vlc-skin/>** builds your own `.vlt` in the
+browser, with nothing to install: size (100-200 %), dark or light, primary and
+secondary colour, font (or your own TTF / OTF), optionally a light + dark pair
+that the theme button switches. Preview, then download, and use the file in
+place of the shipped `Titlebar-NNN.vlt` of the same size (keep the name, so
+Setup and the helper pick it up). It runs the same generator as below, so the
+result is the same as a local build. First visit downloads about 7 MB. Details:
+[configurator/README.md](configurator/README.md).
 
 ### More themes
 

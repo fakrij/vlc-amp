@@ -1,0 +1,36 @@
+# Publish the skin configurator (Titlebar-VLC-skin/configurator/) to GitHub Pages.
+# Repository Settings > Pages > Source must be "GitHub Actions".
+name: Configurator on Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["Titlebar-VLC-skin/configurator/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      # the page runs the generator copy next to it: it must match source/build_skin.py
+      - name: Check the configurator's generator copy
+        run: cmp Titlebar-VLC-skin/source/build_skin.py Titlebar-VLC-skin/configurator/build_skin.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: Titlebar-VLC-skin/configurator
+      - id: deployment
+        uses: actions/deploy-pages@v4

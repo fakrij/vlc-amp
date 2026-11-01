@@ -29,12 +29,11 @@ its licence into `fonts/` and an entry into `fonts.json`.
 package from `cdn.jsdelivr.net/pyodide/v314.0.7/full/`. Runtime and package must come from the same release;
 change the constant to upgrade (and rerun the node check). First visit downloads about 7 MB (cached).
 
-## Host on GitHub Pages
-Pages serves a static folder, so either:
-- Settings > Pages > Deploy from a branch > `main`, folder `/` and the page is at
-  `https://<user>.github.io/<repo>/Titlebar-VLC-skin/configurator/`; or
-- publish only this folder (for example copy it to a `gh-pages` branch root, or use a GitHub Actions
-  "upload-pages-artifact" step with `path: Titlebar-VLC-skin/configurator`).
+## Hosting
+Live at **<https://fakrij.github.io/titlebar-vlc-skin/>**. The workflow `.github/workflows/pages.yml` (at
+the repository root) publishes only this folder to GitHub Pages on every push to `main` that touches it
+(repository Settings > Pages > Source: GitHub Actions). It first checks that `build_skin.py` here is the
+same as `../source/build_skin.py`, so run `./sync.sh` and commit both after a generator change.
 
 Needs HTTPS (Pages provides it) because module workers and `fetch` do not work from `file:`.
 Local try-out: `python3 -m http.server -d configurator` and open `http://localhost:8000/`.
