@@ -35,8 +35,8 @@ source/build_skin.py  --(Pillow)-->  VLC-Amp-NNN.vlt  (tar.gz: theme.xml + img/*
 skins2 only carries a dragged size from one layout to the next when both have
 the same original size and limits (`GenericLayout::isTightlyCoupledWith`,
 used in `TopWindow::setActiveLayout`). So all layouts of the main window are
-**the same size**: 556 x 676 logical px at the default width (620 for the concept
-window), the full player (232) + EQ (164) + playlist (280) stacked.
+**the same size**: 620 x 676 logical px at the default width (minimum 490), the
+full player (232) + EQ (164) + playlist (280) stacked.
 
 | Layout | Bar position | Panels |
 |---|---|---|
@@ -208,14 +208,15 @@ theme (`pack_atlases`, shelf packing) and cut out with `<SubBitmap>`:
 bitmaps (the progress fill frame sheets, wide stretch pieces; > 16384 px)
 stay separate files to avoid storing them twice.
 
-Memory (RSS of VLC on Linux, 8 s after start, `smaps_rollup`): VLC's own default
-skin 131 MB at 100 %; Midnight alone 136 MB, Midnight + Paper 146 MB, all 11
-themes 240 MB (150 %: 146 / 167 / 360 MB). About 100 MB is VLC and its
-libraries, shared with any skin; each theme adds ~10 MB at 100 %. Most of the per-theme cost is the fill frame
-sheets (`title_fill`, `seek`, volume): `CtrlSliderBg` copies its whole frame
-sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
+Memory (RSS of VLC on Linux, 8 s after start, `smaps_rollup`; figures of the hi-fi skin are in the table
+below, from the clean re-measurement of 2026-11-01): Midnight alone 103.6 MB at 100 % and 141.0 MB at 150 % (the flat
+original skin: 87.2 / 102.0 MB), Midnight + Paper 135.8 MB at 100 %: one theme costs about 31 MB (the flat original: about 15), so each
+theme is about 16 - 17 MB heavier than before, and every further theme adds about 32 MB at 100 %. (The flat original, measured earlier with another machine state: default skin
+131 MB, Midnight 136 MB, all 11 themes 240 MB; those numbers do not compare with the table.) About 70 MB is VLC and
+its libraries, shared with any skin. Most of the per-theme cost is the frame sheets (`title_fill`, `seek`, volume, EQ):
+`CtrlSliderBg` copies its whole frame sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
 Hence `FILL_FRAMES = 51` (2 % steps); the earlier 101-frame sheets cost about 80 MB more at 150 %.
-Start-up: 1.7 s with Midnight alone, 4.6 s with all 11 themes (under Xvfb).
+Start-up: about 2.9 s with Midnight alone (under load, Xvfb).
 
 ### Hi-fi redesign, 2026-11-01
 
@@ -353,7 +354,7 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
   (`CreateCompatibleBitmap`, not guaranteed black): bright dots at button corners
   if it is not. `solid()` in the generator composites such bitmaps over the panel
   colour (the panel is a flat colour), so every platform gets the same pixels:
-  `tools/windows-sim.py` writes the comparison to `docs/img/windows-sim/`. Window
+  `tools/windows-sim.py` (legacy; its comparison images were removed) modelled it, `tools/bitmap-audit.py` now checks it. Window
   outlines use hard alpha (`Canvas.done(hard_edges=True)`), small text is drawn on
   opaque crops of the background (`label_on`), and the LCD progress fill frames
   have hard edges.
@@ -417,8 +418,8 @@ frame per device pixel of its 100 px width (`P(100)`).
 
 **Memory rule.** VLC copies a slider's whole frame sheet into every control that
 uses it (`CtrlSliderBg`), and every layout has its own controls, so a sheet costs
-its size times the number of such controls, per theme. Budget: about 10 MB RSS per
-theme at 100 % (`smaps_rollup`, 8 s after start). Keep new sheets to 2 % steps where
+its size times the number of such controls, per theme. Budget: the original aim was about 10 MB RSS per
+theme at 100 % (`smaps_rollup`, 8 s after start); the measured cost is 16 - 17 MB (BACKLOG-hifi.md H29). Keep new sheets to 2 % steps where
 the thumb can cover the gap (as the title boxes do), crop them to the non-background part, and measure
 any new sheet (cost = pixels x 4 B x (controls + 1), see "Hi-fi redesign, 2026-11-01" under Memory).
 The EQ faders are two sliders each (dB label + groove / knob) for this reason.
@@ -936,13 +937,13 @@ not be run (no Windows here).
 
 `linux/vlc-amp-pin.py` (Python 3 standard library + ctypes on libX11 / libXext)
 does what `PinOnce` does on Windows, with the same pin offsets (100 % values
-times the scale: strip pin centre `W - 34 + 11, 12`, full player `W - 82 + 9, 11`
-from the player's top; bar at the bottom: from `H - 24` / `H - 122`).
+times the scale: strip pin centre `W - 36 + 11, 12`, full player `W - 92 + 12, 20`
+from the player's top; bar at the bottom: from `H - 24` / `H - 232`; constants `STRIP_PIN`, `FULL_PIN`).
 
 - **Finding the window.** skins2 creates one X window per skin window, class
   `("vlc", "Vlc")`, name `VLC (TopWindow)`; most are 1 x 1 or 10 x 10
   parked windows. The script takes the viewable one with the largest area
-  (556 x 436 at 100 %), searching a few levels below the root because a window
+  (620 x 676 at 100 %), searching a few levels below the root because a window
   manager reparents clients into frames. It waits until size and shape stay the
   same for 1 s. In `--watch` mode it pairs the window with the VLC process by
   `_NET_WM_PID` (a Flatpak sandbox's own PID is not in `/proc`, so a window with
@@ -952,7 +953,7 @@ from the player's top; bar at the bottom: from `H - 24` / `H - 122`).
   (`XShapeGetRectangles`): bar at the bottom when the shape reaches the
   window's last row; the full player is showing when the point `(0, bar)` from
   the bar's outer edge is inside the shape.
-- **Scale.** The window height is `436 * scale`, matched against the shipped
+- **Scale.** The window height is `676 * scale`, matched against the shipped
   scales (100 / 125 / 150 / 200); else the `VLC-Amp-NNN.vlt` name from
   `/proc/<pid>/cmdline` or `skins2-last` in vlcrc (native, Flatpak and Snap
   paths); else the nearest scale.
@@ -1047,11 +1048,13 @@ spaces do not change the order). A title that already ends in a length (a
 playlist saved with lengths: ` (m:ss)` or two or more spaces and `m:ss`) is
 stripped first. `lua-config` `vlcamp={durations='off'}` turns it off (the interface gets its
 own table as the global `config`, `modules/lua/intf.c:323-353`).
-Verified in VLC 3.0.20 under the harness (2026-11-01): unplayed items show
+Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin, whose column counts were
+70 at 100 % and 91 at a saved 706 px window): unplayed items show
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
-suffixes, `off` shows none; right-aligned at 100 % (70 columns, a 120-character
-title cut with "…") and with a saved 706 px window (91 columns).
+suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
+the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **76 / 74 / 73 / 77** (the rule above, recomputed for the 12 px font
+and the 60 px playtree margin; 76 and 74 were also measured in VLC, one more character was cut).
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 

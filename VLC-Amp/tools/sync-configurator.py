@@ -19,6 +19,9 @@ Verify step (non-zero exit on any difference):
     --themes midnight, plus --mode/--accent/--led (light, custom accent) and --pair at 24 px.
   - with --pyodide <pyodide-dir> <pillow-wheel> (see configurator/README.md "Headless check"): also builds
     the page's options through glue.py in Pyodide under node and compares the .vlt with the CLI build.
+Dependency-free alternative for the copy step only: configurator/sync.sh (plain cp of the same files; with
+the empty PATCHES list both give byte-identical results; the Pages workflow also checks the copy with cmp).
+The Pyodide comparison is byte exact only against the same Pillow as Pyodide's (12.2.0).
 Needs Pillow in the Python that runs this script (e.g. ~/.cache/titlebar-test/venv/bin/python).
 """
 import filecmp
@@ -103,6 +106,9 @@ def verify_pyodide(tmp, pydir, wheel):
     print("pyodide build:", r.stdout.strip(), "(%.1f s incl. start-up)" % (time.time() - t))
     same = filecmp.cmp(os.path.join(cli, "VLC-Amp-100.vlt"), os.path.join(out, "VLC-Amp-100.vlt"), shallow=False)
     print(("ok   " if same else "DIFF ") + "pyodide .vlt vs CLI .vlt (page options)")
+    if not same:
+        print("     note: Pyodide ships Pillow 12.2.0; a different Pillow in this Python can change single pixels"
+              " (+-1) in gradient bitmaps, which is not a generator difference. Compare with the same Pillow.")
     return 0 if same else 1
 
 

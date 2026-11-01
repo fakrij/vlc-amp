@@ -32,6 +32,9 @@
   <h1>VLC Amp skin configurator</h1>
   <p class="lead">Builds one <code>.vlt</code> skin for VLC 3 (skins2) in your browser. Nothing is uploaded;
     the skin generator runs locally with Python (Pyodide).</p>
+  <p class="muted">The skin is the thin hi-fi design: a 24 px strip for a window's title bar that expands into a
+    620 px wide player with equalizer and playlist (minimum width 490), plus the video window with its control
+    panel and a row of extra controls. You choose size, font and colours here; the layout is always the same.</p>
 
   <form onsubmit="return false">
     <fieldset><legend>Size</legend>
@@ -56,7 +59,7 @@
     <fieldset><legend>Light + dark</legend>
       <label class="r"><input type="checkbox" id="pair"> Build both, switchable</label>
       <small>The round button in the full player switches between them (about twice the memory of one
-        theme: +10 MB at 100 %). The base you chose above comes first. For the Windows helper's
+        theme: about +32 MB at 100 %). The base you chose above comes first. For the Windows helper's
         "follow the system" setting choose Dark as the base.</small>
     </fieldset>
     <fieldset><legend>Primary colour</legend>

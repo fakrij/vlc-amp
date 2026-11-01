@@ -1,6 +1,7 @@
 # Hi-fi redesign - backlog
 
-Fork of the VLC Amp skin rebuilt after the "VLC Modular PRO" concept. Last tidied 2026-11-01.
+The VLC Amp skin rebuilt after the "VLC Modular PRO" concept (the redesign, developed in a fork and integrated into VLC Amp's `main` as
+backlog item 38; this file holds its decisions, open items and technical notes; the older items are in [BACKLOG.md](BACKLOG.md)). Last tidied 2026-11-01.
 One style only: flat panels, hairline outlines, no header bars / separators, no side outlines. The former
 standard and flat styles are gone (H4, H5).
 
@@ -10,10 +11,11 @@ for Windows display scaling. Names: `VLC-Amp-[taskbar-|bar<N>-]<pct>.vlt`. Test 
 then `start`, `shot`, `click` (see `tools/README.md`); screenshots: `tools/doc-shots.sh` writes `docs/img-thin/`.
 
 ## Where things stand
-- The design is finished and merged: thin style, 24 px strip, Midnight and Paper (plus the other themes), memory about
-  +16 MB per theme over the original skin.
-- The agents' branches and worktrees are deleted (all merged); only `main` exists in this fork.
-- Open: the Windows test (only Jiri can run it), a few optional items (below), and the parked configurator.
+- The design is finished and merged into `main`: thin style, 24 px strip, Midnight and Paper (plus the other themes), memory about
+  +16 MB per theme over the flat original skin (103.6 vs 87.2 MB at 100 %, 141.0 vs 102.0 MB at 150 %). The video window with its
+  extra row (A-B, chapters, snapshot, shuffle / loop / repeat, speed) and the helper are ported to the new style.
+- The online configurator is part of `main` again (H12, see "Online configurator" at the end): its generator copy is identical to `source/build_skin.py`.
+- Open: the Windows test (only Jiri can run it) and a few optional items (below).
 
 ## Decisions (Jiri)
 | Decision | Result |
@@ -26,7 +28,7 @@ then `start`, `shot`, `click` (see `tools/README.md`); screenshots: `tools/doc-s
 | Seek knob | **Overhang kept**: the knob is centred on the groove ends (6 / 5 px); an inset turns into a gap on resize |
 | Title progress | **Keep the filled box + thumb**; the underline prototype and the pipes idea (H27) are not pursued |
 | Seek bar ends | **Not pill-shaped**: groove radius 3 px, fill radius 1 px stay |
-| Online configurator | **Parked** (H12) |
+| Online configurator | **In `main`** (H12: reopened by the integration; copy of the generator kept identical) |
 
 ## Open items
 P1 = before Jiri tests on Windows, P2 = before release, P3 = later. Assignee: Jiri = needs the real machine or a decision;
@@ -35,7 +37,6 @@ Haiku = mechanical / report, Sonnet = build, Opus = design.
 | # | P | Item | Assignee | Done when |
 |---|---|---|---|---|
 | H3 | P1 | **Windows 11 test** at 100 / 125 / 150 %: alpha rendering, edges and corners, strip in the title bar, taskbar dock (the helper's window-shape constants and click points were updated from `theme.xml` only, never run), theme follows system dark / light, installers (`Install.cmd`, `Setup.cmd`). Send `%TEMP%\vlc-amp-helper.log` if the helper misbehaves. | Jiri | Issues listed here; fixes assigned. |
-| H12 | parked | **Online configurator**: see "Parked" at the end. | - | - |
 | H28 | P3 | **Title frames 51 -> 26** (`title_fill` / `ftitle_fill`): saves about 4 MB per theme (about 9 at 150 %). Risk: a visible step at the playhead. skins2 shows frame `floor(value * (n - 1))` (measured on the seek bar), so a half-step lead like `SEEK_LEAD` should make it safe; untested. | Sonnet | Measured memory, crops at 0 / 50 / 93 % at 620 and 920 px, no visible step; or rejected. |
 | H29 | P3 | **More memory headroom**: the thin skin is about 16 MB per theme over the original (budget was about 10). Candidates: H28, the volume sheet, the remaining EQ sheets. | Sonnet | Only reductions with a measured win and no visible change. |
 | H30 | P2 | **Wider hit-test coverage** (H26 left it): panels-above layout, footer and transport buttons, menu / minimize / quit, real clicks at 150 / 200 %, all four edges above 125 %; the 40 px title seek "outside-left" reading (4565 px in one sweep, 80 px on retest) was not explained. | Haiku | `docs/hit-test-report.md` extended; failures listed. |
@@ -119,13 +120,17 @@ Haiku = mechanical / report, Sonnet = build, Opus = design.
 | H21 | Knob overhang | Seek kept; volume and EQ knobs inside the groove (EQ travel in device px) |
 | H22 | Icon halo | Crisp rendering: 341 asymmetric icon renders -> 0 (468 renders checked) |
 | H24 | Paper adjustment | Applied (see Decisions) |
-| H25 | Package image path | Packages read `docs/img-thin`; `docs/img-hifi` removed |
+| H25 | Package image path | Packages read `docs/img-thin`; the former image folder `img-hifi` was removed |
 | H26 | Hit-test sweep | No reproducible failures at 125 / 150 / 200 % (24 px) and 100 / 150 % (40 px); coverage gaps are H30 |
 | H27 | Pipes progress idea | Mockups made (`A` lit only, `B` lit + faint, `C` wide, `D` short); current look kept |
 | - | Review fixes (Jiri) | EQ click zone widened again (invisible slider), EQ labels no longer cut at the top, empty band beside the title fill removed (inset + no inner shadow), title fill lighter on dark themes (contrast 1.36 -> 1.83), frame 0 lit (dark band at the start of each track), seek fill lead (fill fell behind the knob on wide windows), separator line under the seek bar removed |
 
-## Parked: online configurator (H12)
-Jiri, 2026-11-01: stop working on the configurator for now. State when parked: `configurator/build_skin.py` equals the generator of commit 322d8de
-(byte-identical, verified by `tools/sync-configurator.py`: 8 cases identical, a page-style build under Pyodide identical once). It goes stale with every later
-generator change: do not re-sync or touch `configurator/` until Jiri reopens it. When reopened: run `tools/sync-configurator.py`, then check the page in a real
-browser (never done), memory and run time under Pyodide at 150 / 200 % (not measured), custom fonts through the page (not tested).
+## Online configurator (H12)
+Was parked on 2026-11-01 (a copy of the generator of commit 322d8de); the integration into VLC Amp's `main` reopened it. State now:
+`configurator/build_skin.py` is byte-identical to `source/build_skin.py` and builds the thin hi-fi skin (620 px window, 24 px strip,
+video window); the page offers scaling, font, dark / light, optional light + dark pair, two colours (no strip height or width option:
+the strip is always 24 px). After every generator change run `configurator/sync.sh` (copy only) or `python3 tools/sync-configurator.py`
+(copy and verify: CLI vs copy for 8 option sets, optionally Pyodide vs CLI) and commit `configurator/`; the Pages workflow refuses a stale copy.
+Checked on 2026-11-01 (integration verification): 8 CLI cases identical; a page-style build under Pyodide 314.0.7 (Pillow 12.2.0) is byte-identical to a
+CLI build with the same Pillow; the page itself in headless Edge (single, pair, own font) builds in 8 - 12 s each.
+Not done: memory and run time under Pyodide at 150 / 200 %, the other curated fonts through the page, a build from the page loaded in real VLC.

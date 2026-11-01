@@ -17,16 +17,12 @@ equalizer and playlist.
 or make your own colours in the [online configurator](https://fakrij.github.io/vlc-amp/).
 Unpack it, then see [Install](#install).
 
-The skin screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`;
-the Windows comparison images in `docs/img/windows-sim/` come from
-`tools/windows-sim.py`.
+The skin is a thin hi-fi design (flat panels, hairline outlines). The player window is 620 x 676 px at 100 % (minimum
+width 490); the default strip is 24 px high (for a title bar), 36 px is the taskbar build and 40 px the
+floating strip of the original concept: `python3 source/build_skin.py --bar-height 24`.
 
-The default build is the 24 px (title-bar) strip, 620 px wide:
-`python3 source/build_skin.py --bar-height 24` (`--bar-height 36` = taskbar, 40 = floating, the concept's height).
-
-The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are
-taken from real VLC 3.0.20 by `tools/doc-shots.sh`; the Windows comparison images
-(removed in this fork) came from `tools/windows-sim.py`, now legacy.
+The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from real VLC 3.0.20 by
+`tools/doc-shots.sh`.
 
 ## Features
 
@@ -86,8 +82,8 @@ taken from real VLC 3.0.20 by `tools/doc-shots.sh`; the Windows comparison image
   `gsettings` when present.
 - **Screen**: four builds for 100 %, 125 %, 150 % and 200 % display scaling;
   the setup picks the closest.
-- **Memory**: about 10 MB more than VLC's default skin at 100 % scaling
-  (see [Limits](#limits)).
+- **Memory**: about 16 MB more than the earlier flat skin at 100 % scaling with one theme
+  (see [Limits](#limits)); every extra theme costs about 32 MB.
 - Building the skin yourself (not needed for the downloads) needs Python 3 with
   Pillow.
 
@@ -379,10 +375,7 @@ Windows 11 has no API to put a player *into* the taskbar, so a small helper
    below (off the screen), the helper clicks the flip arrow on their header for you.
 
 **Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
-there.
-
-
-The folder has a second set of files, `VLC-Amp-taskbar-100/125/150/200.vlt`,
+there. The folder has a second set of files, `VLC-Amp-taskbar-100/125/150/200.vlt`,
 with a 36 px strip (bigger buttons and text; same width layout,
 the full player, EQ and playlist are unchanged). When you answer Yes to "dock in
 the taskbar", Setup picks this file, and so does `VLC in taskbar.cmd`; without
@@ -543,7 +536,8 @@ Tested with this skin.
 ### Online configurator
 
 **<https://fakrij.github.io/vlc-amp/>** builds your own `.vlt` in the
-browser, with nothing to install: size (100-200 %), dark or light, primary and
+browser, with nothing to install: the same thin 24 px strip skin (620 px window, video window
+and all), in a size for 100-200 % display scaling, dark or light, primary and
 secondary colour, font (or your own TTF / OTF), optionally a light + dark pair
 that the theme button switches. Preview, then download, and use the file in
 place of the shipped `VLC-Amp-NNN.vlt` of the same size (keep the name, so
@@ -557,14 +551,14 @@ The generator has 10 more themes: dark Ember (amber), Forest (mint), Nord
 (frost blue), Dusk (pink), Carbon (red); light Paper (white / grey, blue), Sand
 (teal on cream), Sage (green), Rose (raspberry); and **Custom**, dark in any
 colour you choose.
-Each adds about 10 MB of VLC memory at 100 % scaling (20 MB at 150 %) and some
+Each adds about 32 MB of VLC memory at 100 % scaling (the earlier flat skin: 15 MB; more at 150 and 200 %) and some
 start-up time, so build only the ones you want (the first is the default):
 
 ```bash
 python3 source/build_skin.py --scale 1.5 --themes "Midnight,Paper,Nord,Custom" --custom "#33ff99"
 ```
 
-`--themes all` builds every theme (about 240 MB of VLC memory at 100 %).
+`--themes all` builds every theme (11 themes: roughly 400 MB of VLC memory at 100 %, extrapolated, not measured with the hi-fi skin).
 
 **Custom colour.** A skin that contains Custom (built with it, as above) can
 be recoloured later without the generator: the tool in `custom-colour/`
@@ -719,10 +713,11 @@ These come from VLC's skin engine (skins2); details in
   [Lua extras](#lua-extras).
 - Flipping the panel side moves the bar once (not with the Windows helper running).
 - The player's invisible area does not snap to screen edges.
-- Memory: VLC with this skin uses about 136 MB at 100 % scaling and 146 MB at
-  150 % (Linux RSS; VLC's own default skin: 131 MB). About 100 MB of that is
-  VLC itself. Every extra theme adds about 10 MB at 100 % (20 MB at
-  150 %), see [More themes](#more-themes).
+- Memory: VLC with this skin (Midnight only) uses about 103.6 MB at 100 % scaling and
+  141.0 MB at 150 % (Linux RSS, measured 8 s after start; the flat original skin on the same machine:
+  87.2 and 102.0 MB), so about +16 MB (+39 MB at 150 %). About 70 MB of it is VLC itself. Every extra
+  theme adds about 32 MB at 100 % (Midnight + Paper: 135.8 MB), see [More themes](#more-themes) and
+  [docs/architecture.md](docs/architecture.md#hi-fi-redesign-2026-11-01).
 - Windows helper (measured on Windows 11, 125 % scaling, one song playing, helper in `-Watch` mode
   with docking, taskbar button, tray icon and light / dark following on): the helper's PowerShell
   process uses **19 MB** of memory while VLC is closed and **44 MB** while it docks VLC, and about
@@ -750,12 +745,13 @@ These come from VLC's skin engine (skins2); details in
 | `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs`, `find-vlc.ps1` (finds `vlc.exe`, shared by the two scripts), `install.ps1` / `uninstall.ps1` (run by the two `.cmd` files above) |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
+| `configurator/` | The online configurator (static page, Pyodide; `sync.sh` copies the generator into it), [configurator/README.md](configurator/README.md) |
 | `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, pin autostart, `--uninstall`), `vlc-amp-pin.py` (pin on start), `follow-system-theme.sh` (light / dark prototype) |
 | `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
 | `tools/make-windows-package.sh` | Builds `dist/VLC-Amp-windows/` (+ zip) to copy to a Windows PC |
-| `tools/` | Test harness: real VLC under Xvfb, screenshots ([tools/README.md](tools/README.md)) |
-| `docs/` | [Architecture](docs/architecture.md), [Lua API notes](docs/lua-api-notes.md), screenshots |
-| `BACKLOG.md` | Wishlist, what is possible, agent task briefs |
+| `tools/` | Test harness (real VLC under Xvfb, screenshots), audits, packaging, `sync-configurator.py` ([tools/README.md](tools/README.md)) |
+| `docs/` | [Architecture](docs/architecture.md), [Lua API notes](docs/lua-api-notes.md), [font notes](docs/font-notes.md), test reports, upstream issue drafts, screenshots (`img-thin/`) |
+| `BACKLOG.md`, `BACKLOG-hifi.md` | Wishlist, what is possible, agent task briefs; the hi-fi redesign's decisions and open items |
 
 ## Building
 
@@ -765,7 +761,7 @@ python3 source/build_skin.py --bar-height 40 --width 620 --scale 1   # concept s
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (default 620, minimum 490 at every bar height), `--bar-height` the strip height in logical
+width in logical pixels (default 620, minimum 490 at every bar height; the video window is never narrower than 580), `--bar-height` the strip height in logical
 pixels (default 24; 36 for the taskbar build, written as
 `VLC-Amp-taskbar-NNN.vlt`, other heights as `VLC-Amp-bar<N>-NNN.vlt`; 24 to 60),
 `--out` the output folder (default
@@ -775,7 +771,7 @@ theme; default `Midnight`), and
 `--custom #rrggbb` sets the Custom theme's colour. See
 [docs/architecture.md](docs/architecture.md) for how the generator works.
 
-Maintenance: the online configurator is PARKED (BACKLOG-hifi.md, H12): `configurator/` is a copy of the generator from 2026-11-01 and is not kept in sync for now. When it is reopened, run `python3 tools/sync-configurator.py` (needs Pillow) to refresh and verify it, and commit `configurator/`.
+Maintenance: `configurator/build_skin.py` (the online configurator's copy of the generator) must stay identical to `source/build_skin.py`. After every generator change run `sh configurator/sync.sh` (plain copy) or `python3 tools/sync-configurator.py` (copy, then builds with both and compares; needs Pillow) and commit `configurator/`; the GitHub Pages workflow refuses a stale copy.
 
 ## Credits
 

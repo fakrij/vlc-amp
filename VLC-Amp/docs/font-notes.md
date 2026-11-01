@@ -134,8 +134,8 @@ alternative (same advances, same chip fit, smaller file) and the one to use if t
 To apply JetBrains Mono (not wired in; the licence must ship with it):
 
 ```
-cp OFL.txt fonts/LICENSE-JetBrainsMono.txt          # from the JetBrains/JetBrainsMono repo
-python3 source/build_skin.py --bar-height 24 --width 620 --font fonts/JetBrainsMono-Regular.ttf
+# the font and its licence text are already in configurator/fonts/ (the online configurator offers it)
+python3 source/build_skin.py --bar-height 24 --width 620 --font configurator/fonts/JetBrainsMono-Regular.ttf
 ```
 Generator change for a default switch: `FONT_MONO` and `FONT_FILE` in `source/build_skin.py` (lines ~40/49) to
 `fonts/JetBrainsMono-Regular.ttf`, and the `0.602` advance in `bar_metrics` to `0.600`.

@@ -31,7 +31,7 @@ and prints the path.
 | `drag <x> <y> <dx> <dy>` | Press at x,y, move by dx,dy in 10 steps, release. Moving the window by its grip: `drag 10 12 50 60`. |
 | `park` | Moves the pointer off the skin (no hover state, tooltips disappear). |
 | `geometry` | `X Y W H` of the main window on the screen. |
-| `shape` | The X11 shape (the visible, clickable part) of the main window: bounding box, whether the bar is at the bottom, whether the full player is showing. Same rule as `ReadShape` in `taskbar/VlcDock.cs`. |
+| `shape` | The X11 shape (the visible, clickable part) of the main window: bounding box, whether the bar is at the bottom, whether the full player is showing. Same height rule as `DockShape.Classify` in `taskbar/VlcDock.cs` (full player or strip from the window height, not from a pixel test); with the full player, EQ and playlist all open the window is solid and up / down cannot be read (the Windows helper keeps the last known direction, `vlc-amp-pin.py` assumes the top). |
 | `quit` | Expands the strip if needed and clicks the full player's quit button, so VLC writes `skins2-config` into its `vlcrc`. Prints that line. |
 | `stop` | Kills only the VLC PID this script saved. VLC does not save its state this way. |
 | `xvfb-stop` | Kills only the Xvfb PID this script saved. |
@@ -75,17 +75,22 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
 - `vlc-env.sh`: paths and the environment for the extracted programs (sourced
   by both scripts).
 - `xshape.py`: reads the X11 shape (used by `shape` and `quit`).
-- `doc-shots.sh`: regenerates `docs/img-thin/{strip,strip-panels,full-eq}.png` from a
+- `doc-shots.sh`: regenerates the three images `docs/img-thin/{strip,strip-panels,full-eq}.png` from a
   build in one command (620 px window, 24 px strip; `BAR=40` for the concept
   strip). Uses `TB_DISPLAY_NUM` / `TB_INSTANCE` like the other commands.
 - `bitmap-audit.py`: scans every bitmap of the builds (4 scales,
   4 themes) for semi-transparent pixels, which X11 turns black. Use this instead of
   `windows-sim.py`.
 - `theme-audit.py`: contrast table of every theme.
-- `windows-sim.py`: **legacy**. Draws the old button comparison in `docs/img/windows-sim/`
-  (how skins2 on X11 and on Windows would blend our semi-transparent bitmaps, from
-  the pre-hi-fi bitmaps); no VLC needed, uses the harness venv's Pillow. Kept for
-  reference only; the bitmap scan above replaces its role.
+- `icon-symmetry.py`: mirror-diffs every icon (left-right / up-down alpha difference per icon, bar height
+  and scale); `python tools/icon-symmetry.py <source dir> <out.json>`, needs numpy.
+- `sync-configurator.py`: copies `source/build_skin.py` and the DejaVu files into `configurator/` and
+  verifies that the CLI and the copy build identical skins (8 option sets; `--pyodide <dir> <pillow wheel>`
+  adds the Pyodide build). Run it after every generator change. `configurator/sync.sh` is its dependency-free
+  copy-only twin.
+- `windows-sim.py`: **legacy**. Models how skins2 on X11 and on Windows would blend the old (pre hi-fi)
+  semi-transparent bitmaps (the comparison images it wrote are no longer in the repository); no VLC needed,
+  uses the harness venv's Pillow. Kept for reference only; the bitmap scan above replaces its role.
 - `make-windows-package.sh`: builds `dist/VLC-Amp-windows/` (and a zip)
   to copy to a Windows PC. Not part of the test harness.
 - `make-linux-package.sh`, `make-package.sh`: build `dist/VLC-Amp-linux/` (and a
