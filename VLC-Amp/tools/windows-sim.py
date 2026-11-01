@@ -79,7 +79,7 @@ def run(tag, patched):
         B.build(skin, 556, 24)
         names = ["t0_b_prev_up", "t0_t_play_off_up", "t0_t_pl_on_up", "t0_t_top_off_up", "t0_b_close_up",
                  "t0_fb_prev_up", "t0_ft_eq_off_up", "t0_b_pl_add_up", "t0_b_theme_up",
-                 "t0_thumb_v_up", "t0_thumb_s_up", "t0_thumb_eq_up", "t0_thumb_pl_up", "t0_ic_speaker"]
+                 "t0_thumb_v_up", "t0_thumb_s_up", "t0_thumb_eq_up", "t0_thumb_pl_up", "t0_c_mute_off_up"]
         bgs = {"t0_thumb_eq_up": B.LCD_BG, "t0_thumb_pl_up": B.SCROLL_TRACK}
         rows = []
         for n in names:

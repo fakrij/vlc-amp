@@ -721,6 +721,14 @@ class Layout:
         return self._add(Node("Slider", sid=sid, x=x, y=y, points=points, thumb=thumb, value=value,
                               tip=tip, bg=bg, nbvert=nbvert, lt=lt, rb=rb, thickness=thickness))
 
+    def vol_slider(self, sid, x, y, points, thumb, tip, bg, nbvert, **kw):
+        """The volume slider and its twin for the muted state (fill in another colour; same spot)."""
+        a = self.slider(sid, x, y, points, thumb, "volume", tip, bg=bg, nbvert=nbvert, **kw)
+        b = self.slider(sid + "_m", x, y, points, thumb, "volume", tip, bg=bg + "m", nbvert=nbvert, **kw)
+        a.vis = vis_and(a.vis, "not vlc.isMute")
+        b.vis = vis_and(b.vis, "vlc.isMute")
+        return a
+
     def video(self, x, y, w, h):
         """skins2 shows video only inside a Video control; it grows with the layout."""
         return self._add(Node("Video", x=x, y=y, w=w, h=h, lt="lefttop", rb="rightbottom"))
@@ -1104,7 +1112,7 @@ def make_eq_thumb(skin, bid, w, h):
     return bid
 
 
-def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0):
+def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, fill=None):
     """Slider background: n frames stacked vertically, frame i filled to i/(n-1). The groove
     has a light 1 px outline and a dark inside; the fill is the accent colour.
     knob = (lo, hi): the knob's centre runs from lo to hi device px (a knob kept inside the groove);
@@ -1121,7 +1129,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0):
         c.rrect(1, track_y + 1, w - 2, track_h - 2, max(0, r - 1), TRACK)
         if frac > 0:
             fw = (w - 4) * frac if knob is None else (knob[0] + (knob[1] - knob[0]) * frac + 0.5) / S - 2
-            c.rrect(2, track_y + 2, max(track_h - 4, fw), track_h - 4, max(0, r - 2), CYAN)
+            c.rrect(2, track_y + 2, max(track_h - 4, fw), track_h - 4, max(0, r - 2), fill or CYAN)
         sheet.paste(c.done(), (0, P(h) * i))
     skin.add(bid, solid(sheet))
     return bid
@@ -1245,17 +1253,22 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
         for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
             make_chip_toggle(skin, nm, 46, 16, lbl)
+        MUTED = mix(AMBER, TRACK, 0.45)                    # the volume fills while muted
         make_fill_frames(skin, "vol100", 100, 10, 0, 10, P(100), knob=(V_LO, V_HI))
+        make_fill_frames(skin, "vol100m", 100, 10, 0, 10, P(100), knob=(V_LO, V_HI), fill=MUTED)
         make_fill_frames(skin, "seek", sw, 10, 0, 10, SEEK_FRAMES, lead=SEEK_LEAD)
-        c = Canvas(12, 12)
-        icon(c, "speaker", 0, 0, 12, LABEL)
-        skin.add("ic_speaker", solid(c.done()))
+        for on in (False, True):                           # the speaker next to the volume slider = mute button
+            for st in ("up", "over", "down"):
+                c = Canvas(16, 16)
+                icon(c, "speaker_off" if on else "speaker", 2, 2, 12, AMBER if on else (LABEL if st == "up" else ICON[st]))
+                skin.add("c_mute_%s_%s" % ("on" if on else "off", st), solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
         lcd(c, 0, 0, TW, BT, 3)
         skin.add("c_time_s", solid(c.done()))
         make_mode_toggle(skin, "c_mode", MB, MB)
         make_progress_frames(skin, "vol_fill", TW - TIME_ZONE - 1, BT - 2, FILL_FRAMES, TITLE_FILL)
+        make_progress_frames(skin, "vol_fillm", TW - TIME_ZONE - 1, BT - 2, FILL_FRAMES, mix(MUTED, TRACK, 0.35))
         c = Canvas(190, 96)
         c.rrect(0, 0, 190, 96, 0, LCD_BG)
         plain_toggle(skin, "c_time_f", c.done())
@@ -1353,8 +1366,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox("c_mode", R(RP + G_ + TW + MG + MB), P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
         vw, vfh = TW - TIME_ZONE - 1, BT - 2
-        lay.slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
-                   "thumb_none", "volume", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
+        lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
+                   "thumb_none", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
                    nbvert=FILL_FRAMES, **tr)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
             lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
@@ -1442,9 +1455,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
         lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
-        lay.image("ic_speaker", F(276), P(ty + 8), lt="righttop", rb="righttop", action="move")
-        lay.slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
-                   "volume", "Volume $V%", bg="vol100", nbvert=P(100), **tr)
+        lay.checkbox("c_mute", F(278), P(ty + 6), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
+        lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+                   "Volume $V%", bg="vol100", nbvert=P(100), **tr)
         lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
                  focus=False, **tr)
         panel_toggles(lay, "ft_pl", "ft_eq", F(108), F(56), P(ty))
@@ -1653,8 +1666,8 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.button("fb_more", P(VW - 222), P(ty), "video.setLayout(video-x)",
                        "More controls (A-B loop, chapters, snapshot, shuffle / loop / repeat, speed)", **rbk)
         lay.checkbox("ft_mute", P(VW - 188), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
-        lay.slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 152), P(ty + 9),
-                   "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v", "volume", "Volume $V%",
+        lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 152), P(ty + 9),
+                   "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v", "Volume $V%",
                    bg="vol100", nbvert=P(100), **rbk)
         lay.text(P(VW - 48), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none",
                  sample="78%", focus=False, **rbk)
@@ -1719,9 +1732,9 @@ def build(skin, W, BH=BAR_DEFAULT):
                   focus=False)
         flay.checkbox("ft_more", P(W - 222), P(32), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
                       "More controls", "Fewer controls")
-        flay.image("ic_speaker", P(W - 186), P(40), action="none")
-        flay.slider("s_vol_fsc", P(W - 168), P(41), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
-                    "volume", "Volume $V%", bg="vol100", nbvert=P(100))
+        flay.checkbox("c_mute", P(W - 188), P(38), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
+        flay.vol_slider("s_vol_fsc", P(W - 168), P(41), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+                    "Volume $V%", bg="vol100", nbvert=P(100))
         flay.button("fb_fs", P(W - 42), P(32), "vlc.fullscreen()", "Leave full screen")
         c = Canvas(W, RH - 2)                              # the extra row: its own panel below the controls
         panel_bg(c, 0, 0, W, RH - 2, 6)
