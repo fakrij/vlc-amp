@@ -1,6 +1,6 @@
 # Titlebar skin: backlog
 
-Last updated 2026-11-01 (item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
+Last updated 2026-11-01 (docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
 
 - **DONE**: built and tested in real VLC 3.0.20 (Linux, skins2).
 - **SKIN**: doable in the skin generator alone.
@@ -61,7 +61,7 @@ Last updated 2026-11-01 (item 35 and T26-T29 from the v1.0 code review; earlier:
 | 31 | Windows: with EQ / playlist open the player cannot collapse back into the taskbar | **FIXED, confirmed by the user on Windows 2026-10-31 (T21 + T25)** | If the helper's bar height (36) differs from the skin VLC actually uses (24), the old test called "strip + PL / EQ" the full player. New `DockShape.Classify` derives the state from the visible height and infers bar height and scale (768 cases pass). Panels that would open below the screen now get one automatic flip click (`$FlipPanels`). **User 2026-10-31: the strip stayed *above* the taskbar** instead of going into it, which matches the suspected misclassification (placed like the full player). Still wanted: the log's `helper started: scale=.. barHeight=..` line and which .vlt VLC uses. | S-M |
 | 32 | Flipping the panels (above / below) moves the strip | **FIXED on Windows, confirmed by the user 2026-10-31 (T25); Linux: limitation** | Cause (known since item 14): the 4 layouts have one size, the bar sits at the top in "dn" and at the bottom in "up", and a skin action cannot move the window. Fix (`KeepBarOnFlip`, `DockShape.FlipOffset` / `BarTop` / `ClampVisible`): the helper sees the bar-side change of the same kind (strip / full) and, not docked, moves the window by the difference with T21's posted drag, clamped to the work area; never while a mouse button is down, not on strip <-> full, not when the window moved as well. Docked, `Place` keeps the strip in the taskbar as before; a 50 ms timer while the mouse is over VLC makes the jump short. The full player with both panels now has a known direction too (seam test in `Classify`). Unit-tested under Mono with real shapes (80 dn / up pairs, 3493 checks). Linux: same idea in `titlebar-pin.py --watch` is harder (skins2 ignores outside moves and synthetic motion on X11); stays a limitation for now. README "second Windows test" steps 9-10. User: flipping is OK now. | S-M |
 | 33 | Second Windows test: a click on the taskbar still hides the player; it only comes back from VLC's tray icon | **FIXED, confirmed by the user on Windows 2026-10-31 (T25)** | **First Windows log (125 %)**: the DPI-unaware helper (powershell.exe) read VLC's window alternately in physical and DPI-scaled coordinates (734x545 / 587x436, Start at 1358 / 1086), depending on which window's message called `Place`, and moved VLC back and forth between them (also the flashing); a position from the wrong system can push the strip off the screen, where skins2 keeps it until the tray icon re-shows it at its own stored position. No hide / minimize was logged at the taskbar click. Fix: the helper's thread is per-monitor DPI aware (V2) from the start and at every entry point (`DpiEnter`), so all coordinates are physical; `dpi:` / `DPI:` log lines. The same log: VLC used `Titlebar-125.vlt` (24 px) while the helper assumed the 36 px build; the script now takes scale / bar height from vlcrc's `skins2-last` when it does not start VLC (cause of the mismatch not visible in the script: Setup writes the taskbar build when docking was answered Yes and the file exists; VLC also saves the skin it last had on exit). User: it happens on a click on an empty taskbar spot or another app's / Windows' icon (not VLC's button, not show desktop). Source facts (3.0.x): skins2 has no `WM_ACTIVATE` / `WM_ACTIVATEAPP` / `WM_KILLFOCUS` handling, so activation changes cannot hide it; its windows are hidden only by minimizing the root window (`vlc.minimize()`, `SC_MINIMIZE` to the root), a skin change or `window.hide()`. Tray icon: single click = `raiseAll` (`SetForegroundWindow`; helps only if VLC was *covered*), double click = `SW_RESTORE` on the root (helps if *minimized*). The root never gets a taskbar button with `skins2-taskbar=0`. So either (a) something minimizes the root (Windows; unknown what), or (b) the strip stays behind the taskbar although the helper re-raises it (Windows 11 z-order; then item 15's `SetParent` is the next step). Fix: while docked, the helper restores a minimized VLC at once (`SC_RESTORE` to the root, as the tray double-click); the full player's own minimize button still minimizes (cursor on the full player at that moment); undocked nothing changes. A raise that does not take is logged with the windows above VLC and retried (NOTOPMOST, TOPMOST). New log lines: `foreground: ... (process); VLC root ... main ...`, `VLC window event: root window ... minimized`, `VLC hidden: ...`, `restore: ...`, `the taskbar is still above VLC after the raise`. Still needed: the log of one occurrence and whether a single or only a double click on the tray icon brings it back (README steps 11-15). User: no longer hides after the DPI fix. | M |
-| 34 | Video does not play (audio only) | **DONE on Windows, confirmed by the user 2026-10-31** (cause of the first failure: VLC's saved `skins2-config` had the new window as hidden; skins2 attaches video only to a *shown* window. The helper now sets `["video" ...]` to shown in vlcrc while VLC is closed (`SyncVlcrcTheme`). Title bar with full screen + shrink-to-bar buttons, resize by the corner, and a full-screen control panel (window `fullscreenController`: seek, previous / play / next, volume, leave) all confirmed by the user on Windows 2026-10-31; the helper also resets a saved `video-min` layout to `video-l`. *Open:* the same fix for Linux (`linux/setup.sh`), and for a Windows install without the helper running). Old status: | The skin had no `<Video>` control, and skins2 shows video only inside one. New window `video` (`build_skin.py`, `vlay`): themed frame (drag, resize E / S / SE) and a Video control, every control `visible="vlc.hasVout"`, so it is invisible without video (same trick as the flag windows). Autoresize: the window follows the video size. The helper's `FindMain` now ignores it (the main window is always 436 logical px high). Verified in VLC 3.0.20 under Xvfb: no skin warnings, window invisible without video. *Not verified:* a real video (the test VLC has no video output plugin and no libavformat), the window on Windows, fullscreen, moving / resizing, theme switch while a video plays. | M |
+| 34 | Video does not play (audio only) | **DONE on Windows, confirmed by the user 2026-10-31** (cause of the first failure: VLC's saved `skins2-config` had the new window as hidden; skins2 attaches video only to a *shown* window. The helper now sets `["video" ...]` to shown in vlcrc while VLC is closed (`SyncVlcrcTheme`). Title bar with full screen + shrink-to-bar buttons, resize by the corner, and a full-screen control panel (window `fullscreenController`: seek, previous / play / next, volume, leave) all confirmed by the user on Windows 2026-10-31; the helper also resets a saved `video-min` layout to `video-l`. *Also fixed* (commit e9fdd60): Setup repairs the saved video window entry itself, on Linux with `repair_video_window` in `linux/setup.sh` and on Windows with `Repair-VideoWindow` in `vlc-taskbar.ps1` Setup, so neither needs the helper running; tested on Linux and by `tools/test-repair-video-window.ps1`, not by a real video on Linux). Old status: | The skin had no `<Video>` control, and skins2 shows video only inside one. New window `video` (`build_skin.py`, `vlay`): themed frame (drag, resize E / S / SE) and a Video control, every control `visible="vlc.hasVout"`, so it is invisible without video (same trick as the flag windows). Autoresize: the window follows the video size. The helper's `FindMain` now ignores it (the main window is always 436 logical px high). Verified in VLC 3.0.20 under Xvfb: no skin warnings, window invisible without video. *Not verified:* a real video (the test VLC has no video output plugin and no libavformat), the window on Windows, fullscreen, moving / resizing, theme switch while a video plays. | M |
 | 35 | Code review of v1.0 (2026-11-01): 10 findings | **FIXED (T26); Linux tested, Windows compiled / parsed only** | (1, 2) Setup run twice on a machine with no vlcrc backed up its *own* vlcrc, so uninstall restored the skin settings (Windows: and pointed VLC at the deleted folder). Now Linux skips the backup when `rc_created=1` for the same `rc`; Windows leaves `vlcrc.titlebar-created` and makes no backup. (3) Linux setup refuses a second VLC flavor until `--uninstall`. (4) Linux setup leaves a foreign `lua-intf` alone (as Windows). (5) `follow-system-theme.sh` uses the vlcrc from the setup state. (6) `titlebar-pin.py` also reads `~/snap/vlc/common/vlcrc`. (7) `VlcDock.CheckVlc` prefers the vlc.exe with the skin's root window and keeps the one it follows (`PickVlc`). (8) `Set-VlcOption` finds `[core] # ...` headers. (9) the helper no longer passes an empty `--skins2-last`. (10) `Find-Vlc` shared in `taskbar/find-vlc.ps1`. *Unverified (needs Windows):* Setup twice on a PC without vlcrc, then Uninstall (vlcrc gone, marker gone); the helper with two vlc.exe running. | done |
 
 Numbers 1-10 follow your first list; N1-N3 your second list; 13-14 your third list (13 = width, 14 = panel side); 15 and 17 your fourth and fifth; 18 the themes; 19-22 your sixth list (taskbar hover buttons, Windows integration, Linux); 7a, 7b, 11, 12, 16, 21 were added during analysis.
@@ -127,28 +127,28 @@ Common problem: **a skin button can only run actions that skins2 knows** (verifi
 ## 3. Suggested order
 
 Docs: user guide in README.md, internals in [docs/architecture.md](docs/architecture.md).
-Most items are built. What is left needs a Windows machine, the user's answers, or phase 2.
+Everything that can be built and checked on Linux is built. What is open needs a Windows machine,
+a real desktop, a browser or a decision by the user.
 
-1. **Windows test (next):** run `taskbar\Setup.cmd`, then open a file from Explorer: skin, one
-   window, no Media Library entry, player pinned (pin lit). Then the 13-step taskbar button
-   checklist in README ("Testing the taskbar button"). Record the results in the *untested* marks
-   of items 1, 7a, 11, 12, 15, 19, 20, 21 and 23.
-2. **T9 (fix 15, taskbar click hides the player):** needs the user's answers to item 15 and the
-   helper's debug log (T3) from that Windows run. Decide from the log; do not guess.
-3. **Phase 2:** T17 (online configurator, item 24), then T18 (follow the system light / dark, item 25;
-   needs T17 step 4 and the Linux launcher from T14).
-
-Waiting on the user, no code: the Wayland and real window manager checklist (item 22d).
-Parked: T10 (patched skins2), only if the user chooses option C in section 2.
+1. **Windows checks for item 35** (the v1.0 review fixes were only compiled / parsed there): Setup
+   twice on a PC without `vlcrc`, then Uninstall (`vlcrc` and `vlcrc.titlebar-created` gone); the
+   helper with two vlc.exe running. Record the result in item 35. Other *untested on Windows* marks stay
+   in the item rows they belong to.
+2. **Item 22d checklist** (user, no code): Wayland and real window managers (GNOME, KDE, XFCE,
+   tiling WMs, Flatpak and Snap VLC). Record the results in item 22d.
+3. **T17 (item 24), what is left:** look at the configurator's preview image and download in a
+   normal browser window, then host it (GitHub Pages, see `configurator/README.md`). T18 / item 25
+   follow-system theme is built (Windows helper, Linux prototype).
+4. **T19** (font check) is with another agent; **T10** (patched skins2) is parked: only if the
+   user chooses option C in section 2.
 
 Agent-sized work packages for these steps are in section 5.
 
 ## 4. Open questions
 
-1. Item 15: the answers from the Windows run. Was the helper running? Does the player come back
-   after a moment? What exactly was clicked? Needed for T9, together with the debug log.
-2. Item 22d: the Wayland and window manager checklist (GNOME, KDE, XFCE, tiling WMs, Flatpak and
-   Snap VLC). Record the results in item 22d.
+1. Item 22d: the Wayland and window manager checklist. Needs a person at a real desktop.
+2. T17: where to host the configurator (GitHub Pages on this repo, or a separate folder / branch)?
+3. T10: is option C (own skins2 build) wanted at all? Until the answer is yes it stays parked.
 
 Answered (for the record):
 
@@ -181,7 +181,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T1 | Test harness in the repo | **DONE** (merged; `tools/`) | - | M |
 | T2 | Move slower / faster to the full player | **DONE** (merged) | T1 | S |
 | T3 | Helper debug log (for 15) | **DONE** (merged) | - | S |
-| T4 | Docs consistency pass | Haiku | after others | XS |
+| T4 | Docs consistency pass | **DONE** (2026-11-01; second pass, see the brief) | after others | XS |
 | T5 | Lua API fact check (for 4, 5, 2) | **DONE** (merged; `docs/lua-api-notes.md`) | - | S |
 | T6 | Lua interface: A-B loop, folder jump, EQ presets, bitrate | **DONE** (merged; Windows untested) | T1, T5 | L |
 | T7 | Tray icon for the helper (11) | **DONE** (merged) | - | M |
@@ -194,7 +194,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T14 | Linux setup script (22a) | **DONE** (merged; Flatpak / Snap paths unverified) | T1 | M |
 | T15 | Linux docs: MPRIS, setup, limits (22b) | **DONE** | T14 | XS |
 | T16 | Linux pin on start + Wayland check (22c, 22d; docking postponed) | **DONE** (Xvfb-tested; Wayland / real WMs need the 22d checklist) | T14 | M |
-| T17 | Online configurator (24), **phase 2**; steps 1 and 4 DONE (generator options, `--pair` in T24); steps 2-3 DONE: `configurator/` page, node + VLC verified, **no browser run yet**; still open: own-TTF upload, light + dark pair in the page | Opus (design), Sonnet (build) | - | M |
+| T17 | Online configurator (24), **phase 2**; steps 1 and 4 DONE (generator options, `--pair` in T24); steps 2-3 DONE: `configurator/` page (own-TTF upload and light + dark pair included), node + VLC verified, headless Edge run OK (2026-11-01); still open: a look at the preview and the download in a normal browser window, hosting | Opus (design), Sonnet (build) | - | M |
 | T18 | Follow system light / dark (25), **phase 2** | Sonnet | T17 step 4, T14 (Linux launcher) | M |
 | T19 | Font check for the configurator: which OFL fonts skins2 renders, tabular digits (report only) | Sonnet | - | S |
 | T20 | Flatpak / Snap VLC paths and options, from docs and sources (report only, for 22a) | **DONE (report; mostly unverified, see brief)** | - | S |
@@ -253,6 +253,13 @@ Done (2026-10-31): README, this file, `docs/` and `tools/README.md` checked agai
 numbers, duplicate sections and broken links fixed. For the next pass: check each claim against
 `source/build_skin.py`, `taskbar/`, `linux/`, `lua/` and `tools/`; keep one section per topic and
 link to it from elsewhere; do not change behaviour or code; keep the item numbers stable.
+
+Done again (2026-11-01): README, `docs/architecture.md`, `tools/README.md`, this file checked after the v1.0
+review fixes (item 35, T27, T28): `vlcrc.titlebar-created`, one VLC flavor per Linux setup, a foreign `lua-intf`
+(and then no `lua/vlcrc-keys.txt` keys), the theme wrap kept on a setup re-run, `follow-system-theme.sh` using
+the setup's vlcrc, `taskbar/find-vlc.ps1`, the helper's choice among several vlc.exe (`PickVlc`), the pin
+watcher's own-user filter; item 34's Linux / no-helper fix, T17's row, sections 3 and 4 brought up to date.
+Left alone: `docs/font-notes.md` and the T19 row (another agent).
 
 ### T5 - Lua API fact check (Haiku)
 Answer from the VLC 3.0.x source (`modules/lua/libs/*.c`, `share/lua/intf/*.lua`, `share/lua/README.txt`), with file:line references:

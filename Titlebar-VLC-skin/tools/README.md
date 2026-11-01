@@ -78,8 +78,12 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
 - `windows-sim.py`: draws the button comparison in `docs/img/windows-sim/`
   (how skins2 on X11 and on Windows would blend our semi-transparent bitmaps;
   no VLC needed, uses the harness venv's Pillow).
-- `make-windows-package.sh`: builds `dist/Titlebar-VLC-skin-windows/` (and a zip)
-  to copy to a Windows PC. Not part of the test harness.
+- `make-windows-package.sh`, `make-linux-package.sh`, `make-package.sh`: build
+  `dist/Titlebar-VLC-skin-windows/` (and a zip) and `dist/Titlebar-VLC-skin-linux/`
+  (and a `.tar.gz`) to copy to another PC; `make-package.sh [windows|linux|all]` runs
+  one or both. Not part of the test harness.
+- `check-windows-helper.sh`, `test-repair-video-window.ps1`, `test-sync-vlcrc.ps1`:
+  Windows helper checks, see the end of this file.
 - `pyodide-spike/`: a spike (node + Pyodide) that checks whether the generator
   runs unchanged in the browser. Its own README has the details.
 

@@ -352,7 +352,9 @@ to `.titlebar-removed` and VLC makes a new one); puts each audio type back to
 its recorded default, or removes our line from `mimeapps.list`, if the default
 is still ours (this runs before the launcher is deleted, because `xdg-mime`
 only reports a default whose file exists); removes the launcher and the Lua
-files; runs `titlebar-pin.py --uninstall-autostart`.
+files; runs `titlebar-pin.py --uninstall-autostart`. `follow-system-theme.sh`
+edits the `rc` recorded in this state file (an explicit `VLCRC` wins, and with no
+state file it takes the first `vlcrc` it finds), so it follows the VLC that was set up.
 
 **Start pinned.** If `linux/titlebar-pin.py` exists the setup asks (or
 `--pin-autostart` / `--no-pin-autostart`; `--yes` means yes) and runs
@@ -391,11 +393,21 @@ grows. Never run it against your real home unless you want the changes.
 
 ## The Windows helper (`taskbar/`)
 
+- `taskbar/find-vlc.ps1` (`Find-Vlc`: the installer's registry key, else the
+  usual Program Files folders) is dot-sourced by `install.ps1` and
+  `vlc-taskbar.ps1`, so both find `vlc.exe` the same way.
 - `vlc-taskbar.ps1 -Setup` writes `vlcrc` (UTF-8 without BOM): the keys of the
   table [vlcrc keys](#vlcrc-keys-what-both-setups-write), with `Set-VlcOption`
   and `Set-VlcModule`. It also installs the Lua interface and its default keys (see "Lua
   interface"). Optionally it creates a Startup shortcut running the helper
-  with `-Watch` (and `-NoDock`).
+  with `-Watch` (and `-NoDock`). When there is no `vlcrc` yet, Setup writes
+  one and a marker `vlcrc.titlebar-created` next to it, and a second run makes
+  no backup of its own file; `uninstall.ps1` then deletes the `vlcrc` and the
+  marker instead of restoring a backup.
+- Which `vlc.exe`: with several running (a second one with another interface,
+  or one still exiting) `VlcDock.PickVlc` takes the one that owns the skin's
+  root window (`HasSkinRoot`) and keeps following it while it qualifies,
+  instead of the first one `GetProcessesByName` returns.
 - `VlcDock.cs` finds VLC's `SkinWindowClass` windows (skipping the 1 x 1 flag
   windows) and reads the main window's region (`GetWindowRgn` +
   `GetRegionData`). `DockShape.Classify` (pure code, tested with the X11

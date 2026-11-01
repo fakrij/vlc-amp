@@ -133,7 +133,8 @@ The setup:
   uses it to read what VLC is playing and to send commands; nothing is
   reachable from the network;
 - installs the Lua extras (`%APPDATA%\vlc\lua\intf\titlebar.lua`, its default
-  keys; see [Lua extras](#lua-extras));
+  keys; skipped when `vlcrc` already names another `lua-intf` script; see
+  [Lua extras](#lua-extras));
 - asks whether to add Windows media controls (see [Media controls](#media-controls)).
 
 Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`
@@ -161,7 +162,8 @@ needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
 2. Close VLC and run **`linux/setup.sh`** (`sh linux/setup.sh` if it is not
    executable). It:
    - finds VLC (package, Flatpak or Snap; asks if there are several) and its
-     settings file (`vlcrc`);
+     settings file (`vlcrc`). It sets up one VLC at a time: to switch to
+     another flavor, run `--uninstall` first;
    - picks the skin file for your display scaling and prints what it detected
      (`GDK_SCALE`, `QT_SCALE_FACTOR`, `Xft.dpi`, KDE and GNOME settings);
      `--scale 150` overrides it;
@@ -174,6 +176,9 @@ needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
      this launcher removes the useless "Media Library" entry from the
      playlist. It offers to make the launcher the default app for audio files
      (`--default-player` / `--no-default-player` skip the question);
+   - installs the Lua extras (see [Lua extras](#lua-extras)) unless your
+     `vlcrc` already runs another Lua interface script (`lua-intf`), which it
+     leaves alone (then the default keys of the extras are skipped too);
    - turns on VLC's built-in web interface for this computer only
      (`127.0.0.1`, port 48080, random password in `vlcrc`). Nothing on Linux
      uses it yet; `--no-web` leaves it off;
@@ -265,7 +270,8 @@ Ctrl + up / down (volume).
 
 VLC's skin engine cannot give a skin these features, so a small Lua script,
 `lua/intf/titlebar.lua`, runs inside VLC next to the skin (Windows and Linux).
-Windows: `Setup.cmd` installs it. Linux and by hand: copy it to
+Windows `Setup.cmd` and `linux/setup.sh` install it (neither does if `vlcrc`
+already runs another Lua script in `lua-intf`; your script is left alone). By hand: copy it to
 `~/.local/share/vlc/lua/intf/` (Windows: `%APPDATA%\vlc\lua\intf\`) and add
 `luaintf` to `extraintf` and `lua-intf=titlebar` to `vlcrc` (details in
 [docs/architecture.md](docs/architecture.md#lua-interface-luaintftitlebarlua)).
@@ -288,7 +294,8 @@ do; other distributions are not checked).
 - The sample rate keeps showing whole kHz ("44" for 44.1 kHz): that is how
   VLC's skin engine formats it.
 - The default keys live in `lua/vlcrc-keys.txt`; both setups write them into
-  `vlcrc` unless you already set the action.
+  `vlcrc` unless you already set the action, and only when they installed the
+  Lua extras.
 - Change the keys in VLC: Tools > Preferences > All > Hotkeys (or `vlcrc`).
   The script uses five VLC actions that do nothing for music, so keep these
   names: A-B loop = *Sync subtitle (mark audio)*, next / previous folder =
@@ -406,7 +413,8 @@ linux/titlebar-pin.py --uninstall-autostart  # undo that
 entry points at the script where it is now, so run it again if you move the
 folder. The watcher looks at the process list every 2 seconds, opens no
 connection to the display while VLC is not running, and pins each VLC start
-once; a pin you remove by hand stays removed. Options: `-v` (say what it does),
+once (only VLC processes of your own user); a pin you remove by hand stays
+removed. Options: `-v` (say what it does),
 `--dry-run` (print where the pin is, do not click), `--timeout`, `--scale`,
 `--display`.
 
@@ -450,7 +458,8 @@ script leaves the settings alone and just starts VLC; it never stops VLC. The
 theme is chosen at VLC's start: if the system switches while VLC runs, use the
 theme button, the next start follows the system. The very first start, before
 VLC has ever saved `skins2-config`, shows th0; quit VLC once. Moving the
-folder needs `--install` again. Tested under Xvfb with a stub `gdbus`; real
+folder needs `--install` again; running `linux/setup.sh` again keeps the
+wrap. It edits the `vlcrc` that `linux/setup.sh` recorded. Tested under Xvfb with a stub `gdbus`; real
 portal and gsettings answers, Flatpak and Snap are not tested.
 
 ### Media controls
@@ -673,7 +682,7 @@ These come from VLC's skin engine (skins2); details in
 | `Titlebar-*.vlt` | The skin, one file per display scaling; `Titlebar-taskbar-*.vlt` the same with a taller strip for the taskbar |
 | `lua/intf/titlebar.lua` | Lua interface: A-B loop, folder jump, EQ presets, bitrate for lossless files |
 | `Install.cmd`, `Uninstall.cmd` | Windows: one-step install / removal (`taskbar\install.ps1`, `taskbar\uninstall.ps1`) |
-| `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs`, `install.ps1` / `uninstall.ps1` (run by the two `.cmd` files above) |
+| `taskbar/` | Windows helper: `Setup.cmd`, `VLC in taskbar.cmd`, `vlc-taskbar.ps1`, `VlcDock.cs`, `find-vlc.ps1` (finds `vlc.exe`, shared by the two scripts), `install.ps1` / `uninstall.ps1` (run by the two `.cmd` files above) |
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
 | `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, pin autostart, `--uninstall`), `titlebar-pin.py` (pin on start), `follow-system-theme.sh` (light / dark prototype) |
