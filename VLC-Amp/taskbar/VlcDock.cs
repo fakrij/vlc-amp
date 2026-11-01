@@ -245,6 +245,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             DisposeTray();   // also when VLC quit (not -Watch): no ghost icon left behind
             UnregisterHotKey(IntPtr.Zero, 1);
             UnhookVlc();
+            UnshareWidth();
             if (fgHook != IntPtr.Zero) UnhookWinEvent(fgHook);
         }
     }
@@ -710,6 +711,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         if (pid != vlcPid)
         {
             if (vlcPid != 0) Log("VLC lost: pid " + vlcPid);
+            UnshareWidth();
             if (pid != 0) Log("VLC found: pid " + pid);
             UnhookVlc();
             vlcPid = pid;
@@ -1305,6 +1307,25 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     // minimize button is undone the way skins2 itself restores: WM_SYSCOMMAND SC_RESTORE to the
     // root window (Win32Factory::Win32Proc -> restore() -> ShowWindow(root, SW_RESTORE), the same
     // as a double-click on VLC's tray icon). Not docked: only logged.
+    // The main window's width for lua/intf/vlcamp.lua (playlist lengths at the right edge): Lua
+    // cannot see window sizes, and skins2 saves them only at exit. Written when it changes; the
+    // file is deleted when VLC goes away, so it never describes another VLC session.
+    static int sharedWidth = -1;
+    static string WidthFile() { return Path.Combine(Path.GetTempPath(), "vlc-amp-width.txt"); }
+
+    static void ShareWidth(int w)
+    {
+        if (w == sharedWidth) return;
+        try { File.WriteAllText(WidthFile(), w.ToString(System.Globalization.CultureInfo.InvariantCulture)); sharedWidth = w; }
+        catch (Exception) { }
+    }
+
+    static void UnshareWidth()
+    {
+        sharedWidth = -1;
+        try { File.Delete(WidthFile()); } catch (Exception) { }
+    }
+
     static void SeenVisible(IntPtr main, RECT r)
     {
         if (hidden)
@@ -1507,6 +1528,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             return;
         }
         SeenVisible(main, rMain);
+        ShareWidth(W(rMain));
         LogChange("dpi", "DPI: VLC's window " + DpiOf(main) + " dpi, " + W(rMain) + "x" + H(rMain) + " px; helper thread " + DpiAwareness());
         if (StartPinned) PinOnce(main, rMain);
         if (FollowTheme) FollowSystemTheme(main, rMain);

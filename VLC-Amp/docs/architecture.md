@@ -766,7 +766,16 @@ advance `round(px x 0.6021)` = 7 / 8 / 10 / 13 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
 comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
-VLC saved at its last exit). Columns = `(width - P(42) - 7 - 2 x advance) /
+VLC saved at its last exit). Live width: Lua cannot see window sizes, so the
+Windows helper writes the main window's width (`W(rMain)`, physical px, the
+same pixels skins2 uses) to `%TEMP%\vlc-amp-width.txt` whenever it changes
+(`VlcDock.ShareWidth`, in `Place`) and deletes the file when VLC goes away or
+the helper exits. The script reads it every 0.5 s (`pl_follow_width`; `TMP`,
+then `TEMP`, as .NET's `GetTempPath`) and, when the column count changes,
+re-pads every title from the title it remembered (so a title cut with "…" at a
+narrow width gets its text back when the player is widened). Tested with the
+file written by hand in VLC 3.0.20: 556 -> 420 -> 556 px gave 70 -> 51 -> 70
+columns within a second. `columns=N` turns following off. Columns = `(width - P(42) - 7 - 2 x advance) /
 advance`: two characters less than the arithmetic, measured in VLC 3.0.20 (70
 fit at 100 % and 71 are clipped; 74 / 75 at 150 %; 91 at 100 % with a 706 px
 window). A title longer than the room is cut to leave an ellipsis and two

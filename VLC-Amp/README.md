@@ -318,9 +318,11 @@ do; other distributions are not checked).
   are not touched). The playlist font has equal-width characters, so the
   title is padded with spaces to put the lengths in one column at the right
   edge; a title that is too long is cut with "…" so its length stays visible.
-  The width is read when VLC starts (from the size VLC saved at its last
-  exit): after making the player wider or narrower, the column follows at the
-  next start. The playing item keeps its real title, so the
+  On Windows the column follows the player's width while you resize it (the
+  helper tells the script the width; within about a second). Without the
+  helper, and on Linux, the width is the one VLC saved at its last exit: after
+  resizing, the column follows at the next start, and a much narrower player
+  cuts the lengths off until then. The playing item keeps its real title, so the
   strip, the taskbar card and the media controls show it plain; it gets its
   length back when another track plays. Lengths appear once VLC has read a
   file (a moment after adding it); streams have none. The SORT button still

@@ -366,15 +366,18 @@ end
 -- P(11) = round(11 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
 -- the playtree P(42) px narrower than the main window. Scale from the skin's file name
 -- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
-local function pl_columns()
+-- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
+local function pl_columns(w)
     local s = 1
     local last = vlc.config.get("skins2-last") or ""
     local pct = last:match("%-(%d+)%.vlt$")
     if pct then s = tonumber(pct) / 100 end
-    local w = py_round(556 * s)
-    local cfg = vlc.config.get("skins2-config") or ""
-    local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
-    if mw then w = tonumber(mw) end
+    if not w then
+        w = py_round(556 * s)
+        local cfg = vlc.config.get("skins2-config") or ""
+        local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
+        if mw then w = tonumber(mw) end
+    end
     local adv = py_round(py_round(11 * s) * 0.6021)
     -- two characters less than the arithmetic: measured in VLC 3.0.20, 70 fit at 100 % (71 is
     -- clipped) and 74 at 150 % (75 is clipped)
@@ -441,12 +444,17 @@ local function pl_pass(cur)
             local e = pl.items[node.id]
             if node.id == cur then
                 if e then pl_restore(node.id, node.item) end
-            elseif not e or node.name ~= e.shown then         -- new item, or its title changed since
-                local metas = node.item:metas() or {}
-                local orig = strip_len(metas.title or "")
-                local shown = decorate(strip_len(node.name or ""), node.duration)
+            elseif not e or node.name ~= e.shown or e.cols ~= pl.cols then
+                local orig, base
+                if e and node.name == e.shown then        -- only the width changed: from the remembered title
+                    orig, base = e.orig, e.base
+                else                                      -- new item, or its title changed since
+                    local metas = node.item:metas() or {}
+                    orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
+                end
+                local shown = decorate(base, node.duration)
                 if node.name ~= shown then node.item:set_meta("title", shown) end
-                pl.items[node.id] = { orig = orig, shown = shown }
+                pl.items[node.id] = { orig = orig, base = base, shown = shown, cols = pl.cols }
             end
         end
     end
@@ -455,8 +463,34 @@ local function pl_pass(cur)
     for id in pairs(pl.items) do if not seen[id] then pl.items[id] = nil end end   -- removed items
 end
 
+-- The live window width: the Windows helper writes it to %TEMP%\vlc-amp-width.txt while VLC runs
+-- (VlcDock.ShareWidth); without it the width stays the one read at start.
+local PL_WIDTH_EVERY_US = 500000
+local function pl_width_file()
+    local tmp = os.getenv("TMP") or os.getenv("TEMP") or os.getenv("TMPDIR") or "/tmp"   -- as .NET GetTempPath
+    return tmp .. (is_windows and "\\" or "/") .. "vlc-amp-width.txt"
+end
+
+local function pl_follow_width()
+    if pl.mode ~= "right" or pl.fixed or now() < (pl.next_width or 0) then return end
+    pl.next_width = now() + PL_WIDTH_EVERY_US
+    local f = io.open(pl_width_file(), "r")
+    if not f then return end
+    local w = tonumber(f:read("*l") or "")
+    f:close()
+    if not w or w == pl.width then return end
+    pl.width = w
+    local cols = pl_columns(w)
+    if cols ~= pl.cols then
+        pl.cols = cols
+        pl.next_pass = 0                       -- re-pad every title now
+        vlc.msg.dbg(TAG .. "playlist width " .. w .. " px: " .. cols .. " columns")
+    end
+end
+
 local function pl_tick()
     if not pl.on then return end
+    pl_follow_width()
     local cur = vlc.playlist.current()
     if cur ~= pl.cur then                      -- track changed: real title back at once
         pl.cur = cur
@@ -515,7 +549,7 @@ local function main()
     pl.on = pl.mode ~= "off"
     local ok, cols = pcall(pl_columns)
     if ok and cols then pl.cols = cols end
-    if tonumber(cfg.columns) then pl.cols = math.floor(tonumber(cfg.columns)) end
+    if tonumber(cfg.columns) then pl.cols, pl.fixed = math.floor(tonumber(cfg.columns)), true end
     local lib = vlc.object.libvlc()
     log("interface started (A-B loop, folder jump, equalizer presets, bitrate"
         .. (pl.on and (", playlist durations " .. (pl.mode == "right" and pl.cols .. " columns" or pl.mode)) or "") .. ")")
