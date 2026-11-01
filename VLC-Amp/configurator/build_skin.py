@@ -894,6 +894,16 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "fb_next", 28, 22, "next")
         make_toggle(skin, "ft_pl", 30, 22, label="PL", use_led=True)
         make_toggle(skin, "ft_eq", 30, 22, label="EQ", use_led=True)
+        # video window / fullscreen controller: the extra row (expand button) and its controls
+        make_button(skin, "fb_more", 28, 22, "arrow_up")                  # show the extra row
+        make_button(skin, "fb_less", 28, 22, "arrow_down")                # hide it
+        make_toggle(skin, "ft_more", 28, 22, icon_off="arrow_up", icon_on="arrow_down")
+        make_button(skin, "xb_chprev", 34, 22, label="CH-")
+        make_button(skin, "xb_chnext", 34, 22, label="CH+")
+        make_button(skin, "xb_frame", 46, 22, label="FRAME")
+        make_button(skin, "xb_snap", 40, 22, label="SNAP")
+        for lbl in ("shuf", "loop", "rep1"):
+            make_toggle(skin, "xt_" + lbl, 44, 22, label=lbl.upper(), use_led=True)
         make_thumb(skin, "thumb_s", 8, 12)
         make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
         make_eq_thumb(skin, "thumb_eq", 12, 6)
@@ -1143,12 +1153,81 @@ def build(skin, W, BH=BAR_DEFAULT):
     VH = PBASE + PH + VB
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(420), maxw=P(3840),
                   minh=P(VT + VB + PH + 90), maxh=P(2160))
+    # The same window with an extra row of controls above the panel (the expand button switches):
+    # the same original size, so skins2 carries the current (maximized) size between the two; the
+    # row takes its height from the video, as a Video control cannot change size inside a layout.
+    RH = 28
+    xlay = Layout(skin, "video-x", P(VW), P(VH), minw=P(420), maxw=P(3840),
+                  minh=P(VT + VB + PH + RH + 90), maxh=P(2160))
     MW = 140                                               # minimized: the title bar alone
     mlay = Layout(skin, "video-min", P(MW), P(VT))
     # Full screen: skins2 shows the window "fullscreenController" over the video when the mouse
-    # moves, and fades it out (VLC's own fullscreen controller option, on by default).
+    # moves, and fades it out (VLC's own fullscreen controller option, on by default). The extra
+    # row is shown by the flag window fxflag above the controls; the layout always has its height
+    # (skins2 places the window once, at the bottom; a taller layout would grow off the screen),
+    # and without the row that part has no pixels, so it is transparent and click-through.
     FSH = 56
-    flay = Layout(skin, "fsc-l", P(W), P(FSH))
+    flay = Layout(skin, "fsc-l", P(W), P(FSH + RH))
+
+    def extra_row(lay, y, w, lt, rb):
+        """The extra controls: chapters, next frame, snapshot, shuffle / loop / repeat, speed. (A-B loop,
+        folder jump and EQ presets cannot be skin buttons: a button runs only skins2's own actions.)"""
+        k = dict(lt=lt, rb=rb)
+        lay.button("xb_chprev", P(8), y, "dvd.previousChapter()", "Previous chapter", **k)
+        lay.button("xb_chnext", P(44), y, "dvd.nextChapter()", "Next chapter", **k)
+        lay.button("xb_frame", P(84), y, "vlc.nextFrame()", "Next frame (pauses)", **k)
+        lay.button("xb_snap", P(134), y, "vlc.snapshot()", "Snapshot (saved to your Pictures folder)", **k)
+        lay.checkbox("xt_shuf", P(180), y, "playlist.isRandom", "playlist.setRandom(true)",
+                     "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on", **k)
+        lay.checkbox("xt_loop", P(228), y, "playlist.isLoop", "playlist.setLoop(true)",
+                     "playlist.setLoop(false)", "Loop playlist: off", "Loop playlist: on", **k)
+        lay.checkbox("xt_rep1", P(276), y, "playlist.isRepeat", "playlist.setRepeat(true)",
+                     "playlist.setRepeat(false)", "Repeat one: off", "Repeat one: on", **k)
+        lay.text(P(326), y + P(3), P(w - 332), "lcd14", "$Rx", CYAN_TXT, scrolling="none",
+                 sample="1.00x", focus=False, **k)
+
+    def video_layout(lay, extra):
+        c = Canvas(VW, VH)
+        panel_bg(c, 0, 0, VW, VH, 6)
+        grip_dots(c, 4, 4, rows=2)                        # title bar grip, left
+        grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
+        nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
+               actions={"mr": "resizeE", "br": "resizeSE"})
+        rt = dict(lt="righttop", rb="righttop")
+        # the name of what plays, across the title bar (clicks go through to the bar: it moves the window)
+        lay.text(P(20), P(5), P(VW - 20 - 130), "lcd12", "$N", CYAN_TXT, rb="righttop", scrolling="none",
+                 sample="Video title", focus=False)
+        lay.checkbox("vb_max", P(VW - 124), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
+                     "Fill the screen (title bar and control panel stay)", "Back to the window size", **rt)
+        lay.button("vb_full", P(VW - 94), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
+        lay.button("vb_min", P(VW - 64), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
+        lay.button("vb_close", P(VW - 34), P(3), "vlc.stop()", "Close the video (stops playback)", **rt)
+        # docked control panel under the video: seek bar, transport, time, volume (kept at the bottom
+        # and stretched with the window)
+        bl = dict(lt="leftbottom", rb="leftbottom")
+        lay.slider("s_seek_vid" + ("_x" if extra else ""), P(8), P(PBASE + 4), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+                   "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, lt="leftbottom", rb="rightbottom")
+        lay.button("fb_prev", P(8), P(PBASE + 22), "playlist.previous()", "Previous", **bl)
+        lay.button("fb_slower", P(38), P(PBASE + 22), "vlc.slower()", "Slower", **bl)
+        lay.checkbox("ft_play", P(68), P(PBASE + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+        lay.button("fb_faster", P(104), P(PBASE + 22), "vlc.faster()", "Faster", **bl)
+        lay.button("fb_next", P(134), P(PBASE + 22), "playlist.next()", "Next", **bl)
+        lay.text(P(176), P(PBASE + 25), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+                 sample="1:02 / 4:12", focus=False, **bl)
+        rbk = dict(lt="rightbottom", rb="rightbottom")
+        if extra:
+            lay.button("fb_less", P(VW - 166), P(PBASE + 22), "video.setLayout(video-l)", "Fewer controls", **rbk)
+        else:
+            lay.button("fb_more", P(VW - 166), P(PBASE + 22), "video.setLayout(video-x)",
+                       "More controls (chapters, next frame, snapshot, shuffle / loop / repeat, speed)", **rbk)
+        lay.checkbox("ft_mute", P(VW - 134), P(PBASE + 22), "vlc.isMute", "vlc.mute()", "vlc.mute()",
+                     "Mute", "Unmute", **rbk)
+        lay.slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 102), P(PBASE + 29), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
+                   "volume", "Volume $V%", bg="vol90", nbvert=P(90), **rbk)
+        if extra:
+            extra_row(lay, P(PBASE - RH + 3), VW, "leftbottom", "leftbottom")
+        lay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH - (RH if extra else 0)))
+
     cur = {}
     for ti, (tmode, tname, _) in enumerate(THEMES):
         apply_theme(ti)
@@ -1180,36 +1259,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         vlay.theme_vis = ("th%d.isVisible" % ti if ti else
                           " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
         vlay.vis = "vlc.hasVout"
+        xlay.theme_vis, xlay.vis = vlay.theme_vis, vlay.vis
         mlay.theme_vis, mlay.vis = vlay.theme_vis, vlay.vis
-        c = Canvas(VW, VH)
-        panel_bg(c, 0, 0, VW, VH, 6)
-        grip_dots(c, 4, 4, rows=2)                        # title bar grip, left
-        grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
-        nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
-               actions={"mr": "resizeE", "br": "resizeSE"})
-        rt = dict(lt="righttop", rb="righttop")
-        vlay.checkbox("vb_max", P(VW - 124), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
-                      "Fill the screen (title bar and control panel stay)", "Back to the window size", **rt)
-        vlay.button("vb_full", P(VW - 94), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
-        vlay.button("vb_min", P(VW - 64), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
-        vlay.button("vb_close", P(VW - 34), P(3), "vlc.stop()", "Close the video (stops playback)", **rt)
-        # docked control panel under the video: seek bar, transport, time, volume (kept at the bottom
-        # and stretched with the window)
-        bl = dict(lt="leftbottom", rb="leftbottom")
-        vlay.slider("s_seek_vid", P(8), P(PBASE + 4), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
-                    "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, lt="leftbottom", rb="rightbottom")
-        vlay.button("fb_prev", P(8), P(PBASE + 22), "playlist.previous()", "Previous", **bl)
-        vlay.button("fb_slower", P(38), P(PBASE + 22), "vlc.slower()", "Slower", **bl)
-        vlay.checkbox("ft_play", P(68), P(PBASE + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-        vlay.button("fb_faster", P(104), P(PBASE + 22), "vlc.faster()", "Faster", **bl)
-        vlay.button("fb_next", P(134), P(PBASE + 22), "playlist.next()", "Next", **bl)
-        vlay.text(P(176), P(PBASE + 25), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
-                  sample="1:02 / 4:12", focus=False, **bl)
-        vlay.checkbox("ft_mute", P(VW - 134), P(PBASE + 22), "vlc.isMute", "vlc.mute()", "vlc.mute()",
-                      "Mute", "Unmute", lt="rightbottom", rb="rightbottom")
-        vlay.slider("s_vol_vid", P(VW - 102), P(PBASE + 29), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
-                    "volume", "Volume $V%", bg="vol90", nbvert=P(90), lt="rightbottom", rb="rightbottom")
-        vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH))
+        video_layout(vlay, False)
+        video_layout(xlay, True)
         c = Canvas(MW, VT)
         panel_bg(c, 0, 0, MW, VT, 6)
         grip_dots(c, 4, 4, rows=2)
@@ -1218,6 +1271,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         mlay.button("vb_restore", P(MW - 64), P(3), "video.setLayout(video-l)", "Show the video")
         mlay.button("vb_close", P(MW - 34), P(3), "vlc.stop()", "Close the video (stops playback)")
         flay.theme_vis = vlay.theme_vis
+        c = Canvas(W, RH - 2)                              # the extra row: its own panel above the controls
+        panel_bg(c, 0, 0, W, RH - 2, 6)
+        flay.vis = "fxflag.isVisible"
+        hslice(skin, flay, "fsc_xbg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
+        extra_row(flay, P(2), W, "lefttop", "lefttop")
+        flay.vis, flay.oy = None, P(RH)
         c = Canvas(W, FSH)
         panel_bg(c, 0, 0, W, FSH, 6)
         hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
@@ -1228,10 +1287,14 @@ def build(skin, W, BH=BAR_DEFAULT):
         flay.button("fb_next", P(78), P(28), "playlist.next()", "Next")
         flay.text(P(124), P(31), P(190), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
                   focus=False)
+        flay.checkbox("ft_more", P(W - 186), P(28), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
+                      "More controls", "Fewer controls")
         flay.image("ic_speaker", P(W - 150), P(33), action="none")
         flay.slider("s_vol_fsc", P(W - 134), P(35), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
                     "volume", "Volume $V%", bg="vol90", nbvert=P(90))
         flay.button("fb_fs", P(W - 36), P(28), "vlc.fullscreen()", "Leave full screen")
+        flay.oy = 0
+        xlay.vis, xlay.theme_vis = None, None
         vlay.vis, vlay.theme_vis, mlay.vis, mlay.theme_vis = None, None, None, None
         flay.theme_vis = None
     apply_theme(0)
@@ -1239,13 +1302,13 @@ def build(skin, W, BH=BAR_DEFAULT):
 
     skin.add("flag_px", Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
     flags = []
-    for fid in ["eqflag", "plflag", "tflag"] + ["th%d" % i for i in range(len(THEMES))]:
+    for fid in ["eqflag", "plflag", "tflag", "fxflag"] + ["th%d" % i for i in range(len(THEMES))]:
         fl = Layout(skin, fid + "-l", 1, 1)
         fl.image("flag_px", 0, 0)
         flags.append(dict(id=fid, visible="true" if fid == "th0" else "false", position="Center",
                           yoffset=0, layouts=[fl], dragdrop=False))
     skin.windows = [dict(id="main", visible="true", position="Center", yoffset=0, layouts=layouts),
-                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[mlay, vlay],                  # last = default
+                    dict(id="video", visible="true", position="Center", yoffset=0, layouts=[mlay, xlay, vlay],      # last = default
                          dragdrop=False),
                     dict(id="fullscreenController", visible="false", position="South", yoffset=0,
                          layouts=[flay], dragdrop=False)] + flags

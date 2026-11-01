@@ -273,11 +273,17 @@ speed. Then the seek bar, transport, volume, PL and EQ.
   buttons in the title bar make it fill the screen (title bar and control panel stay), go
   full screen without a frame, and shrink the window to its title bar (the button there
   brings the video back). A control panel (seek bar, previous / play / next, time, volume)
-  is docked under the video, with slower / faster and mute; the title bar also has a close button
-  (it stops the video). There is no A-B button: skins2 has no such action (use the hotkey or the
-  tray menu, see Lua extras). In full screen, moving the mouse shows a control
-  panel (seek bar, previous / play / next, volume, leave full screen) that fades out. With no video the
-  window has no pixels and is invisible. It starts at the video's size.
+  is docked under the video, with slower / faster and mute; the title bar shows the name of
+  what plays and has a close button (it stops the video). The arrow button next to mute adds a
+  row of extra controls: previous / next chapter, next frame, snapshot (saved to your Pictures
+  folder), shuffle / loop / repeat one, and the playback speed; the arrow takes them away
+  again (the row takes its height from the picture, the window keeps its size). There is no
+  A-B button: skins2 has no such action (use the hotkey or the tray menu, see Lua extras). In
+  full screen, moving the mouse shows a control panel (seek bar, previous / play / next,
+  volume, leave full screen) that fades out; its arrow button adds the same extra row above
+  it. With no video the window has no pixels and is invisible. It starts at the video's size.
+  On Windows a maximized video stays clear of the taskbar and the pinned player goes behind
+  it (the helper does both).
 
 ### Keyboard
 
