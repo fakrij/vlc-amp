@@ -416,6 +416,15 @@ grows. Never run it against your real home unless you want the changes.
   commands by their `--no-media-library` flag as before. Tested on Windows with a
   stub program (2026-11-01): arguments with spaces and parentheses intact, no
   second helper when one runs, the shortcut's command when none runs.
+- Maximize covers the taskbar: skins2's `WindowManager::maximize` sizes the
+  window to the whole monitor (`window_manager.cpp`, `getMonitorInfo`, not the
+  work area). When a VLC skin window exactly fills its monitor and the taskbar
+  takes room, `FitMaximizedVideo` posts a drag on the video layout's `resizeSE`
+  corner (bottom-right 30 x 30 logical px) by the difference, and on its title
+  bar when the taskbar is at the top or left, so skins2 itself resizes the
+  layout (an outside `SetWindowPos` would leave it drawing at the old size).
+  Restore still works: skins2 saved the size before maximizing. Compiled, not
+  yet seen on Windows.
 - Maximized video: while a visible VLC skin window other than the main and
   root ones fills its monitor's work area (the skin's video window, maximized)
   and a visible part of the player (window region, `ReadShape`) overlaps it,

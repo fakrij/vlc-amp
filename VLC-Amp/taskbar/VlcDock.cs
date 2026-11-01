@@ -1358,6 +1358,64 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         return hit;
     }
 
+    // skins2 maximizes a window to the whole monitor (window_manager.cpp maximize: getMonitorInfo, not
+    // the work area), so a maximized video covers the taskbar. When a VLC skin window exactly fills its
+    // monitor and the taskbar takes room (work area smaller), the helper drags the window's resize
+    // corner (the video layout's resizeSE grip: the bottom-right 30 x 30 logical px) by the difference,
+    // and its title bar when the taskbar is at the top or left, with posted messages, so skins2 itself
+    // resizes the layout (an outside SetWindowPos would leave skins2 drawing at the old size). Once the
+    // window equals the work area nothing happens until the next maximize; restore still works (skins2
+    // saved the size before maximizing).
+    static IntPtr fittedVideo = IntPtr.Zero;
+    static DateTime fittedAt = DateTime.MinValue;
+
+    static void FitMaximizedVideo(IntPtr main)
+    {
+        if (MouseButtonDown() || (DateTime.Now - fittedAt).TotalMilliseconds < 1500) return;
+        uint vlc = vlcPid;
+        IntPtr video = IntPtr.Zero;
+        RECT rv = new RECT();
+        MONITORINFO mi = new MONITORINFO();
+        mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+        EnumWindows(delegate (IntPtr h, IntPtr l)
+        {
+            uint pid;
+            GetWindowThreadProcessId(h, out pid);
+            if (pid != vlc || h == main || !IsWindowVisible(h) || ClassOf(h) != "SkinWindowClass" || IsSkinRoot(h, pid)) return true;
+            RECT r;
+            if (!GetWindowRect(h, out r) || !GetMonitorInfo(MonitorFromWindow(h, 2), ref mi)) return true;
+            if (r.Left != mi.rcMonitor.Left || r.Top != mi.rcMonitor.Top ||
+                r.Right != mi.rcMonitor.Right || r.Bottom != mi.rcMonitor.Bottom) return true;
+            video = h;
+            rv = r;
+            return false;
+        }, IntPtr.Zero);
+        if (video == IntPtr.Zero) return;
+        RECT w = mi.rcWork, m = mi.rcMonitor;
+        int dw = (m.Right - w.Right) + (w.Left - m.Left), dh = (m.Bottom - w.Bottom) + (w.Top - m.Top);
+        if (dw <= 0 && dh <= 0) return;   // auto-hidden taskbar: the whole monitor is the work area
+        int gx = W(rv) - (int)Math.Round(10 * Scale), gy = H(rv) - (int)Math.Round(10 * Scale);
+        Log("maximized video " + Describe(video) + " covers the taskbar: resizing it by " + (-dw) + "," + (-dh) +
+            " with a drag on its corner at " + Pt(gx, gy));
+        PostMessage(video, WM_MOUSEMOVE, IntPtr.Zero, LParam(gx, gy));
+        PostMessage(video, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), LParam(gx, gy));
+        PostMessage(video, WM_MOUSEMOVE, new IntPtr(MK_LBUTTON), LParam(gx - dw, gy - dh));
+        PostMessage(video, WM_LBUTTONUP, IntPtr.Zero, LParam(gx - dw, gy - dh));
+        int mx = w.Left - m.Left, my = w.Top - m.Top;
+        if (mx > 0 || my > 0)
+        {
+            // taskbar at the top or left: move it by the title bar (left part, clear of the buttons)
+            int tx = (int)Math.Round(60 * Scale), ty = (int)Math.Round(8 * Scale);
+            Log("maximized video: moving it by " + mx + "," + my + " with a drag on its title bar at " + Pt(tx, ty));
+            PostMessage(video, WM_MOUSEMOVE, IntPtr.Zero, LParam(tx, ty));
+            PostMessage(video, WM_LBUTTONDOWN, new IntPtr(MK_LBUTTON), LParam(tx, ty));
+            PostMessage(video, WM_MOUSEMOVE, new IntPtr(MK_LBUTTON), LParam(tx + mx, ty + my));
+            PostMessage(video, WM_LBUTTONUP, IntPtr.Zero, LParam(tx + mx, ty + my));
+        }
+        fittedVideo = video;
+        fittedAt = DateTime.Now;
+    }
+
     // true = the player is kept below a maximized video (Place does nothing else this tick)
     static bool KeepUnderVideo(IntPtr main, RECT rMain)
     {
@@ -1596,6 +1654,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         }
         SeenVisible(main, rMain);
         ShareWidth(W(rMain));
+        FitMaximizedVideo(main);                   // skins2 maximizes over the taskbar: back into the work area
         if (KeepUnderVideo(main, rMain)) return;   // a maximized video: the player waits below it
         LogChange("dpi", "DPI: VLC's window " + DpiOf(main) + " dpi, " + W(rMain) + "x" + H(rMain) + " px; helper thread " + DpiAwareness());
         if (StartPinned) PinOnce(main, rMain);
