@@ -364,7 +364,7 @@ end
 -- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
 -- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses DejaVu Sans Mono at
 -- P(11) = round(11 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
--- the playtree P(42) px narrower than the main window. Scale from the skin's file name
+-- the playtree P(W - 42) wide. Scale from the skin's file name
 -- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
 -- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
 local function pl_columns(w)
@@ -378,10 +378,16 @@ local function pl_columns(w)
         local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
         if mw then w = tonumber(mw) end
     end
-    local adv = py_round(py_round(11 * s) * 0.6021)
-    -- two characters less than the arithmetic: measured in VLC 3.0.20, 70 fit at 100 % (71 is
-    -- clipped) and 74 at 150 % (75 is clipped)
-    return math.max(20, math.floor((w - py_round(42 * s) - 7 - 2 * adv) / adv))
+    local px = py_round(11 * s)
+    local adv = py_round(px * 0.6021)
+    local dot = (px < 13 and 2) or (px <= 24 and 3) or math.floor(px / 7)   -- ink width of "." (FreeType)
+    local tree = w - (py_round(556 * s) - py_round(514 * s))               -- the playtree is P(W - 42) wide
+    -- skins2 (ft2_font.cpp drawString) shows the whole line only if after every character the pen
+    -- plus "..." (2 advances + the dot's ink) stays left of the limit (tree - 7); otherwise it ends
+    -- the line with "...". So the most characters n with n*adv + 2*adv + dot < tree - 7. Checked
+    -- in VLC 3.0.20: 70 at 100 %, 76 at 125 %, 74 at 150 % (one more is cut each time), 91 at 706 px.
+    local limit = tree - 7 - 2 * adv - dot
+    return math.max(20, math.floor((limit - 1) / adv))
 end
 
 -- UTF-8 aware length and cut (a character is one cell in a monospaced font)
@@ -474,17 +480,20 @@ end
 local function pl_follow_width()
     if pl.mode ~= "right" or pl.fixed or now() < (pl.next_width or 0) then return end
     pl.next_width = now() + PL_WIDTH_EVERY_US
+    local w
     local f = io.open(pl_width_file(), "r")
-    if not f then return end
-    local w = tonumber(f:read("*l") or "")
-    f:close()
-    if not w or w == pl.width then return end
-    pl.width = w
+    if f then
+        w = tonumber(f:read("*l") or "")
+        f:close()
+    end
+    local skin = vlc.config.get("skins2-last") or ""   -- skins2 stores it once the skin is loaded
+    if w == pl.width and skin == pl.skin then return end
+    pl.width, pl.skin = w, skin
     local cols = pl_columns(w)
     if cols ~= pl.cols then
         pl.cols = cols
         pl.next_pass = 0                       -- re-pad every title now
-        vlc.msg.dbg(TAG .. "playlist width " .. w .. " px: " .. cols .. " columns")
+        vlc.msg.dbg(TAG .. "playlist width " .. tostring(w or "saved") .. " px, " .. skin .. ": " .. cols .. " columns")
     end
 end
 

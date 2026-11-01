@@ -766,19 +766,17 @@ advance `round(px x 0.6021)` = 7 / 8 / 10 / 13 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
 comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
-VLC saved at its last exit). Live width: Lua cannot see window sizes, so the
-Windows helper writes the main window's width (`W(rMain)`, physical px, the
-same pixels skins2 uses) to `%TEMP%\vlc-amp-width.txt` whenever it changes
-(`VlcDock.ShareWidth`, in `Place`) and deletes the file when VLC goes away or
-the helper exits. The script reads it every 0.5 s (`pl_follow_width`; `TMP`,
-then `TEMP`, as .NET's `GetTempPath`) and, when the column count changes,
-re-pads every title from the title it remembered (so a title cut with "…" at a
-narrow width gets its text back when the player is widened). Tested with the
-file written by hand in VLC 3.0.20: 556 -> 420 -> 556 px gave 70 -> 51 -> 70
-columns within a second. `columns=N` turns following off. Columns = `(width - P(42) - 7 - 2 x advance) /
-advance`: two characters less than the arithmetic, measured in VLC 3.0.20 (70
-fit at 100 % and 71 are clipped; 74 / 75 at 150 %; 91 at 100 % with a 706 px
-window). A title longer than the room is cut to leave an ellipsis and two
+VLC saved at its last exit). The playtree is `P(W - 42)` wide, so `P(556) -
+P(514)` px narrower than the window (42 / 53 / 63 / 84 px: rounding differs
+from `P(42)` at 125 %). skins2's `drawString` shows the whole line only if,
+after every character, the pen plus "..." (two advances and the ink width of
+".", 2 px at 11 px and 3 px at 14-22 px) is left of the limit `playtree - 7`;
+otherwise it ends the line with "..." (`maxIndex < len`), even when the text
+itself would fit. So columns = the largest `n` with `n x adv + 2 x adv + dot <
+playtree - 7`. Checked in VLC 3.0.20: 70 at 100 % (71 cut), 76 at 125 % (77
+cut), 74 at 150 % (75 cut), 91 at 100 % with a 706 px window. The script also
+re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
+the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
 spaces. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
 `columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
