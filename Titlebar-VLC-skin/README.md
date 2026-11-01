@@ -1,17 +1,22 @@
-# Titlebar - a VLC skin
+# VLC Amp
 
-A music skin for VLC 3 (Windows and Linux, skins2 engine). The player collapses
-into a 24 px strip that fits into a window title bar or the Windows taskbar.
-Inspired by the MMD3 skin.
+**An MMD3-inspired VLC skin with a title bar mode.** A music skin for VLC 3
+(Windows and Linux, skins2 engine). The player collapses into a 24 px strip
+that fits into a window title bar or the Windows taskbar, and expands into a
+full player with equalizer and playlist.
+
+The skin's files and folders keep the working name *Titlebar*
+(`Titlebar-NNN.vlt`, `Titlebar-VLC-skin/`, "VLC (Titlebar)" launcher), so the
+setup scripts and existing installs keep working.
 
 ![The strip](docs/img/strip.png)
 
 **Download the latest release:**
-[Windows (zip)](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-windows.zip)
+[Windows (zip)](https://github.com/fakrij/vlc-amp/releases/latest/download/Titlebar-VLC-skin-windows.zip)
 ·
-[Linux (tar.gz)](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
-· [all releases](https://github.com/fakrij/titlebar-vlc-skin/releases) ·
-or make your own colours in the [online configurator](https://fakrij.github.io/titlebar-vlc-skin/).
+[Linux (tar.gz)](https://github.com/fakrij/vlc-amp/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
+· [all releases](https://github.com/fakrij/vlc-amp/releases) ·
+or make your own colours in the [online configurator](https://fakrij.github.io/vlc-amp/).
 Unpack it, then see [Install](#install).
 
 The skin screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`;
@@ -108,7 +113,7 @@ the helper running it is repaired whenever VLC is closed.
 ### Windows (recommended)
 
 1. Close VLC and double-click **`Install.cmd`** (in the unpacked
-   [Windows release zip](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-windows.zip),
+   [Windows release zip](https://github.com/fakrij/vlc-amp/releases/latest/download/Titlebar-VLC-skin-windows.zip),
    in this folder, or in the `Titlebar-VLC-skin-windows` folder built by
    `tools/make-windows-package.sh`).
    It:
@@ -168,7 +173,7 @@ Xvfb); Flatpak, Snap and Wayland (XWayland) are not tested yet. The script
 needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
 
 1. Unpack the
-   [Linux release](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
+   [Linux release](https://github.com/fakrij/vlc-amp/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
    (its `Install.sh` runs step 2 for you), or copy this folder, somewhere
    permanent, for example `~/VLC-skin` (the setup
    points VLC at the skin file in it; for a Snap VLC it must be under your home
@@ -503,7 +508,7 @@ Tested with this skin.
 
 ### Online configurator
 
-**<https://fakrij.github.io/titlebar-vlc-skin/>** builds your own `.vlt` in the
+**<https://fakrij.github.io/vlc-amp/>** builds your own `.vlt` in the
 browser, with nothing to install: size (100-200 %), dark or light, primary and
 secondary colour, font (or your own TTF / OTF), optionally a light + dark pair
 that the theme button switches. Preview, then download, and use the file in

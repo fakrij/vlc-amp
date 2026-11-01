@@ -1,4 +1,4 @@
-# Titlebar configurator (static page)
+# VLC Amp skin configurator (static page)
 
 Builds one `Titlebar-NNN.vlt` in the browser: size (100 / 125 / 150 / 200 %, preselected from
 `devicePixelRatio`), font (curated, or your own TTF / OTF file, embedded as `fonts/lcd.*`), dark / light,
@@ -30,7 +30,7 @@ package from `cdn.jsdelivr.net/pyodide/v314.0.7/full/`. Runtime and package must
 change the constant to upgrade (and rerun the node check). First visit downloads about 7 MB (cached).
 
 ## Hosting
-Live at **<https://fakrij.github.io/titlebar-vlc-skin/>**. The workflow `.github/workflows/pages.yml` (at
+Live at **<https://fakrij.github.io/vlc-amp/>**. The workflow `.github/workflows/pages.yml` (at
 the repository root) publishes only this folder to GitHub Pages on every push to `main` that touches it
 (repository Settings > Pages > Source: GitHub Actions). It first checks that `build_skin.py` here is the
 same as `../source/build_skin.py`, so run `./sync.sh` and commit both after a generator change.
