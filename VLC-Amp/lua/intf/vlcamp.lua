@@ -6,8 +6,8 @@ Adds what the skins2 engine cannot do with buttons:
   * Next / previous folder (local files, from the playlist order)
   * Next / previous equalizer preset
   * A bitrate for lossless files (FLAC, WAV, ...), so the skin's "kbps" is not 0
-  * Durations in the playlist: "Title (3:42)" (not on the playing item;
-    off with --lua-config "vlcamp={durations='off'}")
+  * Durations in the playlist, at the right edge (not on the playing item;
+    --lua-config "vlcamp={durations='suffix'}" for "Title (3:42)", 'off' for none)
 
 Start it next to the skin:
     vlc --intf skins2 --extraintf luaintf --lua-intf vlcamp
@@ -338,16 +338,64 @@ end
 -- Durations in the playlist: skins2's Playtree draws one text column, the
 -- item's title (input_item_GetTitleFbName), and redraws an item on the
 -- playlist's "item-change" event, which a meta change raises. So the title of
--- every item with a known length gets " (m:ss)" appended. The playing item
--- keeps its real title: the strip, the web interface (taskbar card), MPRIS and
--- SMTC all show the current title. The suffix (not a prefix) keeps the
--- playlist's SORT button, which sorts by title, sorting by name.
--- Off with --lua-config "vlcamp={durations='off'}".
+-- every item with a known length gets it at the right edge: the playlist font
+-- is monospaced, so the title is padded with spaces (or cut with "...") to the
+-- number of characters that fit (pl_columns). The playing item keeps its real
+-- title: the strip, the web interface (taskbar card), MPRIS and SMTC all show
+-- the current title. The length goes after the title (not before it), so the
+-- playlist's SORT button, which sorts by title, still sorts by name.
+-- --lua-config "vlcamp={durations='suffix'}" gives "Title (3:42)" instead,
+-- 'off' none; columns=N overrides the computed width.
 ----------------------------------------------------------------------
 local PL_EVERY_US = 2000000                    -- full playlist pass
-local PL_SUFFIX = "^(.-) %(%d+:%d%d%)$"        -- a title we (or a saved playlist) decorated
-local PL_SUFFIX_H = "^(.-) %(%d+:%d%d:%d%d%)$"
-local pl = { on = true, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
+local PL_DECORATED = {                         -- a title we (or a saved playlist) decorated
+    "^(.-) %(%d+:%d%d%)$", "^(.-) %(%d+:%d%d:%d%d%)$", "^(.-)  +%d+:%d%d$", "^(.-)  +%d+:%d%d:%d%d$" }
+local pl = { mode = "right", cols = 72, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
+
+-- Python's round() (half to even), as the skin generator sizes its fonts with it
+local function py_round(x)
+    local f = math.floor(x)
+    local d = x - f
+    if d > 0.5 or (d == 0.5 and f % 2 == 1) then return f + 1 end
+    return f
+end
+
+-- Characters that fit in a playlist line. skins2 (ctrl_tree.cpp makeImage) draws a flat playtree's
+-- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
+-- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses DejaVu Sans Mono at
+-- P(11) = round(11 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
+-- the playtree P(42) px narrower than the main window. Scale from the skin's file name
+-- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
+local function pl_columns()
+    local s = 1
+    local last = vlc.config.get("skins2-last") or ""
+    local pct = last:match("%-(%d+)%.vlt$")
+    if pct then s = tonumber(pct) / 100 end
+    local w = py_round(556 * s)
+    local cfg = vlc.config.get("skins2-config") or ""
+    local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
+    if mw then w = tonumber(mw) end
+    local adv = py_round(py_round(11 * s) * 0.6021)
+    -- two characters less than the arithmetic: measured in VLC 3.0.20, 70 fit at 100 % (71 is
+    -- clipped) and 74 at 150 % (75 is clipped)
+    return math.max(20, math.floor((w - py_round(42 * s) - 7 - 2 * adv) / adv))
+end
+
+-- UTF-8 aware length and cut (a character is one cell in a monospaced font)
+local function u_len(str)
+    local _, n = str:gsub("[^\128-\191]", "")
+    return n
+end
+
+local function u_sub(str, n)
+    local out, count = {}, 0
+    for ch in str:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+        if count >= n then break end
+        count = count + 1
+        out[count] = ch
+    end
+    return table.concat(out)
+end
 
 local function fmt_len(sec)
     sec = math.floor(sec + 0.5)
@@ -357,7 +405,21 @@ local function fmt_len(sec)
 end
 
 local function strip_len(title)
-    return title:match(PL_SUFFIX_H) or title:match(PL_SUFFIX) or title
+    for _, pat in ipairs(PL_DECORATED) do
+        local t = title:match(pat)
+        if t then return t end
+    end
+    return title
+end
+
+-- "Title          3:42" filling pl.cols characters (a title that is too long is cut with an
+-- ellipsis, so the length stays visible); in "suffix" mode "Title (3:42)"
+local function decorate(title, sec)
+    local len = fmt_len(sec)
+    if pl.mode == "suffix" then return title .. " (" .. len .. ")" end
+    local room = pl.cols - u_len(len) - 2             -- at least two spaces before the length
+    if u_len(title) > room then title = u_sub(title, room - 1) .. "\226\128\166" end   -- U+2026
+    return title .. string.rep(" ", pl.cols - u_len(title) - u_len(len)) .. len
 end
 
 -- Put the real title back on the playing item (cheap: done on every tick when the track changes)
@@ -382,7 +444,7 @@ local function pl_pass(cur)
             elseif not e or node.name ~= e.shown then         -- new item, or its title changed since
                 local metas = node.item:metas() or {}
                 local orig = strip_len(metas.title or "")
-                local shown = strip_len(node.name or "") .. " (" .. fmt_len(node.duration) .. ")"
+                local shown = decorate(strip_len(node.name or ""), node.duration)
                 if node.name ~= shown then node.item:set_meta("title", shown) end
                 pl.items[node.id] = { orig = orig, shown = shown }
             end
@@ -449,10 +511,14 @@ local function main()
     register("eq_prev",     function() eq_step(-1) end)
 
     local cfg = (type(config) == "table") and config or {}
-    pl.on = cfg.durations ~= "off"
+    pl.mode = (cfg.durations == "off" or cfg.durations == "suffix") and cfg.durations or "right"
+    pl.on = pl.mode ~= "off"
+    local ok, cols = pcall(pl_columns)
+    if ok and cols then pl.cols = cols end
+    if tonumber(cfg.columns) then pl.cols = math.floor(tonumber(cfg.columns)) end
     local lib = vlc.object.libvlc()
     log("interface started (A-B loop, folder jump, equalizer presets, bitrate"
-        .. (pl.on and ", playlist durations" or "") .. ")")
+        .. (pl.on and (", playlist durations " .. (pl.mode == "right" and pl.cols .. " columns" or pl.mode)) or "") .. ")")
     while true do
         guarded("tick", tick, lib)
         local period = (ab.state == "ab") and POLL_FAST_US or POLL_IDLE_US

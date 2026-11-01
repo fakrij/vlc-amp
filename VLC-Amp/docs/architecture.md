@@ -753,22 +753,41 @@ raises (`src/playlist/item.c:228-233, 316`). Every entry of
 on any item, not only the playing one (`modules/lua/libs/input.c:354-441`).
 
 So every 2 s the script walks the playlist and sets the title of each item with
-a known `duration` (seconds, `-1` = unknown) to `<title or name> (m:ss)`
-(`h:mm:ss` from an hour). It remembers the original title meta per item id
+a known `duration` (seconds, `-1` = unknown) to `<title or name>`, spaces, and
+the length (`m:ss`, `h:mm:ss` from an hour), filling the line: right-aligned
+by padding, because the playlist font (DejaVu Sans Mono) gives every character
+the same advance. The line width in characters (`pl_columns`, at start): the
+Playtree draws a flat list's text 7 px in (`ctrl_tree.cpp` `makeImage`,
+`itemImageWidth` = 5 + 2) and cuts what does not fit with "..." (`ft2_font.cpp`
+`drawString`, glyph advance = FreeType's hinted `advance.x >> 6`); the skin's
+playtree is `P(42)` narrower than the main window, its font `P(11)` =
+`round(11 x scale)` px (Python rounding, half to even: 16 at 150 %), and the
+advance `round(px x 0.6021)` = 7 / 8 / 10 / 13 px at 100 / 125 / 150 / 200 %
+(measured with FreeType for digits, space, "…" and accented letters). Scale
+comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
+entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
+VLC saved at its last exit). Columns = `(width - P(42) - 7 - 2 x advance) /
+advance`: two characters less than the arithmetic, measured in VLC 3.0.20 (70
+fit at 100 % and 71 are clipped; 74 / 75 at 150 %; 91 at 100 % with a 706 px
+window). A title longer than the room is cut to leave an ellipsis and two
+spaces. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
+`columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
 text (VLC re-read the tags, the user renamed it) is decorated afresh. The
 playing item is never decorated: on a track change the original title goes
 back at once (strip, web interface, MPRIS and SMTC read the current item's
 title) and the previous item is decorated in the same tick. Why a suffix: the
 skin's SORT button runs `playlist_RecursiveNodeSort(..., SORT_TITLE, ...)`
-(`commands/cmd_playtree.cpp:41`), so a prefix would sort by length. A title that
-already ends in ` (m:ss)` (a playlist saved with lengths) is stripped first.
-`lua-config` `vlcamp={durations='off'}` turns it off (the interface gets its
+(`commands/cmd_playtree.cpp:41`), so a prefix would sort by length (trailing
+spaces do not change the order). A title that already ends in a length (a
+playlist saved with lengths: ` (m:ss)` or two or more spaces and `m:ss`) is
+stripped first. `lua-config` `vlcamp={durations='off'}` turns it off (the interface gets its
 own table as the global `config`, `modules/lua/intf.c:323-353`).
 Verified in VLC 3.0.20 under the harness (2026-11-01): unplayed items show
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
-suffixes, `off` shows none.
+suffixes, `off` shows none; right-aligned at 100 % (70 columns, a 120-character
+title cut with "…") and with a saved 706 px window (91 columns).
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 
