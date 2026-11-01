@@ -532,6 +532,10 @@ def icon(c, name, ox, oy, size, color):
         c.poly(T([(1.5, 4.5), (3.6, 4.5), (6.6, 2), (6.6, 10), (3.6, 7.5), (1.5, 7.5)]), color)
         c.arc(ox + 7 * f, oy + 6 * f, 2.6 * f, -50, 50, color, 1.3 * f)
         c.arc(ox + 7 * f, oy + 6 * f, 4.6 * f, -50, 50, color, 1.3 * f)
+    elif name == "speaker_off":  # muted: the speaker with a cross
+        c.poly(T([(1.2, 4.5), (3.3, 4.5), (6.3, 2), (6.3, 10), (3.3, 7.5), (1.2, 7.5)]), color)
+        c.lines(T([(7.6, 4.2), (11, 7.8)]), color, 1.4 * f)
+        c.lines(T([(11, 4.2), (7.6, 7.8)]), color, 1.4 * f)
 
 
 # ---------------------------------------------------------------- skin model
@@ -878,6 +882,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "vb_full", 26, 18, "expand", icon_size=11)      # video window: full screen
         make_button(skin, "vb_min", 26, 18, "minimize", icon_size=11)     # video window: shrink to its title bar
         make_button(skin, "vb_restore", 26, 18, "restore", icon_size=11)  # ... and back
+        make_button(skin, "vb_close", 26, 18, "close", icon_size=11)      # video window: close = stop
+        make_toggle(skin, "ft_mute", 26, 22, icon_off="speaker", icon_on="speaker_off", on_color=AMBER)
         make_button(skin, "fb_fs", 28, 22, "expand")                      # fullscreen controller: leave full screen
         make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
         make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
@@ -1182,21 +1188,25 @@ def build(skin, W, BH=BAR_DEFAULT):
         nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VT,
                actions={"mr": "resizeE", "br": "resizeSE"})
         rt = dict(lt="righttop", rb="righttop")
-        vlay.checkbox("vb_max", P(VW - 94), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
+        vlay.checkbox("vb_max", P(VW - 124), P(3), "video.isMaximized", "video.maximize()", "video.unmaximize()",
                       "Fill the screen (title bar and control panel stay)", "Back to the window size", **rt)
-        vlay.button("vb_full", P(VW - 64), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
-        vlay.button("vb_min", P(VW - 34), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
+        vlay.button("vb_full", P(VW - 94), P(3), "vlc.fullscreen()", "Full screen (no frame, control panel on mouse move)", **rt)
+        vlay.button("vb_min", P(VW - 64), P(3), "video.setLayout(video-min)", "Shrink to the title bar", **rt)
+        vlay.button("vb_close", P(VW - 34), P(3), "vlc.stop()", "Close the video (stops playback)", **rt)
         # docked control panel under the video: seek bar, transport, time, volume (kept at the bottom
         # and stretched with the window)
         bl = dict(lt="leftbottom", rb="leftbottom")
         vlay.slider("s_seek_vid", P(8), P(PBASE + 4), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
                     "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, lt="leftbottom", rb="rightbottom")
         vlay.button("fb_prev", P(8), P(PBASE + 22), "playlist.previous()", "Previous", **bl)
-        vlay.checkbox("ft_play", P(38), P(PBASE + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-        vlay.button("fb_next", P(78), P(PBASE + 22), "playlist.next()", "Next", **bl)
-        vlay.text(P(124), P(PBASE + 25), P(190), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+        vlay.button("fb_slower", P(38), P(PBASE + 22), "vlc.slower()", "Slower", **bl)
+        vlay.checkbox("ft_play", P(68), P(PBASE + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+        vlay.button("fb_faster", P(104), P(PBASE + 22), "vlc.faster()", "Faster", **bl)
+        vlay.button("fb_next", P(134), P(PBASE + 22), "playlist.next()", "Next", **bl)
+        vlay.text(P(176), P(PBASE + 25), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
                   sample="1:02 / 4:12", focus=False, **bl)
-        vlay.image("ic_speaker", P(VW - 118), P(PBASE + 27), lt="rightbottom", rb="rightbottom", action="none")
+        vlay.checkbox("ft_mute", P(VW - 134), P(PBASE + 22), "vlc.isMute", "vlc.mute()", "vlc.mute()",
+                      "Mute", "Unmute", lt="rightbottom", rb="rightbottom")
         vlay.slider("s_vol_vid", P(VW - 102), P(PBASE + 29), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
                     "volume", "Volume $V%", bg="vol90", nbvert=P(90), lt="rightbottom", rb="rightbottom")
         vlay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH))
@@ -1205,7 +1215,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_dots(c, 4, 4, rows=2)
         skin.add("video_min_bg", c.done(hard_edges=True))
         mlay.image("video_min_bg", 0, 0, action="move")
-        mlay.button("vb_restore", P(MW - 34), P(3), "video.setLayout(video-l)", "Show the video")
+        mlay.button("vb_restore", P(MW - 64), P(3), "video.setLayout(video-l)", "Show the video")
+        mlay.button("vb_close", P(MW - 34), P(3), "vlc.stop()", "Close the video (stops playback)")
         flay.theme_vis = vlay.theme_vis
         c = Canvas(W, FSH)
         panel_bg(c, 0, 0, W, FSH, 6)

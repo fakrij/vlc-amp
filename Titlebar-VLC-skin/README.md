@@ -245,7 +245,9 @@ speed. Then the seek bar, transport, volume, PL and EQ.
   buttons in the title bar make it fill the screen (title bar and control panel stay), go
   full screen without a frame, and shrink the window to its title bar (the button there
   brings the video back). A control panel (seek bar, previous / play / next, time, volume)
-  is docked under the video. In full screen, moving the mouse shows a control
+  is docked under the video, with slower / faster and mute; the title bar also has a close button
+  (it stops the video). There is no A-B button: skins2 has no such action (use the hotkey or the
+  tray menu, see Lua extras). In full screen, moving the mouse shows a control
   panel (seek bar, previous / play / next, volume, leave full screen) that fades out. With no video the
   window has no pixels and is invisible. It starts at the video's size.
 
