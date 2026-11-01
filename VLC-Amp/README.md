@@ -1,10 +1,11 @@
 # VLC Amp
 
 **An MMD3-inspired VLC skin with a title bar mode.** MMD3 is the beloved
-Winamp skin; VLC Amp brings its look to VLC. A music skin for VLC 3
-(Windows and Linux, skins2 engine). The player collapses into a 24 px strip
-that fits into a window title bar or the Windows taskbar, and expands into a
-full player with equalizer and playlist.
+Winamp skin, and its best idea is the one VLC Amp takes over most: the
+player collapses into a slim strip that sits in a window's title bar. A music
+skin for VLC 3 (Windows and Linux, skins2 engine): the 24 px strip fits into a
+window title bar or the Windows taskbar, and expands into a full player with
+equalizer and playlist.
 
 ![The strip](docs/img/strip.png)
 
