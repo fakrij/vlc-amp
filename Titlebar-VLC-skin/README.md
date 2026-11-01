@@ -6,6 +6,14 @@ Inspired by the MMD3 skin.
 
 ![The strip](docs/img/strip.png)
 
+**Download the latest release:**
+[Windows (zip)](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-windows.zip)
+·
+[Linux (tar.gz)](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
+· [all releases](https://github.com/fakrij/titlebar-vlc-skin/releases) ·
+or make your own colours in the [online configurator](https://fakrij.github.io/titlebar-vlc-skin/).
+Unpack it, then see [Install](#install).
+
 The skin screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`;
 the Windows comparison images in `docs/img/windows-sim/` come from
 `tools/windows-sim.py`.
@@ -99,8 +107,10 @@ the helper running it is repaired whenever VLC is closed.
 
 ### Windows (recommended)
 
-1. Close VLC and double-click **`Install.cmd`** (in this folder, or in the
-   `Titlebar-VLC-skin-windows` folder built by `tools/make-windows-package.sh`).
+1. Close VLC and double-click **`Install.cmd`** (in the unpacked
+   [Windows release zip](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-windows.zip),
+   in this folder, or in the `Titlebar-VLC-skin-windows` folder built by
+   `tools/make-windows-package.sh`).
    It:
    - installs VLC 3 with `winget` if it is missing;
    - copies the skin to `%LOCALAPPDATA%\Titlebar-VLC-skin` (VLC points at the
@@ -157,7 +167,10 @@ Snap, on any desktop. Tested on X11 with a distro package (VLC 3.0.20 under
 Xvfb); Flatpak, Snap and Wayland (XWayland) are not tested yet. The script
 needs only a POSIX shell and the usual tools (`awk`, `sed`, `grep`).
 
-1. Copy this folder somewhere permanent, for example `~/VLC-skin` (the setup
+1. Unpack the
+   [Linux release](https://github.com/fakrij/titlebar-vlc-skin/releases/latest/download/Titlebar-VLC-skin-linux.tar.gz)
+   (its `Install.sh` runs step 2 for you), or copy this folder, somewhere
+   permanent, for example `~/VLC-skin` (the setup
    points VLC at the skin file in it; for a Snap VLC it must be under your home
    folder, not in a hidden folder).
 2. Close VLC and run **`linux/setup.sh`** (`sh linux/setup.sh` if it is not
