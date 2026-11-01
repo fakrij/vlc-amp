@@ -1259,8 +1259,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_fill_frames(skin, "seek", sw, 10, 0, 10, SEEK_FRAMES, lead=SEEK_LEAD)
         for on in (False, True):                           # the speaker next to the volume slider = mute button
             for st in ("up", "over", "down"):
-                c = Canvas(22, 28)                         # 22 x 28 click zone around the 12 px icon
-                icon(c, "speaker_off" if on else "speaker", 5, 8, 12, AMBER if on else (LABEL if st == "up" else ICON[st]))
+                c = Canvas(22, 28)                         # 22 x 28 click zone around the 16 px icon
+                icon(c, "speaker_off" if on else "speaker", 3, 6, 16, AMBER if on else (LABEL if st == "up" else ICON[st]))
                 skin.add("c_mute_%s_%s" % ("on" if on else "off", st), solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
@@ -1915,6 +1915,7 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
         e = getattr(n, "vis", None)
         if not e:
             return True
+        e = e.replace("vlc.isMute", "False")        # preview: not muted
         e = e.replace("vlc.hasVout", "True")    # preview shows the video window as if a video played
         on = set(flags) | {"th%d" % theme}
         return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in on), e))
