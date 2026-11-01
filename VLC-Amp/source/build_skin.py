@@ -160,8 +160,8 @@ def _theme(mode, hue, sat, accent, led):
 
 
 THEMES, CUSTOM = [], None      # CUSTOM = index of the Custom theme, None when it is not built
-# The release skins carry only these: every theme costs ~10 MB of VLC memory at 100 % scaling
-# (~20 MB at 150 %) and start-up time. --themes all builds every theme.
+# The release skins carry only these: every extra theme costs ~32 MB of VLC memory at 100 % scaling
+# (Midnight alone 103.6 MB, Midnight + Paper 135.8 MB) and start-up time. --themes all builds every theme.
 DEFAULT_THEMES = ["midnight"]
 
 
@@ -1563,11 +1563,11 @@ def build(skin, W, BH=BAR_DEFAULT):
     # control panel docked under it. As wide as the player, so the seek bar bitmap (sw) fits as in
     # the full player; the 12 px frame is the margin rule and holds the corner resize tab.
     VB, VT, PH = 12, 36, 68                                # frame, title bar, control panel (logical px)
-    VW = W
+    VMIN = 580                                             # the panel's controls need this width
+    VW = max(W, VMIN)                                      # --width 490-579 fits the strip, not this panel
     VIDH = (VW - 2 * VB) * 9 // 16                         # starts 16:9
     PBASE = VT + VIDH                                      # top of the control panel
     VH = PBASE + PH
-    VMIN = 580                                             # the panel's controls need this width
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(VMIN), maxw=P(3840),
                   minh=P(VT + PH + 90), maxh=P(2160))
     # The same window with an extra row of controls below the panel (the arrow button switches):

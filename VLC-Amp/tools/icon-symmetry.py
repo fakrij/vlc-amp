@@ -6,7 +6,7 @@ sys.path.insert(0, src)
 import build_skin as b
 from PIL import Image, ImageChops
 import numpy as np
-AX={'expand':'LU','collapse':'LU','prev':'U','next':'U','play':'U','pause':'LU','stop':'LU','pin':'L','minimize':'L','close':'LU','menu':'LU','arrow_up':'L','arrow_down':'L','sun':'LU','moon':'U','speaker':'U','slower':'','faster':''}
+AX={'expand':'LU','collapse':'LU','prev':'U','next':'U','play':'U','pause':'LU','stop':'LU','pin':'L','minimize':'L','close':'LU','menu':'LU','arrow_up':'L','arrow_down':'L','sun':'LU','moon':'U','speaker':'U','slower':'','faster':'','maximize':'LU','unmaximize':'','restore':'L','speaker_off':''}
 calls={}
 orig=b.icon
 def rec(c,name,ox,oy,size,color):
@@ -30,8 +30,8 @@ for bh in (24,36,40):
         if not len(xs): continue
         g=a[ys.min():ys.max()+1, xs.min():xs.max()+1]
         row=dict(bh=bh,sc=sc,name=name,w=w,h=h,size=size,ox=ox,oy=oy,bw=g.shape[1],bh_=g.shape[0])
-        row['LR']=int(np.abs(g-g[:,::-1]).sum()) if 'L' in AX[name] else None
-        row['UD']=int(np.abs(g-g[::-1,:]).sum()) if 'U' in AX[name] else None
+        row['LR']=int(np.abs(g-g[:,::-1]).sum()) if 'L' in AX.get(name,'') else None
+        row['UD']=int(np.abs(g-g[::-1,:]).sum()) if 'U' in AX.get(name,'') else None
         # centring offset in device px (bbox centre vs canvas centre), weighted by alpha
         ww=a.sum(); cx=(a.sum(0)*np.arange(a.shape[1])).sum()/ww+.5; cy=(a.sum(1)*np.arange(a.shape[0])).sum()/ww+.5
         row['cx']=round(cx-a.shape[1]/2,2); row['cy']=round(cy-a.shape[0]/2,2); row['ink']=int(ww)
