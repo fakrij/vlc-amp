@@ -206,7 +206,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T26 | v1.0 code review fixes (35) | **DONE** (Linux tested; Windows: compiled / parsed, needs the item 35 checks) | - | M |
 | T27 | Linux setup: a re-run drops `follow-system-theme.sh --install`'s Exec wrap; `lua/vlcrc-keys.txt` hotkeys written even when the Lua extras are skipped | **DONE** (merged; setup re-run keeps the wrap and says so; keys only with the Lua extras. Verified in a private HOME: setup, `--install`, setup -> Exec still wrapped, `--uninstall` removes the file; `lua-intf=mine` -> warning, no `key-` lines; plain setup writes 5 keys; `sh -n`. Only the basic-launcher path: no system `vlc.desktop` on the test machine) | T26 | S |
 | T28 | `titlebar-pin.py --watch`: only this user's VLC processes | **DONE** (merged; `py_compile` OK; throwaway test with `proc_comm` patched to "vlc": own pid present, pid 1 filtered out; no VLC started or killed; not run against real VLCs of other users) | T26 | XS |
-| T29 | Generator: input checks with `assert` vanish under `python -O` | Haiku | - | XS |
+| T29 | Generator: input checks with `assert` vanish under `python -O` | **DONE** (merged; `assert` -> `raise SystemExit("error: ...")`, same messages. Verified: Titlebar-100 `.vlt` from the original commit and after the change are byte-identical (`cmp`); forced case collision under `python3 -O` exits 1 with the error (temporary break reverted, not committed); `configurator/build_skin.py` synced, `diff` clean. Not run: the Custom-theme and element-id failures under `-O`, and the 150/200 % and taskbar builds) | - | XS |
 
 ### T27 - Linux setup re-run keeps the theme wrap; keys only with Lua (Sonnet)
 From the v1.0 review. Files: `linux/setup.sh`, `linux/follow-system-theme.sh`, docs/architecture.md (Linux setup section).
@@ -217,8 +217,9 @@ From the v1.0 review. Files: `linux/setup.sh`, `linux/follow-system-theme.sh`, d
 ### T28 - Pin watcher: only this user's VLCs (Haiku)
 `linux/titlebar-pin.py`: `vlc_pids()` says "of this user" but returns every process named vlc. Filter by `os.stat("/proc/<pid>").st_uid == os.getuid()`. Verify with `python3 -m py_compile` and a small test that `vlc_pids()` skips a pid owned by root (for example pid 1 renamed via a monkeypatched `proc_comm`).
 
-### T29 - Generator checks without assert (Haiku)
+### T29 - Generator checks without assert (Haiku) - **DONE**
 `source/build_skin.py` `main()` checks case-only bitmap id collisions, the Custom theme's grey + red rule and element ids with `assert`; `python -O` drops them and a broken `.vlt` is written. Replace with `raise SystemExit("error: ...")` (same messages). Then run `configurator/sync.sh` so the page's copy matches. Verify: `python3 source/build_skin.py --out <tmp>` builds a `.vlt` byte-identical to one built before the change (same Pillow), and `python3 -O` still fails on a forced collision (temporarily, not committed).
+Result: done as briefed; see the T29 row above for what was verified and what was not.
 
 ### T1 - Test harness in the repo (Sonnet)
 Goal: any agent can run real VLC 3.0.20 with the skin, click it and take screenshots, without sudo.
