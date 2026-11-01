@@ -902,12 +902,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "xb_chprev", 34, 22, label="CH-")
         make_button(skin, "xb_chnext", 34, 22, label="CH+")
         make_button(skin, "xb_snap", 40, 22, label="SNAP")
-        c = Canvas(84, 22)                                                  # speed readout box
-        lcd(c, 0, 0, 84, 22)
+        c = Canvas(56, 22)                                                  # speed readout box (between slower / faster)
+        lcd(c, 0, 0, 56, 22)
         skin.add("x_speed_bg", solid(c.done()))
         for lbl in ("shuf", "loop", "rep1"):
-            make_toggle(skin, "xt_" + lbl, 44, 22, label=lbl.upper(), use_led=True)
-        make_thumb(skin, "thumb_s", 8, 12)
+            make_toggle(skin, "xt_" + lbl, 40, 22, label=lbl.upper(), use_led=True)
+        make_thumb(skin, "thumb_s", 10, 16)
         make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
         make_eq_thumb(skin, "thumb_eq", 12, 6)
         make_thumb(skin, "thumb_pl", 6, 22, SCROLL_TRACK)
@@ -915,7 +915,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
         make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
         make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
-        make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
+        # seek bar: 14 px tall frames with the 4 px bar 4 px down; skins2 hit-tests a slider background
+        # by its rectangle (ctrl_slider.cpp CtrlSliderBg::mouseOver), so the padding (opaque panel colour,
+        # solid()) makes the bar easier to grab; the sliders sit 3 px higher, so the bar does not move
+        make_fill_frames(skin, "seek", sw, 14, 4, 4, FILL_FRAMES)
         c = Canvas(12, 12)
         icon(c, "speaker", 0, 0, 12, LABEL)
         skin.add("ic_speaker", solid(c.done()))
@@ -1046,7 +1049,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.text(F(90), P(58), P(72), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
                  sample="SPEED 1x", **tr)
         # seek bar (stretches; the fill frames scale with it)
-        lay.slider("s_seek_" + lay.id, P(8), P(78), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+        lay.slider("s_seek_" + lay.id, P(8), P(75), "(0,%d),(%d,%d)" % (P(6), P(sw) - 1, P(6)), "thumb_s",
                    "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, rb="righttop")
         # transport row
         ty = 96
@@ -1186,13 +1189,15 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.button("xb_snap", P(120), y, "vlc.snapshot()", "Snapshot (saved to your Pictures folder)", **k)
         lay.checkbox("xt_shuf", P(166), y, "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on", **k)
-        lay.checkbox("xt_loop", P(214), y, "playlist.isLoop", "playlist.setLoop(true)",
+        lay.checkbox("xt_loop", P(208), y, "playlist.isLoop", "playlist.setLoop(true)",
                      "playlist.setLoop(false)", "Loop playlist: off", "Loop playlist: on", **k)
-        lay.checkbox("xt_rep1", P(262), y, "playlist.isRepeat", "playlist.setRepeat(true)",
+        lay.checkbox("xt_rep1", P(250), y, "playlist.isRepeat", "playlist.setRepeat(true)",
                      "playlist.setRepeat(false)", "Repeat one: off", "Repeat one: on", **k)
-        lay.image("x_speed_bg", P(312), y, action="none", **k)
-        lay.text(P(316), y + P(6), P(76), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
-                 sample="SPEED 1.5x", focus=False, **k)
+        lay.button("fb_slower", P(296), y, "vlc.slower()", "Slower", **k)
+        lay.image("x_speed_bg", P(326), y, action="none", **k)
+        lay.text(P(328), y + P(4), P(52), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+                 sample="1.25x", focus=False, **k)
+        lay.button("fb_faster", P(384), y, "vlc.faster()", "Faster", **k)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)
@@ -1214,14 +1219,20 @@ def build(skin, W, BH=BAR_DEFAULT):
         # docked control panel under the video: seek bar, transport, time, volume (kept at the bottom
         # and stretched with the window)
         bl = dict(lt="leftbottom", rb="leftbottom")
-        lay.slider("s_seek_vid" + ("_x" if extra else ""), P(8), P(pb + 4), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+        lay.slider("s_seek_vid" + ("_x" if extra else ""), P(8), P(pb + 1), "(0,%d),(%d,%d)" % (P(6), P(sw) - 1, P(6)), "thumb_s",
                    "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, lt="leftbottom", rb="rightbottom")
         lay.button("fb_prev", P(8), P(pb + 22), "playlist.previous()", "Previous", **bl)
-        lay.button("fb_slower", P(38), P(pb + 22), "vlc.slower()", "Slower", **bl)
-        lay.checkbox("ft_play", P(68), P(pb + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-        lay.button("fb_faster", P(104), P(pb + 22), "vlc.faster()", "Faster", **bl)
-        lay.button("fb_next", P(134), P(pb + 22), "playlist.next()", "Next", **bl)
-        lay.text(P(176), P(pb + 25), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+        if extra:                                         # slower / faster are in the row, around the speed
+            lay.checkbox("ft_play", P(38), P(pb + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_next", P(74), P(pb + 22), "playlist.next()", "Next", **bl)
+            tx = 116
+        else:
+            lay.button("fb_slower", P(38), P(pb + 22), "vlc.slower()", "Slower", **bl)
+            lay.checkbox("ft_play", P(68), P(pb + 22), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_faster", P(104), P(pb + 22), "vlc.faster()", "Faster", **bl)
+            lay.button("fb_next", P(134), P(pb + 22), "playlist.next()", "Next", **bl)
+            tx = 176
+        lay.text(P(tx), P(pb + 25), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
                  sample="1:02 / 4:12", focus=False, **bl)
         rbk = dict(lt="rightbottom", rb="rightbottom")
         if extra:
@@ -1283,7 +1294,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         c = Canvas(W, FSH)
         panel_bg(c, 0, 0, W, FSH, 6)
         hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
-        flay.slider("s_seek_fsc", P(8), P(8), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
+        flay.slider("s_seek_fsc", P(8), P(5), "(0,%d),(%d,%d)" % (P(6), P(sw) - 1, P(6)), "thumb_s",
                     "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES)
         flay.button("fb_prev", P(8), P(28), "playlist.previous()", "Previous")
         flay.checkbox("ft_play", P(38), P(28), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")

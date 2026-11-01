@@ -104,8 +104,16 @@ the release skins have `th0` only). Shown = on.
   (the name of what plays; `focus="false"`, so clicks reach the move area).
 - Extra row: `video-x` is `video-l` with the panel moved up and a row of
   controls below it (A-B, chapters `dvd.previousChapter()` /
-  `dvd.nextChapter()`, `vlc.snapshot()`, shuffle / loop / repeat, "SPEED $Rx"
-  in an LCD box). The arrow button
+  `dvd.nextChapter()`, `vlc.snapshot()`, shuffle / loop / repeat, and slower /
+  faster on both sides of `$Rx` centred in an LCD box; in `video-x` the panel
+  then has no slower / faster).
+- Seek bars are easier to grab: skins2 hit-tests a slider that has a background
+  image by that image's rectangle (`ctrl_slider.cpp`, `CtrlSliderBg::mouseOver`),
+  so the seek frames are 14 px tall with the 4 px bar 4 px down (the padding is
+  opaque panel colour from `solid()`: on Windows slider backgrounds are copied
+  without blending), the sliders sit 3 px higher (the bar stays put), and the
+  thumb is 10 x 16. Checked in VLC 3.0.20: a click 4 px above the visible bar
+  jumps (31:50 of 63:00 at the middle). The arrow button
   switches with `video.setLayout(...)`. Both layouts have the same original
   size, so skins2 carries the current (also maximized) size across, as with the
   main window's layouts; the row takes its height from the Video control (a

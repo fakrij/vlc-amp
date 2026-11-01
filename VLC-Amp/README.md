@@ -276,7 +276,8 @@ speed. Then the seek bar, transport, volume, PL and EQ.
   is docked under the video, with slower / faster and mute; the title bar shows the name of
   what plays and has a close button (it stops the video). The arrow button next to mute opens
   a row of extra controls below the panel: A-B loop, previous / next chapter, snapshot (saved
-  to your Pictures folder), shuffle / loop / repeat one, and the playback speed; the arrow
+  to your Pictures folder), shuffle / loop / repeat one, and slower / faster on both sides of
+  the playback speed (they move there from the panel); the arrow
   takes them away again (the row takes its height from the picture, the window keeps its
   size). The A-B button works on Windows with the helper running (a skin button cannot run
   the Lua extras itself; the helper passes the click on); elsewhere use the hotkey (see Lua
