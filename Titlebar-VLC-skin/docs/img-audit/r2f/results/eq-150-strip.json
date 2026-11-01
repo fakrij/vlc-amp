@@ -1,0 +1,433 @@
+{
+ "scenes": [
+  {
+   "scene": "strip-dn-pl0-eq1",
+   "controls": [
+    {
+     "id": "t0_s_eq0_strip_dn",
+     "tag": "Slider",
+     "x": 162,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        162,
+        132
+       ],
+       "changed_px": 1499
+      },
+      "left_out": {
+       "pt": [
+        161,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        206,
+        132
+       ],
+       "changed_px": 1499
+      },
+      "right_out": {
+       "pt": [
+        207,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq1_strip_dn",
+     "tag": "Slider",
+     "x": 236,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        236,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        235,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        280,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        281,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq2_strip_dn",
+     "tag": "Slider",
+     "x": 294,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        294,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        293,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        338,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        339,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq3_strip_dn",
+     "tag": "Slider",
+     "x": 350,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        350,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        349,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        394,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        395,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq4_strip_dn",
+     "tag": "Slider",
+     "x": 408,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        408,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        407,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        452,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        453,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq5_strip_dn",
+     "tag": "Slider",
+     "x": 464,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        464,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        463,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        508,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        509,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq6_strip_dn",
+     "tag": "Slider",
+     "x": 522,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        522,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        521,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        566,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        567,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq7_strip_dn",
+     "tag": "Slider",
+     "x": 578,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        578,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        577,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        622,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        623,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq8_strip_dn",
+     "tag": "Slider",
+     "x": 636,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        636,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        635,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        680,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        681,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq9_strip_dn",
+     "tag": "Slider",
+     "x": 692,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        692,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        691,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        736,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        737,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq10_strip_dn",
+     "tag": "Slider",
+     "x": 750,
+     "y": 93,
+     "w": 45,
+     "h": 156,
+     "edges": {
+      "left_in": {
+       "pt": [
+        750,
+        132
+       ],
+       "changed_px": 1355
+      },
+      "left_out": {
+       "pt": [
+        749,
+        132
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        794,
+        132
+       ],
+       "changed_px": 1333
+      },
+      "right_out": {
+       "pt": [
+        795,
+        132
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "window": [
+  335,
+  193,
+  930,
+  1014
+ ]
+}

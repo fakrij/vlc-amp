@@ -45,18 +45,21 @@ function Show-Msg($text, $buttons = "OK") {
     return [System.Windows.Forms.MessageBox]::Show($text, "Titlebar VLC skin", $buttons)
 }
 
-# Strip height (logical px) of the taller skin build "Titlebar-taskbar-NNN.vlt" (generator --bar-height);
-# "Titlebar-bar<N>-NNN.vlt" carries its own height in the name. Plain "Titlebar-NNN.vlt" is 24.
+# Skin file names: Titlebar-[taskbar-|bar<N>-]<scale>.vlt
+#   taskbar-   strip of $TaskbarBarHeight px (generator --bar-height 36);  bar<N>-  carries its own height N
+#   none       24 px strip (BAR_DEFAULT in the generator)
+# Strip height (logical px) of the taller skin build "Titlebar-taskbar-NNN.vlt".
 $TaskbarBarHeight = 36
+$SkinBarDefault = 24
 
 # Scale (1.5) and strip height (24, 36, ...) from a skin file name, as @{ Scale = ..; BarHeight = .. }
 function Get-SkinInfo($path) {
-    $info = @{ Scale = 1.0; BarHeight = 24 }
+    $info = @{ Scale = 1.0; BarHeight = $SkinBarDefault }
     if (-not $path) { return $info }
     $leaf = Split-Path -Leaf $path
-    if ($leaf -match '^Titlebar-(taskbar|bar(\d+))-(\d+)\.vlt$') {
+    if ($leaf -match '^Titlebar-(?:(taskbar)-|bar(\d+)-)?(\d+)\.vlt$') {
         $info.Scale = [int]$Matches[3] / 100.0
-        if ($Matches[2]) { $info.BarHeight = [int]$Matches[2] } else { $info.BarHeight = $TaskbarBarHeight }
+        if ($Matches[2]) { $info.BarHeight = [int]$Matches[2] } elseif ($Matches[1]) { $info.BarHeight = $TaskbarBarHeight }
     } elseif ($leaf -match '-(\d+)\.vlt$') {
         $info.Scale = [int]$Matches[1] / 100.0
     }
@@ -65,6 +68,7 @@ function Get-SkinInfo($path) {
 
 # Skin file for the current display scale (AppliedDPI: 96 = 100 %, 120 = 125 %, 144 = 150 %, 192 = 200 %).
 # -Taskbar: the skin is docked in the taskbar, so prefer the taller Titlebar-taskbar-NNN.vlt if it exists.
+# Order: the taller build first when -Taskbar, then the plain 24 px file.
 function Get-SkinPath([switch]$Taskbar) {
     $name = $Skin
     if ($name -eq "auto") {
@@ -73,10 +77,13 @@ function Get-SkinPath([switch]$Taskbar) {
         $pct = $dpi * 100 / 96
         $best = 100
         foreach ($s in 100, 125, 150, 200) { if ([math]::Abs($s - $pct) -lt [math]::Abs($best - $pct)) { $best = $s } }
-        $name = "Titlebar-$best.vlt"
-        if ($Taskbar) {
+        $cands = @()
+        if ($Taskbar) { $cands += "Titlebar-taskbar-$best.vlt" }
+        $cands += "Titlebar-$best.vlt"
+        $name = $cands[-1]
+        :find foreach ($c in $cands) {
             foreach ($dir in $root, $here) {
-                if (Test-Path (Join-Path $dir "Titlebar-taskbar-$best.vlt")) { $name = "Titlebar-taskbar-$best.vlt"; break }
+                if (Test-Path (Join-Path $dir $c)) { $name = $c; break find }
             }
         }
     }

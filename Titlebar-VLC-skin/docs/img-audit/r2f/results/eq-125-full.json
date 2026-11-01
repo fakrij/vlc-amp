@@ -1,0 +1,433 @@
+{
+ "scenes": [
+  {
+   "scene": "full-dn-pl0-eq1",
+   "controls": [
+    {
+     "id": "t0_s_eq0_full_dn",
+     "tag": "Slider",
+     "x": 135,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        369
+       ],
+       "changed_px": 1057
+      },
+      "left_out": {
+       "pt": [
+        134,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        172,
+        369
+       ],
+       "changed_px": 1057
+      },
+      "right_out": {
+       "pt": [
+        173,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq1_full_dn",
+     "tag": "Slider",
+     "x": 198,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        197,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        236,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq2_full_dn",
+     "tag": "Slider",
+     "x": 245,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        245,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        244,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        282,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        283,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq3_full_dn",
+     "tag": "Slider",
+     "x": 293,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        293,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        292,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        330,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        331,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq4_full_dn",
+     "tag": "Slider",
+     "x": 340,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        340,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        339,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        377,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        378,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq5_full_dn",
+     "tag": "Slider",
+     "x": 388,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        388,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        387,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        425,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        426,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq6_full_dn",
+     "tag": "Slider",
+     "x": 435,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        435,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        434,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        472,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        473,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq7_full_dn",
+     "tag": "Slider",
+     "x": 483,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        483,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        482,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        521,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq8_full_dn",
+     "tag": "Slider",
+     "x": 530,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        530,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        529,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        567,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        568,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq9_full_dn",
+     "tag": "Slider",
+     "x": 578,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        578,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        577,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        615,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        616,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq10_full_dn",
+     "tag": "Slider",
+     "x": 625,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        369
+       ],
+       "changed_px": 965
+      },
+      "left_out": {
+       "pt": [
+        624,
+        369
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        662,
+        369
+       ],
+       "changed_px": 946
+      },
+      "right_out": {
+       "pt": [
+        663,
+        369
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "window": [
+  252,
+  89,
+  775,
+  845
+ ]
+}

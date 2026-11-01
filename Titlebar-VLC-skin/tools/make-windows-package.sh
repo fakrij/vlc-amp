@@ -9,7 +9,7 @@ OUT=${1:-dist}
 NAME=Titlebar-VLC-skin-windows
 PKG="${OUT:?}/${NAME:?}"
 
-paths=(Install.cmd Uninstall.cmd README.md 'Titlebar-*.vlt' taskbar lua docs/img)
+paths=(Install.cmd Uninstall.cmd README.md 'Titlebar-*.vlt' taskbar lua docs/img-thin)
 dirty=$(git status --porcelain -- "${paths[@]}")
 [ -z "$dirty" ] || { echo "warning: uncommitted changes in packaged files (not included):"; echo "$dirty"; }
 
@@ -24,10 +24,14 @@ if [ "${PAIR:-1}" = 1 ]; then
     PY=python3; [ -x "${VENV:-}/bin/python" ] && PY="$VENV/bin/python"
     rm -f "$PKG"/Titlebar-*.vlt
     tmp=$(mktemp -d)
+    # File names: Titlebar-[taskbar-]NNN.vlt (see taskbar/vlc-taskbar.ps1 Get-SkinInfo): 24 px strip;
+    # taskbar- = 36 px strip when docked.
     for sc in 1:100 1.25:125 1.5:150 2:200; do
-        "$PY" source/build_skin.py --scale "${sc%%:*}" --themes midnight,paper --out "$tmp" >/dev/null
-        "$PY" source/build_skin.py --scale "${sc%%:*}" --bar-height 36 --themes midnight,paper --out "$tmp" >/dev/null
+        for bar in 24 36; do
+            "$PY" source/build_skin.py --scale "${sc%%:*}" --bar-height "$bar" --themes midnight,paper --out "$tmp" >/dev/null &
+        done
     done
+    wait
     cp "$tmp"/Titlebar-*.vlt "$PKG"/
     rm -rf "$tmp"
 fi

@@ -4,11 +4,14 @@ A music skin for VLC 3 (Windows and Linux, skins2 engine). The player collapses
 into a 24 px strip that fits into a window title bar or the Windows taskbar.
 Inspired by the MMD3 skin.
 
-![The strip](docs/img/strip.png)
+![The strip](docs/img-thin/strip.png)
 
-The skin screenshots are taken from real VLC 3.0.20 by `tools/doc-shots.sh`;
-the Windows comparison images in `docs/img/windows-sim/` come from
-`tools/windows-sim.py`.
+The default build is the 24 px (title-bar) strip, 620 px wide:
+`python3 source/build_skin.py --bar-height 24` (`--bar-height 36` = taskbar, 40 = floating, the concept's height).
+
+The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are
+taken from real VLC 3.0.20 by `tools/doc-shots.sh`; the Windows comparison images
+(removed in this fork) came from `tools/windows-sim.py`, now legacy.
 
 ## Features
 
@@ -18,24 +21,21 @@ the Windows comparison images in `docs/img/windows-sim/` come from
 - **Seek from the title**: the title window is also the seek bar. The played
   part fills it; click anywhere to jump there (the middle = 50 %), drag, or
   use the mouse wheel (5 % per notch).
-- **Time**: elapsed time; click it for time left (and back). Fits tracks
+- **Time**: elapsed time; the small +/- button beside the time box switches to
+  time left (and back). In the full player, click the time instead. Fits tracks
   longer than an hour.
-
-  ![Time left](docs/img/strip-countdown.png)
-
 - **Playlist and equalizer** open attached to the player, with the same width.
   They open **below** the bar (for a title bar at the top of the screen) or
   **above** it (for the taskbar): the small arrow on the panel header flips the
   side. The bar does not move when panels open or close.
 
-  | Below | Above |
-  |---|---|
-  | ![Panels below](docs/img/panels-below.png) | ![Panels above](docs/img/panels-above.png) |
+  ![Strip with EQ and playlist, panels below the bar](docs/img-thin/strip-panels.png)
 
-- **Full player** (expand button): large time, title, bitrate, shuffle / loop /
-  repeat-one, speed, seek bar, transport, volume, VLC's menu, minimize, quit.
+- **Full player** (expand button): large time, title, bitrate, sample rate,
+  file format, shuffle / loop / repeat-one, speed, seek bar, transport (stop,
+  previous, slower, play / pause, faster, next), volume, VLC's menu, minimize, quit.
 
-  ![Full player](docs/img/full.png)
+  ![Full player with equalizer and playlist](docs/img-thin/full-eq.png)
 
 - **Look**: Midnight (dark, cyan-blue). Every extra theme costs VLC memory, so
   the skin ships with this one only. Other colour schemes, a light look and a
@@ -174,8 +174,8 @@ Interface > Preferences > **Use native style**, restart VLC.
 | Previous / next | Previous / next track |
 | Play / pause | |
 | Title | Song name (scrolls when long). Click = jump to that point, drag = seek, wheel = 5 % |
-| Time | Elapsed; click for time left |
-| Volume | Slider |
+| Time box | Elapsed time. Click / drag / wheel in the box sets the volume (the box fills with it) |
+| +/- (beside the time box) | Switch the time to time left and back |
 | PL / EQ | Show / hide playlist / equalizer (lit when open) |
 | Pin | Always on top (lit when on) |
 | Right edge | Drag to change the width (the whole player follows) |
@@ -187,7 +187,8 @@ to the strip, minimize, quit. A skin built with several themes also has a
 round theme button there.
 Display: large time (click to switch elapsed / time left), the track length
 under it ("of 5:16"), title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
-speed. Then the seek bar, transport, volume, PL and EQ.
+speed. Then the seek bar, transport (stop, previous, slower, play / pause,
+faster, next), volume, PL and EQ.
 
 ### Playlist and equalizer
 
@@ -269,7 +270,6 @@ Windows 11 has no API to put a player *into* the taskbar, so a small helper
 **Taller strip.** The taskbar is 48 px tall, so the 24 px strip looks small
 there.
 
-![The taller strip](docs/img/strip-taskbar.png)
 
 The folder has a second set of files, `Titlebar-taskbar-100/125/150/200.vlt`,
 with a 36 px strip (bigger buttons and text; same width layout,
@@ -628,20 +628,22 @@ These come from VLC's skin engine (skins2); details in
 ## Building
 
 ```bash
-python3 source/build_skin.py --scale 1.5 --width 556 --preview
+python3 source/build_skin.py --scale 1.5 --preview
+python3 source/build_skin.py --bar-height 40 --width 620 --scale 1   # concept size: Titlebar-bar40-100.vlt
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (min 420, at every bar height), `--bar-height` the strip height in logical
+width in logical pixels (default 620, minimum 490 at every bar height), `--bar-height` the strip height in logical
 pixels (default 24; 36 for the taskbar build, written as
-`Titlebar-taskbar-NNN.vlt`, other heights as `Titlebar-bar<N>-NNN.vlt`),
+`Titlebar-taskbar-NNN.vlt`, other heights as `Titlebar-bar<N>-NNN.vlt`; 24 to 60),
 `--out` the output folder (default
-`source/dist`), `--classic` the older bevelled look (the default is flat),
-`--preview` also writes a PNG of all states, `--themes` picks
+`source/dist`), `--preview` also writes a PNG of all states, `--themes` picks
 the themes (comma-separated, the first one is the default; `all` = every
 theme; default `Midnight`), and
 `--custom #rrggbb` sets the Custom theme's colour. See
 [docs/architecture.md](docs/architecture.md) for how the generator works.
+
+Maintenance: the online configurator is PARKED (BACKLOG-hifi.md, H12): `configurator/` is a copy of the generator from 2026-11-01 and is not kept in sync for now. When it is reopened, run `python3 tools/sync-configurator.py` (needs Pillow) to refresh and verify it, and commit `configurator/`.
 
 ## Credits
 

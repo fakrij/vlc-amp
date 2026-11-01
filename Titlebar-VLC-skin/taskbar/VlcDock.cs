@@ -1558,8 +1558,9 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
 // What VLC's main window shows, read from its window region (VlcDock.ReadShape). Pure code,
 // no Win32: the tests feed it the X11 shapes of the real skin under Xvfb.
 //
-// The window is 436 logical px tall in every layout (full player 122 + EQ 116 + playlist 198),
-// the strip is BarHeight tall (24, 36 for the taskbar build). The visible height alone tells
+// The window is 676 logical px tall in every layout (full player 232 + EQ 164 + playlist 280;
+// build_skin.py FH / EH / LH, the same for every strip height),
+// the strip is BarHeight tall (24, 36 for the taskbar build; the file name says which). The visible height alone tells
 // strip from full player and which panels are open:
 //   strip  bar, bar + EQ, bar + PL, bar + EQ + PL
 //   full   122, 122 + EQ, 122 + PL, 122 + EQ + PL
@@ -1594,7 +1595,7 @@ public sealed class ShapeInfo
 
 public static class DockShape
 {
-    public const int FullH = 122, EqH = 116, PlH = 198, WinH = 436;
+    public const int FullH = 232, EqH = 164, PlH = 280, WinH = 676;   // = build_skin.py FH, EH, LH, FH + EH + LH
     const int Tol = 2;   // px: every part is rounded on its own at 125 % / 150 %
 
     static int Px(double v, double scale) { return (int)Math.Round(v * scale); }
@@ -1769,47 +1770,47 @@ public static class DockShape
     }
 
     // Client point of the flip arrow on the panel next to the strip: EQ (68 px from the right
-    // edge) when it is open, else the playlist (26 px); 18 x 12 buttons 4 px below the panel top.
+    // edge) when it is open, else the playlist (36 px); 24 x 22 buttons 6 px below the panel top.
     public static bool FlipPoint(ShapeInfo s, int ww, int hh, out int x, out int y)
     {
         double sc = s.Scale;
         x = y = 0;
         if (s.Full || !(s.Eq || s.Pl)) return false;
-        x = ww - Px(s.Eq ? 68 : 26, sc) + Px(9, sc);
+        x = ww - Px(s.Eq ? 86 : 36, sc) + Px(12, sc);
         int panelTop = s.BarAtBottom ? hh - s.Bar - Px(s.Eq ? EqH : PlH, sc) : s.Bar;
-        y = panelTop + Px(10, sc);
+        y = panelTop + Px(17, sc);
         return true;
     }
 
-    // Client point of the theme button (full player only): 122 px from the right edge, like the pin button.
+    // Client point of the theme button (full player only): 148 px from the right edge (24 x 22, header row at y 9).
     public static void ThemePoint(ShapeInfo s, int ww, int hh, out int x, out int y)
     {
         double sc = s.Scale;
-        x = ww - Px(122, sc) + Px(9, sc);
-        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(11, sc);
+        x = ww - Px(148, sc) + Px(12, sc);
+        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(20, sc);
     }
 
-    // A few points on the full player's panel (left of the LCD): their brightness tells dark from light.
+    // A few points on the full player's panel (bottom edge strip, below the transport row, above the outline): their brightness tells dark from light.
     public static void ThemeSamplePoints(ShapeInfo s, int ww, int hh, out int[] xs, out int y)
     {
         double sc = s.Scale;
         xs = new int[] { Px(20, sc), Px(40, sc), Px(60, sc) };
-        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(60, sc);
+        y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(FullH - 5, sc);
     }
 
-    // Client point of the pin button: full player 82 px from the right edge, 5 px from its top;
-    // strip 34 px from the right edge, centred in the bar.
+    // Client point of the pin button: full player 92 px from the right edge (24 x 22, header row at y 9);
+    // strip 36 px from the right edge (22 wide), centred in the bar.
     public static void PinPoint(ShapeInfo s, int ww, int hh, out int x, out int y)
     {
         double sc = s.Scale;
         if (s.Full)
         {
-            x = ww - Px(82, sc) + Px(9, sc);
-            y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(11, sc);
+            x = ww - Px(92, sc) + Px(12, sc);
+            y = (s.BarAtBottom ? hh - Px(FullH, sc) : 0) + Px(20, sc);
         }
         else
         {
-            x = ww - Px(34, sc) + Px(11, sc);
+            x = ww - Px(36, sc) + Px(11, sc);
             y = (s.BarAtBottom ? hh - s.Bar : 0) + s.Bar / 2;
         }
     }

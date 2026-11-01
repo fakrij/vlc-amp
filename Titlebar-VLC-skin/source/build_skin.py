@@ -67,19 +67,19 @@ def H(c, a=255):
 # A theme is a few seed colours: base (dark / light template, tinted with a hue), accent
 # and LED. Everything else is derived from them by mixing with grey, black or white.
 DARK = dict(
-    BG_TOP="#2e3135", BG_BOT="#1b1c1e", OUTLINE="#08090a", HILITE="#4c5055", PL_FLAT="#26282b",
-    BTN={"up": ("#3d4045", "#28292c"), "over": ("#484b50", "#303236"), "down": ("#1f2023", "#2c2e32")},
-    BTN_BORDER="#0b0c0d", BTN_HILITE="#565a60", ICON_UP="#c8cbcf", ICON_OVER="#ffffff",
-    LCD_EDGE="#3d4045", GRIP="#6c7075", LABEL="#9fa3a8",
-    THUMB_UP=("#e5e7e9", "#8f9399"), THUMB_OVER=("#ffffff", "#a9adb2"), TRACK="#0c0d0e",
-    PT_PLAY="#ffffff", HEAD_OVER="#ffffff", SHADOW=200, SHADOW2=120)
+    BG_TOP="#292f3a", BG_BOT="#1e232d", PL_FLAT="#232831",
+    BTN={"up": ("#3b4353", "#252b37"), "over": ("#465064", "#2e3544"), "down": ("#191d26", "#282e3a")},
+    ICON_UP="#c8cbcf", ICON_OVER="#ffffff",
+    LCD_EDGE="#333b49", GRIP="#6c7075", LABEL="#9fa3a8",
+    THUMB_UP=("#e2e6ec", "#59606b"), THUMB_OVER=("#ffffff", "#7a828e"), TRACK="#080a0e",
+    PT_PLAY="#ffffff", SHADOW=200, SHADOW2=120)
 LIGHT = dict(
-    BG_TOP="#f0f1f2", BG_BOT="#d6d9dc", OUTLINE="#83878b", HILITE="#ffffff", PL_FLAT="#e5e7e9",
+    BG_TOP="#f0f1f2", BG_BOT="#d6d9dc", PL_FLAT="#e5e7e9",
     BTN={"up": ("#fbfcfc", "#e0e2e5"), "over": ("#ffffff", "#ebedee"), "down": ("#cdd0d3", "#dcdfe1")},
-    BTN_BORDER="#8f9397", BTN_HILITE="#ffffff", ICON_UP="#3d4043", ICON_OVER="#000000",
-    LCD_EDGE="#ffffff", GRIP="#8f9397", LABEL="#5e6266",
+    ICON_UP="#3d4043", ICON_OVER="#000000",
+    LCD_EDGE="#ffffff", GRIP="#8f9397", LABEL="#50545a",
     THUMB_UP=("#ffffff", "#bdc1c5"), THUMB_OVER=("#ffffff", "#d8dbde"), TRACK="#bec2c6",
-    PT_PLAY="#000000", HEAD_OVER="#000000", SHADOW=60, SHADOW2=30)
+    PT_PLAY="#000000", SHADOW=60, SHADOW2=30)
 
 
 def _rgb(c):
@@ -115,18 +115,18 @@ def accent_palette(mode, A, led):
     """Accent colours from one colour A: CYAN (fills, active icons), CYAN_TXT / CYAN2 /
     CYAN_DIM (LCD text: main / secondary / off), LCD_BG, TITLE_FILL (played part of the strip
     title), LCD_HI (LCD toggle hover), DIVIDER, EQ_TRACK, SCROLL_TRACK, PT_SEL / PT_BG2
-    (playlist selection / odd rows); AMBER / AMBER_OFF from the LED colour.
+    (playlist selection / odd rows); AMBER from the LED colour.
     Only mixes with neutral colours: the custom theme's recolouring relies on it."""
     k, w, g = "#000000", "#ffffff", "#808080"
     if mode == "dark":
-        return dict(CYAN=A, CYAN_TXT=mix(A, w, 0.05), CYAN2=mix(A, k, 0.18), CYAN_DIM=mix(A, k, 0.52),
-                    LCD_BG=mix(A, k, 0.93), TITLE_FILL=mix(A, k, 0.78), LCD_HI=mix(A, w, 0.85),
+        return dict(CYAN=A, CYAN_TXT=mix(A, w, 0.05), CYAN2=mix(A, k, 0.18), CYAN_DIM=mix(A, k, 0.40),
+                    LCD_BG=mix(A, k, 0.93), TITLE_FILL=mix(A, k, 0.68), LCD_HI=mix(A, w, 0.85),
                     DIVIDER=mix(A, k, 0.78), EQ_TRACK=mix(A, "#141414", 0.88), SCROLL_TRACK=mix(A, k, 0.89),
-                    PT_SEL=mix(A, k, 0.78), PT_BG2=mix(A, k, 0.9), AMBER=led, AMBER_OFF=mix(led, k, 0.7))
-    return dict(CYAN=A, CYAN_TXT=mix(A, k, 0.25), CYAN2=mix(A, g, 0.3), CYAN_DIM=mix(A, w, 0.6),
+                    PT_SEL=mix(A, k, 0.78), PT_BG2=mix(A, k, 0.85), AMBER=led)
+    return dict(CYAN=A, CYAN_TXT=mix(A, k, 0.25), CYAN2=mix(A, k, 0.12), CYAN_DIM=mix(A, w, 0.08),
                 LCD_BG=mix(A, w, 0.9), TITLE_FILL=mix(A, w, 0.74), LCD_HI=mix(A, k, 0.6),
                 DIVIDER=mix(A, w, 0.72), EQ_TRACK=mix(A, w, 0.78), SCROLL_TRACK=mix(A, w, 0.82),
-                PT_SEL=mix(A, w, 0.74), PT_BG2=mix(A, w, 0.86), AMBER=led, AMBER_OFF=mix(led, w, 0.62))
+                PT_SEL=mix(A, w, 0.74), PT_BG2=mix(A, w, 0.80), AMBER=led)
 
 
 # The custom theme is rendered with a pure red accent and a neutral grey base, so every
@@ -139,15 +139,15 @@ CUSTOM_DEFAULT = "#b48cff"
 # (mode, name, base hue, base saturation, accent, LED); the button in the full player's
 # title bar steps through them in this order. Index 0 = default.
 THEME_SEEDS = [
-    ("dark",  "Midnight", 210, 0.12, "#5fd3e8", "#f2a93b"),
+    ("dark",  "Midnight", 214, 0.20, "#5fd3e8", "#f2a93b"),
     ("dark",  "Ember",     28, 0.12, "#ffb547", "#ff7b4a"),
     ("dark",  "Forest",   150, 0.09, "#78e0a0", "#e8d36a"),
     ("dark",  "Nord",     220, 0.17, "#88c0d0", "#ebcb8b"),
     ("dark",  "Dusk",     268, 0.15, "#ff79c6", "#f1fa8c"),
-    ("dark",  "Carbon",     0, 0.00, "#ff5a4f", "#ffd166"),
+    ("dark",  "Carbon",     0, 0.00, "#ff7064", "#ffd166"),
     ("light", "Paper",    210, 0.12, "#1f7fc4", "#e8901a"),
-    ("light", "Sand",      44, 0.45, "#1f9a92", "#d0561c"),
-    ("light", "Sage",     120, 0.10, "#2e8b45", "#d08a1a"),
+    ("light", "Sand",      44, 0.45, "#12726a", "#d0561c"),
+    ("light", "Sage",     120, 0.10, "#217239", "#d08a1a"),
     ("light", "Rose",     345, 0.22, "#c2185b", "#e8901a"),
     ("dark",  "Custom",     0, 0.00, CUSTOM_REF, None),
 ]
@@ -244,29 +244,11 @@ def set_pair(first_mode, accent, led=None):
 set_themes(DEFAULT_THEMES)
 
 
-FLAT = True     # flat style (default): solid fills, no gradients / bevel lines / glow; --classic turns it off
-
-
-def flatten(pal):
-    """Flat style: every gradient pair collapses to its mean, button borders vanish into the fill."""
-    mid = lambda p: mix(p[0], p[1], 0.5)
-    pal["BG_TOP"] = pal["BG_BOT"] = mid((pal["BG_TOP"], pal["BG_BOT"]))
-    pal["PL_FLAT"] = pal["BG_TOP"]
-    pal["BTN"] = {k: (mid(v),) * 2 for k, v in pal["BTN"].items()}
-    pal["THUMB_UP"] = (pal["THUMB_UP"][0],) * 2
-    pal["THUMB_OVER"] = (pal["THUMB_OVER"][0],) * 2
-    pal["BTN_BORDER"] = pal["BTN"]["up"][0]
-    pal["HILITE"] = pal["BG_TOP"]
-    pal["BTN_HILITE"] = pal["BTN"]["up"][0]
-    pal["LCD_EDGE"] = pal["LCD_BG"]
-    pal["SHADOW"] = pal["SHADOW2"] = 0
-    return pal
-
-
 def apply_theme(i):
     pal = dict(THEMES[i][2])
-    if FLAT:
-        pal = flatten(pal)
+    dark = _luminance(pal["BG_TOP"]) < 0.5
+    pal["EDGE"] = mix(pal["BG_BOT"], "#ffffff" if dark else "#000000", 0.14 if dark else 0.17)
+    pal["LED_OFF"] = mix(pal["BTN"]["up"][1], "#ffffff" if dark else "#000000", 0.42)   # light 1 px outline of buttons, displays, panels (hi-fi)
     pal["ICON"] = {"up": pal.pop("ICON_UP"), "over": pal.pop("ICON_OVER"), "down": pal["CYAN"]}
     globals().update(pal)
 
@@ -306,12 +288,14 @@ class Canvas:
         self.ky = self.ph * SS / h
         self.im = Image.new("RGBA", (self.pw * SS, self.ph * SS), (0, 0, 0, 0))
         self.texts = []
+        self.ox = self.oy = 0       # drawing offset (logical px): lets a face be drawn inset in a well
+        self.crisp = False          # icon mode: shapes sampled at pixel centres (see _ss), set by icon()
 
     def X(self, v):
-        return v * self.kx
+        return (v + self.ox) * self.kx
 
     def Y(self, v):
-        return v * self.ky
+        return (v + self.oy) * self.ky
 
     def _layer(self):
         layer = Image.new("RGBA", self.im.size, (0, 0, 0, 0))
@@ -321,18 +305,20 @@ class Canvas:
         return [round(self.X(x)), round(self.Y(y)),
                 round(self.X(x + w)) - 1, round(self.Y(y + h)) - 1]
 
-    def rrect(self, x, y, w, h, r, color):
+    def rrect(self, x, y, w, h, r, color, corners=None):
+        """corners = (top left, top right, bottom right, bottom left) rounded?; default all."""
         layer, d = self._layer()
         b = self._box(x, y, w, h)
         if b[2] < b[0] or b[3] < b[1]:
             return
         if r > 0:
-            d.rounded_rectangle(b, radius=r * self.kx, fill=H(color) if isinstance(color, str) else color)
+            d.rounded_rectangle(b, radius=r * self.kx, fill=H(color) if isinstance(color, str) else color,
+                                corners=corners)
         else:
             d.rectangle(b, fill=H(color) if isinstance(color, str) else color)
         self.im.alpha_composite(layer)
 
-    def grad(self, x, y, w, h, r, top, bot):
+    def grad(self, x, y, w, h, r, top, bot, corners=None):
         b = self._box(x, y, w, h)
         gw, gh = b[2] - b[0] + 1, b[3] - b[1] + 1
         if gw <= 0 or gh <= 0:
@@ -344,17 +330,76 @@ class Canvas:
             col.putpixel((0, yy), tuple(int(t0[i] + (t1[i] - t0[i]) * t) for i in range(3)) + (255,))
         g = col.resize((gw, gh))
         mask = Image.new("L", (gw, gh), 0)
-        ImageDraw.Draw(mask).rounded_rectangle([0, 0, gw - 1, gh - 1], radius=max(0, r * self.kx), fill=255)
+        ImageDraw.Draw(mask).rounded_rectangle([0, 0, gw - 1, gh - 1], radius=max(0, r * self.kx), fill=255,
+                                               corners=corners)
         layer = Image.new("RGBA", self.im.size, (0, 0, 0, 0))
         layer.paste(g, (b[0], b[1]), mask)
         self.im.alpha_composite(layer)
 
+    def _ss(self, x, y):
+        """Logical -> supersampled pixel position (crisp / icon shapes, see _fill)."""
+        return (self.X(x), self.Y(y))
+
+    # Pillow's polygon / ellipse / wide-line fill is not centred: it covers every pixel the shape touches
+    # (plus the end pixel), sampled at the top of each scanline, so shapes grow by up to one supersampled
+    # pixel (1/4 device pixel at SS = 4), unequally on the left / right and top / bottom. That is the
+    # asymmetric halo of H22. Crisp shapes are filled here instead: a pixel is set exactly when its centre
+    # is inside the polygon (even-odd rule), so a mirror-symmetric shape on a symmetric lattice stays symmetric.
+    @staticmethod
+    def _fill(d, pts, fill):
+        # an edge exactly through a pixel centre counts as inside on every side (two scanlines per row,
+        # both ends inclusive), so a tie cannot favour left / top over right / bottom
+        n = len(pts)
+        ys = [p[1] for p in pts]
+        eps = 1e-6
+        for j in range(max(0, int(math.floor(min(ys)))), int(math.ceil(max(ys))) + 1):
+            spans = []
+            for yc in (j + 0.5 - eps, j + 0.5 + eps):
+                xs = []
+                for i in range(n):
+                    (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
+                    if (y0 <= yc < y1) or (y1 <= yc < y0):
+                        xs.append(x0 + (yc - y0) / (y1 - y0) * (x1 - x0))
+                xs.sort()
+                spans += [(xs[k], xs[k + 1]) for k in range(0, len(xs) - 1, 2)]
+            for xl, xr in spans:
+                xa, xb = int(math.ceil(xl - 0.5 - eps)), int(math.floor(xr - 0.5 + eps))
+                if xb >= xa:
+                    d.line([(xa, j), (xb, j)], fill=fill)
+
+    @staticmethod
+    def _ellipse_pts(cx, cy, rx, ry, a0=0, a1=360, n=None):
+        n = n or max(48, int(max(rx, ry) * 4))
+        return [(cx + rx * math.cos(math.radians(a0 + (a1 - a0) * i / n)),
+                 cy + ry * math.sin(math.radians(a0 + (a1 - a0) * i / n))) for i in range(n + 1)]
+
+    def _lines_crisp(self, pts, color, width):
+        layer, d = self._layer()
+        pp = [self._ss(x, y) for x, y in pts]
+        hx, hy = width * self.kx / 2, width * self.ky / 2
+        fill = H(color)
+        for (x0, y0), (x1, y1) in zip(pp, pp[1:]):
+            dx, dy = x1 - x0, y1 - y0
+            n = math.hypot(dx, dy)
+            if n == 0:
+                continue
+            nx, ny = -dy / n * hx, dx / n * hy
+            self._fill(d, [(x0 + nx, y0 + ny), (x1 + nx, y1 + ny), (x1 - nx, y1 - ny), (x0 - nx, y0 - ny)], fill)
+        for x, y in pp:  # round caps and joins
+            self._fill(d, self._ellipse_pts(x, y, hx, hy), fill)
+        self.im.alpha_composite(layer)
+
     def poly(self, pts, color):
         layer, d = self._layer()
-        d.polygon([(self.X(x), self.Y(y)) for x, y in pts], fill=H(color))
+        if self.crisp:
+            self._fill(d, [self._ss(x, y) for x, y in pts], H(color))
+        else:
+            d.polygon([(self.X(x), self.Y(y)) for x, y in pts], fill=H(color))
         self.im.alpha_composite(layer)
 
     def lines(self, pts, color, width):
+        if self.crisp:
+            return self._lines_crisp(pts, color, width)
         layer, d = self._layer()
         pp = [(self.X(x), self.Y(y)) for x, y in pts]
         wpx = width * self.kx
@@ -366,18 +411,32 @@ class Canvas:
 
     def arc(self, cx, cy, r, start, end, color, width):
         layer, d = self._layer()
+        if self.crisp:  # ring between r - width (inside) and r, like Pillow's arc, as a polygon
+            x, y = self._ss(cx, cy)
+            n = max(24, int(r * self.kx))
+            outer = self._ellipse_pts(x, y, r * self.kx, r * self.ky, start, end, n)
+            inner = self._ellipse_pts(x, y, r * self.kx - width * self.kx, r * self.ky - width * self.ky, start, end, n)
+            self._fill(d, outer + inner[::-1], H(color))
+            self.im.alpha_composite(layer)
+            return
         d.arc([self.X(cx - r), self.Y(cy - r), self.X(cx + r), self.Y(cy + r)],
               start, end, fill=H(color), width=max(1, round(width * self.kx)))
         self.im.alpha_composite(layer)
 
     def circle(self, cx, cy, r, color):
         layer, d = self._layer()
+        if self.crisp:
+            x, y = self._ss(cx, cy)
+            self._fill(d, self._ellipse_pts(x, y, r * self.kx, r * self.ky),
+                       H(color) if isinstance(color, str) else color)
+            self.im.alpha_composite(layer)
+            return
         d.ellipse([self.X(cx - r), self.Y(cy - r), self.X(cx + r), self.Y(cy + r)],
                   fill=H(color) if isinstance(color, str) else color)
         self.im.alpha_composite(layer)
 
     def text(self, x, y, s, size, color, font="bold", anchor="la"):
-        self.texts.append((x, y, s, size, color, font, anchor))
+        self.texts.append((x + self.ox, y + self.oy, s, size, color, font, anchor))
 
     def done(self, hard_edges=False):
         out = self.im.resize((self.pw, self.ph), Image.BOX)
@@ -392,21 +451,45 @@ class Canvas:
 
 
 def solid(im, bg=None):
-    """Flat style: give a bitmap that sits on a plain panel colour no partly transparent pixels.
+    """Give a bitmap that sits on a plain panel colour no partly transparent pixels.
     skins2 premultiplies every bitmap when it loads it, draws buttons, thumbs and similar into
     a blank graphic without blending (the corner pixels come out darker than the panel) and
     copies that over the window. Windows (Win32Graphics::drawBitmap) alpha-blends it onto a
     blank bitmap whose start content nobody guarantees. Compositing the bitmap over the colour
-    it will sit on (BG_TOP: every flat panel has it) gives the same pixels everywhere and keeps
-    the smooth corners. Classic style has gradient panels, so it is left alone."""
-    if not FLAT:
-        return im
-    return Image.alpha_composite(Image.new("RGBA", im.size, H(bg or BG_TOP)), im.convert("RGBA"))
+    it will sit on (the panel fill) gives the same pixels everywhere and keeps the smooth corners."""
+    return Image.alpha_composite(Image.new("RGBA", im.size, H(bg or mix(BG_TOP, BG_BOT, 0.5))),
+                                 im.convert("RGBA"))
+
+
+PL_GUTTER = 6                       # playlist list box: row stripes (left) and scroll track (right) sit 6 px from the box edge
+GRIP_W = 9                          # resize tab width
+GRIP_H = 70                         # tab height in the EQ, playlist and full player (the strip: bar height - 6)
+
+
+def grip_x(w):
+    """Left edge of the resize tab: 9 px centred in the 12 px right margin (W - 12 .. W - 1)."""
+    return w - 12 + (12 - GRIP_W) // 2
+
+
+def grip_y(box_y, box_h, h=GRIP_H):
+    """Top edge of a tab of height h centred on a section's main box (display card, EQ / list box)."""
+    return box_y + (box_h - h) // 2
+
+
+def grip_tab(skin, lay, bg, x, y, h):
+    """The resize zone: the drawn tab as its own control (resizeE), so the hit area is exactly the tab.
+    The section backgrounds only move the window. bg = a section bitmap (opaque at the tab), x / y / h logical px."""
+    x0, x1 = int(math.floor(x * S)), int(math.ceil((x + GRIP_W) * S))
+    y0, y1 = int(math.floor(y * S)), int(math.ceil((y + h) * S))
+    im = bg.crop((x0, y0, x1, y1))
+    assert im.getchannel("A").getextrema()[0] == 255, "resize tab must be opaque"
+    lay.image(add_shared(skin, "grip_%d_%d" % (x1 - x0, y1 - y0), im), x0, y0, lt="righttop", rb="righttop",
+              action="resizeE")
 
 
 def resize_handle(c, x, y, h):
-    """Grip for the right edge (the resizeE zone): a 9 px wide tab in the button colour with three
-    light ribs, so it reads as something to grab. x = its left edge in logical px (W - 10)."""
+    """Grip for the right edge: a 9 px wide tab in the button colour with three light ribs, so it reads
+    as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab."""
     pad = BTN["up"][0]
     c.rrect(x, y, 9, h, 2, pad)
     for rx in (x + 2, x + 4, x + 6):
@@ -414,23 +497,29 @@ def resize_handle(c, x, y, h):
 
 
 # ---------------------------------------------------------------- primitives
-def panel_bg(c, x, y, w, h, r, flat=False):
-    c.rrect(x, y, w, h, r, OUTLINE)
-    if FLAT:
-        r = min(r, 2)
-    if flat:
-        c.rrect(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), PL_FLAT)
-    else:
-        c.grad(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), BG_TOP, BG_BOT)
-    c.rrect(x + r, y + 1, w - 2 * r, 1, 0, HILITE)
+def panel_bg(c, x, y, w, h, r, flat=False, rt=True, rb=True):
+    """Window section background. rt / rb: round the top / bottom corners (a corner that touches
+    another section is square, so stacked sections form one rounded block)."""
+    cn = (rt, rt, rb, rb)
+    c.rrect(x, y, w, h, r, EDGE, corners=cn)
+    fh = h - 2 + (0 if rb else 1)    # a square bottom touches the next section: its top outline is the only line there
+    # the fill covers the side outline (top / bottom lines stay)
+    c.rrect(x, y + 1, w, fh, max(0, r - 1), PL_FLAT if flat else mix(BG_TOP, BG_BOT, 0.5), corners=cn)
 
 
-def lcd(c, x, y, w, h, r=2):
-    c.rrect(x, y, w, h, r, LCD_EDGE)               # light bottom edge
-    c.rrect(x, y, w, h - 1, r, LCD_BG)
-    c.rrect(x + 1, y, w - 2, 1, 0, (0, 0, 0, SHADOW))  # inner top shadow
-    c.rrect(x, y + 1, 1, h - 3, 0, (0, 0, 0, SHADOW2))
-    c.rrect(x + w - 1, y + 1, 1, h - 3, 0, (0, 0, 0, SHADOW2))
+def box_edge(a):
+    """Outline colour of a display box: a light line on dark themes, a dark line on light ones."""
+    if _luminance(LCD_BG) < 0.5:
+        return mix(LCD_BG, "#ffffff", a)
+    return mix(LCD_BG, "#000000", 2 * a)      # light themes: twice as strong, the dark line on a light box is faint
+
+
+def lcd(c, x, y, w, h, r=2, outline=True):
+    if not outline:    # a plain dark box, no light outline
+        c.rrect(x, y, w, h, r, LCD_BG)
+        return
+    c.rrect(x, y, w, h, r, box_edge(0.13))     # outline all round; no inner shadow (it left a dark sliver beside the fill at fractional scales)
+    c.rrect(x + 1, y + 1, w - 2, h - 2, max(0, r - 1), LCD_BG)
 
 
 def grip_dots(c, x, y, rows=3):
@@ -439,27 +528,44 @@ def grip_dots(c, x, y, rows=3):
             c.circle(cx, y + 3 + 4 * i, 1, GRIP)
 
 
-def button_face(c, w, h, state):
+def button_face(c, w, h, state, ring=None):
+    """Hairline outline, nearly flat gradient face; ring = accent outline (lit toggles)."""
     top, bot = BTN[state]
-    c.rrect(0, 0, w, h, 3, BTN_BORDER)
-    c.grad(1, 1, w - 2, h - 2, 2, top, bot)
-    if state == "down":
-        if not FLAT:
-            c.rrect(2, 1, w - 4, 1, 0, (0, 0, 0, 150))
-    elif not FLAT:
-        c.rrect(2, 1, w - 4, 1, 0, BTN_HILITE)
+    r = 4 if h >= 18 else 3
+    c.rrect(0, 0, w, h, r, ring or EDGE)
+    top, bot = mix(top, bot, 0.3), mix(top, bot, 0.8)
+    c.grad(1, 1, w - 2, h - 2, r - 1, top, bot)
+
+
+def ring_colour(col):
+    return mix(col, BG_BOT, 0.45)
 
 
 def led(c, cx, cy, on):
     if on:
-        if not FLAT:
-            c.circle(cx, cy, 3.2, H(AMBER, 70))
+        c.circle(cx, cy, 3.2, H(AMBER, 70))
         c.circle(cx, cy, 2, AMBER)
     else:
-        c.circle(cx, cy, 2, AMBER_OFF)
+        c.circle(cx, cy, 2, LED_OFF)
 
 
 def icon(c, name, ox, oy, size, color):
+    """Draw a glyph in crisp mode with its centre snapped to the device pixel grid (H22): the centre
+    (ox + size / 2, oy + size / 2) moves to the nearest half device pixel (at most 1/4 px), so the
+    4x supersampled box filter sees a mirror-symmetric lattice and symmetric glyphs stay symmetric."""
+    cx = c.X(ox + size / 2)
+    cy = c.Y(oy + size / 2)
+    unit = SS / 2.0                                              # half a device pixel in supersampled px
+    ox += (round(cx / unit) * unit - cx) / c.kx
+    oy += (round(cy / unit) * unit - cy) / c.ky
+    c.crisp = True
+    try:
+        _icon(c, name, ox, oy, size, color)
+    finally:
+        c.crisp = False
+
+
+def _icon(c, name, ox, oy, size, color):
     f = size / 12.0
 
     def T(pts):
@@ -475,6 +581,8 @@ def icon(c, name, ox, oy, size, color):
     elif name == "prev":
         c.poly(T([(2, 2), (3.6, 2), (3.6, 10), (2, 10)]), color)
         c.poly(T([(10, 2), (4.4, 6), (10, 10)]), color)
+    elif name == "stop":   # hollow square
+        c.lines(T([(2.5, 2.5), (9.5, 2.5), (9.5, 9.5), (2.5, 9.5), (2.5, 2.5)]), color, 1.4 * f)
     elif name == "next":
         c.poly(T([(2, 2), (7.6, 6), (2, 10)]), color)
         c.poly(T([(8.4, 2), (10, 2), (10, 10), (8.4, 10)]), color)
@@ -504,9 +612,9 @@ def icon(c, name, ox, oy, size, color):
             c.lines(T([(2.5, yy), (9.5, yy)]), color, 1.4 * f)
     elif name in ("arrow_up", "arrow_down"):  # flip: open panels above / below
         if name == "arrow_up":
-            c.poly(T([(6, 2), (10.5, 8), (1.5, 8)]), color)
+            c.poly(T([(6, 3), (10.5, 9), (1.5, 9)]), color)
         else:
-            c.poly(T([(1.5, 4), (10.5, 4), (6, 10)]), color)
+            c.poly(T([(1.5, 3), (10.5, 3), (6, 9)]), color)
     elif name == "sun":
         c.circle(ox + 6 * f, oy + 6 * f, 2.4 * f, color)
         for a in range(0, 360, 45):
@@ -630,28 +738,41 @@ def vis_and(*exprs):
     return " and ".join(e for e in exprs if e) or None
 
 
-def label_on(skin, bid, bg, x, y, w, h, text):
+def label_on(skin, bid, bg, x, y, w, h, text, size=8):
     """Label baked onto a crop of the window background so it is fully opaque."""
     im = bg.crop((P(x), P(y), P(x) + P(w), P(y) + P(h))).copy()
     d = ImageDraw.Draw(im)
-    d.text((0, im.height / 2), text, font=_truetype(FONT_BOLD, P(8)), fill=H(LABEL), anchor="lm")
+    d.text((0, im.height / 2), text, font=_truetype(FONT_BOLD, P(size)), fill=H(LABEL), anchor="lm")
     skin.add(bid, im)
     return bid
 
 
-def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None):
-    """Cut a horizontally stretchable element into left cap / mosaic middle / right cap."""
+def add_shared(skin, name, im):
+    """Add a piece that corner variants share (slice middles). Variants whose pixels differ (the bottom
+    outline of a strip that has a panel below it) get their own id (name, name2, ...); equal ones reuse it."""
+    n = 1
+    while True:
+        bid = name if n == 1 else "%s%d" % (name, n)
+        old = skin.bitmaps.get(skin.prefix + bid)
+        if old is None or (old.size == im.size and old.tobytes() == im.tobytes()):
+            return skin.add(bid, im)
+        n += 1
+
+
+def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None, tag=""):
+    """Cut a horizontally stretchable element into left cap / mosaic middle / right cap.
+    tag names the caps only (corner variants share the middle piece)."""
     w, h = im.size
     l, r = P(capl), P(capr)
-    skin.add(name + "_l", im.crop((0, 0, l, h)))
-    skin.add(name + "_m", im.crop((l, 0, w - r, h)))
-    skin.add(name + "_r", im.crop((w - r, 0, w, h)))
-    lay.image(name + "_l", x, y, action=action, action2=action2)
-    lay.image(name + "_m", x + l, y, rb="righttop", action=action, action2=action2)
-    lay.image(name + "_r", x + w - r, y, lt="righttop", rb="righttop", action=right_action or action)
+    skin.add(name + tag + "_l", im.crop((0, 0, l, h)))
+    mid = add_shared(skin, name + "_m", im.crop((l, 0, w - r, h)))
+    skin.add(name + tag + "_r", im.crop((w - r, 0, w, h)))
+    lay.image(name + tag + "_l", x, y, action=action, action2=action2)
+    lay.image(mid, x + l, y, rb="righttop", action=action, action2=action2)
+    lay.image(name + tag + "_r", x + w - r, y, lt="righttop", rb="righttop", action=right_action or action)
 
 
-def nslice(skin, lay, name, im, x, y, cap, actions=None):
+def nslice(skin, lay, name, im, x, y, cap, actions=None, tag=""):
     """Nine-slice for elements stretching in both directions."""
     w, h = im.size
     c = P(cap)
@@ -661,7 +782,9 @@ def nslice(skin, lay, name, im, x, y, cap, actions=None):
     actions = actions or {}
     for y0, y1, vy in ys:
         for x0, x1, vx in xs:
-            bid = skin.add("%s_%s%s" % (name, vy, vx), im.crop((x0, y0, x1, y1)))
+            corner = vy in "tb" and vx in "lr"
+            piece, bid = im.crop((x0, y0, x1, y1)), "%s%s_%s%s" % (name, tag if corner else "", vy, vx)
+            bid = skin.add(bid, piece) if corner else add_shared(skin, bid, piece)
             lt_x, rb_x = anchor_x[vx]
             if vy == "t":
                 lt, rb = lt_x, rb_x
@@ -674,38 +797,154 @@ def nslice(skin, lay, name, im, x, y, cap, actions=None):
 
 
 # ---------------------------------------------------------------- bitmap factories
-def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_on=None):
+def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_on=None, label_size=8):
     for st in ("up", "over", "down"):
         c = Canvas(w, h)
         button_face(c, w, h, st)
         if icon_name:
             icon(c, icon_name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, ICON[st])
         if label:
-            c.text(w / 2, h / 2 + 0.5, label, 8, ICON[st], anchor="mm")
+            c.text(w / 2, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
 
 def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_led=False,
-                on_color=None, icon_size=12, label_size=8):
-    """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true)."""
+                on_color=None, icon_size=12, label_size=8, well=None):
+    """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true).
+    well = (outer width, outer height): the button sits in a recessed box (w x h is the button)."""
     for on in (False, True):
         for st in ("up", "over", "down"):
-            c = Canvas(w, h)
-            button_face(c, w, h, st)
+            c = Canvas(*(well or (w, h)))
+            if well:
+                c.rrect(0, 0, well[0], well[1], 3, LCD_EDGE)
+                c.rrect(1, 1, well[0] - 2, well[1] - 2, 3, LCD_BG)
+                c.ox, c.oy = (well[0] - w) / 2, (well[1] - h) / 2
             col = ICON[st]
             if on and on_color and st != "down":
                 col = on_color
+            ring = None
+            if on and on_color:
+                ring = ring_colour(on_color)
+            elif on and (use_led or label):
+                ring = ring_colour(CYAN)
+                col = CYAN if st != "down" else col
+            elif icon_on == "pause":
+                ring = ring_colour(CYAN)
+            button_face(c, w, h, st, ring)
             name = icon_on if on else icon_off
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
             if label:
-                if use_led:
-                    led(c, 6, h / 2, on)
-                    c.text(w / 2 + 3, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
+                if use_led:      # dot + gap + text, centred as one group
+                    tw_ = _truetype(FONT_BOLD, P(label_size)).getlength(label) / S
+                    x0 = (w - (4 + 5 + tw_)) / 2
+                    led(c, x0 + 2, h / 2, on)
+                    c.text(x0 + 9, h / 2 + 0.5, label, label_size, col, anchor="lm")
                 else:
                     c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
+    return base
+
+
+def make_strip_button(skin, base, w, h):
+    """Labelled "STRIP" button (icon + text, accent ring) that collapses the full player."""
+    for st in ("up", "over", "down"):
+        c = Canvas(w, h)
+        button_face(c, w, h, st, ring_colour(CYAN))
+        col = CYAN if st != "down" else ICON[st]
+        icon(c, "collapse", 7, (h - 10) / 2, 10, col)
+        c.text(23, h / 2 + 0.5, "STRIP", 9, col, anchor="lm")
+        skin.add("%s_%s" % (base, st), solid(c.done()))
+    return base
+
+
+EQ_FRAMES, EQ_FW, EQ_FH = 41, 30, 104
+EQ_KNOB_H = 14        # EQ knob height (thumb_eq)
+EQ_G0, EQ_G1 = 16, 96   # EQ groove: top row, row after the bottom
+
+
+def eq_travel():
+    """Device y of the EQ knob centre at +20 dB and at -20 dB: the knob (height P(14), drawn from centre - h // 2)
+    stays inside the groove at both ends at every scale (rounding the logical 23 / 89 overshot by 1 px at 150 %)."""
+    kh = P(EQ_KNOB_H)
+    return P(EQ_G0) + kh // 2, P(EQ_G1) - (kh - kh // 2)
+
+
+# A fader is drawn as one 30 x 104 design, but only three parts of it are stored (each frame sheet is
+# copied by VLC into 44 sliders per theme, so every pixel counts):
+#   - the dB label (a slider of its own on top of the fader, thumb_none), columns EQ_LBL_X, rows 0 .. EQ_LBL_H
+#   - the groove with the lit fill, columns EQ_FILL_X, rows EQ_LBL_H .. EQ_CROP_H (the knob stays on this slider)
+#   - the two 0 dB ticks never change: they are pasted into the static eq_bands image (EQ_TICKS)
+# Everything else is the plain LCD background, which eq_bands already has. (x0, width), logical px:
+EQ_LBL_X = {False: (6, 18), True: (1, 28)}   # band fader / preamp (its label has a "dB")
+EQ_LBL_H = 14
+EQ_FILL_X = (11, 8)
+EQ_CROP_H = 98
+EQ_TICK_BOX = (8, 54, 22, 58)   # 1 px of slack each side: ticks are anti-aliased at fractional scales
+EQ_FILL_STEP = 2   # the groove sheet has every 2nd dB: the knob (14 px high, centred on the fill's top edge) hides the gap
+EQ_TICKS = {}
+
+
+def eq_boxes(pre):
+    """Device-px crop boxes (left, top, right, bottom) in the 30 x 104 design: label, fill, ticks."""
+    lx, lw = EQ_LBL_X[pre]
+    fx, fw = EQ_FILL_X
+    return ((P(lx), 0, P(lx + lw), P(EQ_LBL_H)), (P(fx), P(EQ_LBL_H), P(fx + fw), P(EQ_CROP_H)),
+            tuple(P(v) for v in EQ_TICK_BOX))
+
+
+def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
+    """EQ fader frames, frame i (i = dB + 20), 1 dB per frame, opaque (LCD_BG): `bid` has the groove
+    and the lit fill from the bottom up to the knob, `lbl_bid` the dB value above the groove."""
+    lb, fb, tb = eq_boxes(pre)
+    lw, lh, fw, fh = lb[2] - lb[0], lb[3] - lb[1], fb[2] - fb[0], fb[3] - fb[1]
+    lsheet = Image.new("RGBA", (lw, lh * EQ_FRAMES), (0, 0, 0, 0))
+    nf = len(range(0, EQ_FRAMES, EQ_FILL_STEP))
+    fsheet = Image.new("RGBA", (fw, fh * nf), (0, 0, 0, 0))
+    for i in range(EQ_FRAMES):
+        db = i - 20
+        c = Canvas(EQ_FW, EQ_FH)
+        c.rrect(0, 0, EQ_FW, EQ_FH, 0, LCD_BG)
+        c.rrect(14, EQ_G0, 2, EQ_G1 - EQ_G0, 1, EQ_TRACK)
+        c.rrect(9, 55.5, 4, 1, 0, CYAN_DIM)       # 0 dB ticks either side of the groove
+        c.rrect(17, 55.5, 4, 1, 0, CYAN_DIM)
+        ct, cb = eq_travel()
+        cy = (cb - (cb - ct) * i / 40.0) / S  # knob centre
+        c.rrect(13.5, cy, 3, 96 - cy, 0, col)
+        label = ("%+d" % db if db else "0") + ("dB" if pre and db else "")
+        c.text(15, 6, label, 9, col if db else CYAN2, font="mono", anchor="mm")
+        full = c.done()
+        lsheet.paste(full.crop(lb), (0, lh * i))
+        if i % EQ_FILL_STEP == 0:
+            fsheet.paste(full.crop(fb), (0, fh * (i // EQ_FILL_STEP)))
+        if i == 0:
+            EQ_TICKS[pre] = full.crop(tb)
+    skin.add(bid, solid(fsheet, LCD_BG))
+    skin.add(lbl_bid, solid(lsheet, LCD_BG))
+    return bid
+
+
+def make_chip_toggle(skin, base, w, h, label):
+    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): dot + text, accent border when on."""
+    for on in (False, True):
+        for st in ("up", "over", "down"):
+            c = Canvas(w, h)
+            # same rules as the buttons: the outline (lit ring) is the same in every state, hover lightens
+            # the face, pressed darkens it and turns the text accent-coloured
+            edge = ring_colour(CYAN) if on else box_edge(0.16)
+            face = mix(LCD_BG, CYAN, 0.14 if on else 0.0)
+            if st == "over":
+                face = mix(face, CYAN, 0.10)
+            elif st == "down":
+                face = mix(face, "#000000", 0.35)
+            c.rrect(0, 0, w, h, 3, edge)
+            c.rrect(1, 1, w - 2, h - 2, 2, face)
+            tw_ = _truetype(FONT_MONO, P(9)).getlength(label) / S
+            x0 = (w - (4 + 5 + tw_)) / 2
+            c.circle(x0 + 2, h / 2, 2, CYAN if on else mix(LCD_BG, CYAN, 0.45))
+            c.text(x0 + 9, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
+            skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done(), LCD_BG))
     return base
 
 
@@ -733,20 +972,81 @@ def plain_toggle(skin, base, im):
 
 
 def make_mode_toggle(skin, base, w, h):
-    """Left part of the strip's time box: "+" = elapsed time, "-" = time left; click switches."""
+    """Small button left of the strip's time box: "+" = elapsed time, "-" (lit) = time left; click switches."""
     for on in (False, True):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
-            c.rrect(0, 0, w, h, 2, LCD_BG)
-            c.rrect(w - 3, 0, 3, h, 0, LCD_BG)           # square right side
-            c.rrect(w - 1, 2, 1, h - 4, 0, DIVIDER)
-            col = CYAN_TXT if st == "over" else CYAN_DIM
-            cx, cy = (w - 1) / 2, h / 2
-            c.rrect(cx - 2.5, cy - 0.5, 5, 1, 0, col)
+            button_face(c, w, h, st, ring_colour(CYAN) if on else None)
+            col = CYAN if on and st != "down" else ICON[st]
+            cx, cy = w / 2, h / 2
+            c.rrect(cx - 3, cy - 0.75, 6, 1.5, 0, col)         # "-" = time left
             if not on:
-                c.rrect(cx - 0.5, cy - 2.5, 1, 5, 0, col)
+                c.rrect(cx - 0.75, cy - 3, 1.5, 6, 0, col)     # "+" = elapsed
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
+
+
+def make_title_thumb(skin, bid, h):
+    """Thumb of a title box: left half = fill colour, right half = box colour, accent line at the
+    centre (the thumb's centre sits on the playing position). It covers the gap between the fill
+    frame (4 % steps, rounded down) and the exact position, so progress moves pixel by pixel."""
+    for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
+        im = Image.new("RGBA", (P(2 * TITLE_S), P(h)), H(LCD_BG))
+        d = ImageDraw.Draw(im)
+        d.rectangle([0, 0, P(TITLE_S) - 1, P(h) - 1], fill=H(TITLE_FILL))
+        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, P(h) - 1], fill=H(col))
+        skin.add("%s_%s" % (bid, st), im)
+
+
+def make_title_frames(skin, bid, w, h, n, color):
+    """Title box fill frames. The play position runs from TITLE_S to w - TITLE_S (the thumb is
+    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position."""
+    pw, ph, ps = P(w), P(h), P(TITLE_S)
+    sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
+    d = ImageDraw.Draw(sheet)
+    for i in range(n):      # frame 0 too: it is shown while the position is inside the first step (about 0-2 %),
+        # and without its lit lead-in the box stays dark from its left edge up to the thumb's left half
+        end = ps + round((pw - 2 * ps) * i / (n - 1))
+        d.rectangle([0, ph * i, end - 1, ph * i + ph - 1], fill=H(color))
+    skin.add(bid, sheet)
+    return bid
+
+
+def make_title_under(skin, bid, w, h, n):
+    """H14 'underline' mode: line thumb (full height, accent) + the underline's own thumb (h = underline
+    height) + underline frames (w x ul_h x n) + a 1-frame opaque box background (the click area)."""
+    lw = max(1, P(1))
+    for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
+        skin.add("%s_line_%s" % (bid, st), Image.new("RGBA", (lw, P(h)), H(col)))
+        skin.add("%s_ulthumb_%s" % (bid, st), Image.new("RGBA", (lw, P(TITLE_UL_H)), H(col)))
+    skin.add(bid + "_box", Image.new("RGBA", (P(w), P(h)), (0, 0, 0, 0)))
+    pw, uh = P(w), P(TITLE_UL_H)
+    sheet = Image.new("RGBA", (pw, uh * n), (0, 0, 0, 0))
+    d = ImageDraw.Draw(sheet)
+    for i in range(1, n):
+        d.rectangle([0, uh * i, round(pw * i / (n - 1)) - 1, uh * i + uh - 1], fill=H(CYAN))
+    skin.add(bid + "_ul", sheet)
+
+
+def inset():
+    """Device px between a display box's edge and its fill controls: exactly the outline (int(S) px), so no
+    unfilled sliver is left at fractional scales (one logical px = 1.5 device px at 150 %; P(x + 1) rounded up)."""
+    return max(1, int(S))
+
+
+def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
+    """The progress slider(s) of one title box at (x, y) (device px), inner size fw x fh (design px)."""
+    tip = "$T / $D  (click to jump, wheel = 5 %)"
+    if TITLE_MODE == "underline":
+        make_title_under(skin, bid, fw, fh, TITLE_UL_FRAMES)
+        lay.slider(sid, x, y, "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2), bid + "_line", "time", tip,
+                   bg=bid + "_box", nbvert=1, rb="righttop")
+        lay.slider(sid + "_ul", x, y + P(fh) - P(TITLE_UL_H), "(0,%d),(%d,%d)" % (P(TITLE_UL_H) // 2, P(fw) - 1, P(TITLE_UL_H) // 2),
+                   bid + "_ulthumb", "time", tip, bg=bid + "_ul", nbvert=TITLE_UL_FRAMES, rb="righttop")
+        return
+    make_title_frames(skin, bid + "_fill", fw, fh, TITLE_FRAMES, TITLE_FILL)
+    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), P(fh) // 2, P(fw) - P(TITLE_S) - 1, P(fh) // 2),
+               thumb, "time", tip, bg=bid + "_fill", nbvert=TITLE_FRAMES, rb="righttop")
 
 
 def make_progress_frames(skin, bid, w, h, n, color):
@@ -764,41 +1064,59 @@ def make_progress_frames(skin, bid, w, h, n, color):
 
 
 def make_thumb(skin, bid, w, h, bg=None):
+    """Metallic slider knob (bright top half, darker lower half) with an accent notch."""
     for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
-        c.rrect(0, 0, w, h, 2, BTN_BORDER)
-        c.grad(1, 1, w - 2, h - 2, 1, t, b)
+        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        mid = h // 2
+        c.grad(1, 1, w - 2, mid - 1, 1, t, mix(t, b, 0.55))
+        c.grad(1, mid, w - 2, h - 1 - mid, 1, mix(t, b, 0.8), b)
+        c.rrect(1, 1, w - 2, 1, 0, (255, 255, 255, 120))
+        c.rrect((w - 1) / 2, 3, 1, h - 6, 0, CYAN)
         skin.add("%s_%s" % (bid, st), solid(c.done(), bg))
     return bid
 
 
 def make_eq_thumb(skin, bid, w, h):
-    """EQ slider knob: a flat accent-coloured pill (on the LCD)."""
+    """EQ slider knob on the LCD: a metallic block with an accent notch."""
     for st, col in (("up", CYAN), ("over", LCD_HI)):
         c = Canvas(w, h)
-        c.rrect(0, 0, w, h, h / 2, col)
+        t, b = THUMB_UP if st == "up" else THUMB_OVER
+        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.grad(1, 1, w - 2, h // 2 - 1, 1, t, mix(t, b, 0.55))
+        c.grad(1, h // 2, w - 2, h - 1 - h // 2, 1, mix(t, b, 0.8), b)
+        c.rrect(1, 1, w - 2, 1, 0, (255, 255, 255, 120))
+        c.rrect(2, (h - 1) / 2 - 0.5, w - 4, 2, 0, col)   # accent notch across the knob
         skin.add("%s_%s" % (bid, st), solid(c.done(), LCD_BG))
     return bid
 
 
-def make_fill_frames(skin, bid, w, h, track_y, track_h, n):
-    """Slider background: n frames stacked vertically, frame i filled to i/(n-1)."""
+def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0):
+    """Slider background: n frames stacked vertically, frame i filled to i/(n-1). The groove
+    has a light 1 px outline and a dark inside; the fill is the accent colour.
+    knob = (lo, hi): the knob's centre runs from lo to hi device px (a knob kept inside the groove);
+    the fill then ends under the knob centre instead of at i/(n-1) of the groove.
+    lead = fraction of a frame step the fill runs ahead: skins2 shows frame floor(value * (n-1)), so the fill
+    lags the knob by up to one step; with lead 0.5 the error is +-half a step and the knob (which covers
+    +-6 px) hides it up to about 1200 px of seek bar width."""
     sheet = Image.new("RGBA", (P(w), P(h) * n), (0, 0, 0, 0))
+    r = 3 if track_h >= 8 else track_h / 2
     for i in range(n):
-        frac = i / (n - 1)
+        frac = i / (n - 1) if i in (0, n - 1) else min(1.0, (i + lead) / (n - 1))
         c = Canvas(w, h)
-        c.rrect(0, track_y, w, track_h, track_h / 2, TRACK)
-        c.rrect(0, track_y, w, 1, 0, (0, 0, 0, 160))
+        c.rrect(0, track_y, w, track_h, r, mix(TRACK, "#ffffff", 0.22))
+        c.rrect(1, track_y + 1, w - 2, track_h - 2, max(0, r - 1), TRACK)
         if frac > 0:
-            c.rrect(0, track_y, max(track_h, w * frac), track_h, track_h / 2, CYAN)
+            fw = (w - 4) * frac if knob is None else (knob[0] + (knob[1] - knob[0]) * frac + 0.5) / S - 2
+            c.rrect(2, track_y + 2, max(track_h - 4, fw), track_h - 4, max(0, r - 2), CYAN)
         sheet.paste(c.done(), (0, P(h) * i))
     skin.add(bid, solid(sheet))
     return bid
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 420   # narrowest strip: EQ band block (400 px) plus a 10 px margin each side; title window 62 px
-TIME_ZONE = 16   # width of the elapsed / countdown switch at the left of the strip's time box
+MIN_W = 490   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 94 px title window
+TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (Titlebar-taskbar-NNN.vlt); the helper assumes the same
 
@@ -809,7 +1127,9 @@ def bar_metrics(bh):
     time box, which has to fit "-1:23:45" in the bigger strip font; MIN_W grows with it."""
     fs = 12 + (bh - 24) // 6                       # strip font (title, time), px
     tw = TIME_ZONE + 12 + math.ceil(8 * 0.602 * fs)  # time box: mode zone + 4 px + text + 8 px margin; DejaVu Sans Mono advance = 0.602 em
-    return dict(bh=bh, btn=bh - 6, icon=12 + (bh - 24) // 4, label=8 + (bh - 24) // 12, font=fs, tw=tw,
+    big = bh >= 30
+    return dict(bh=bh, btn=min(bh - 6, 24), y=(bh - min(bh - 6, 24)) // 2, bw=24 if big else 22, gap=6 if big else 2,
+                icon=13 if big else 12, label=9 if big else 8, font=fs, tw=tw,
                 min_w=MIN_W, grip_rows=3 + (bh - 24) // 8, grip_h=10 + (bh - 24) // 2)
 
 
@@ -817,6 +1137,13 @@ def skin_name(bh, pct):
     """File stem of a build: Titlebar-150, Titlebar-taskbar-150 (36 px bar), Titlebar-bar40-150."""
     kind = "" if bh == BAR_DEFAULT else "taskbar-" if bh == BAR_TASKBAR else "bar%d-" % bh
     return "Titlebar-%s%d" % (kind, pct)
+SEEK_LEAD = float(os.environ.get("TB_SEEK_LEAD", "0.5"))   # fill runs this many frame steps ahead of the frame index (see make_fill_frames)
+SEEK_FRAMES = 101   # full-player seek bar: 1 % steps (the sheet is only 10 px high)
+# H14 prototype (docs/architecture.md "Progress bar options"): "thumb" = fill frames + 2 x TITLE_S thumb (current);
+# "underline" = exact 1 px line over a 1-frame box + a TITLE_UL_H px accent underline sheet (TITLE_UL_FRAMES frames)
+TITLE_MODE = os.environ.get("TB_TITLE_MODE", "thumb")
+TITLE_UL_H, TITLE_UL_FRAMES = 2, int(os.environ.get("TB_UL_FRAMES", "101"))
+TITLE_FRAMES, TITLE_S = 51, 10   # title boxes: 2 % steps; the thumb (2 x TITLE_S wide) carries the fill in between
 FILL_FRAMES = 51   # frames of the seek / title progress fills (2 % steps); each frame costs memory in every theme
 
 # State that must survive layout switches and restarts lives in tiny invisible "flag"
@@ -836,77 +1163,90 @@ def build(skin, W, BH=BAR_DEFAULT):
     (it only does that between layouts of identical original size). Areas without
     pixels are cut out of the window, so the unused space is invisible and click-through.
     EQ and playlist are shown / hidden inside the layout, not separate layouts."""
-    FH, EH, LH = 122, 116, 198
+    FH, EH, LH = 232, 164, 280
     HT = FH + EH + LH                 # window height: full player + EQ + playlist (the same for every bar height)
     M = bar_metrics(BH)
     TW = M["tw"]                      # strip time box: fits "-1:23:45" (hours) in the strip font
-    BT = M["btn"]                     # strip button height (3 px margin above and below)
+    BT = M["btn"]                     # strip button height
+    BW_, G_, BY = M["bw"], M["gap"], M["y"]
+    PLW = 44                          # PL / EQ toggle width (strip and full player)
+    MB = min(16, BT - 4)              # mode button (elapsed / time left) next to the strip's time box
     skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
     PW = P(W)
     tr = dict(lt="righttop", rb="righttop")
-    sw = W - 20                       # seek bar width (full player; ends 12 px from the edge)
+    sw = W - 24                       # seek bar width (full player)
+    EQ_BW = 446                       # EQ band block width (fixed, centred): the faders span 3 .. 443
+    VK = P(10)                        # full-player volume knob width (thumb_v); the knob is drawn from centre - VK // 2
+    V_LO, V_HI = VK // 2, P(100) - 1 - (VK - 1 - VK // 2)    # its centre range: the knob stays inside the 100 px groove (it never scales: fixed-width control)
 
     def make_bitmaps():
         """All bitmaps of the current theme (skin.prefix namespaces them)."""
         isz, lsz = M["icon"], M["label"]
-        make_button(skin, "b_expand", 22, BT, "expand", icon_size=isz)
-        make_button(skin, "b_prev", 22, BT, "prev", icon_size=isz)
-        make_toggle(skin, "t_play", 26, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
-        make_button(skin, "b_next", 22, BT, "next", icon_size=isz)
-        make_toggle(skin, "t_pl", 26, BT, label="PL", use_led=True, label_size=lsz)
-        make_toggle(skin, "t_eq", 26, BT, label="EQ", use_led=True, label_size=lsz)
-        make_toggle(skin, "t_top", 22, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
-        make_thumb(skin, "thumb_v", 7, 13)
-        for st, col in (("up", mix(CYAN, TITLE_FILL, 0.2)), ("over", CYAN)):   # play head in the title window
-            skin.add("thumb_title_" + st, Image.new("RGBA", (max(1, P(1)), P(BT - 6)), H(col)))
+        for nm, ic in (("b_expand", "expand"), ("b_prev", "prev"), ("b_next", "next")):
+            make_button(skin, nm, BW_, BT, ic, icon_size=isz)
+        make_toggle(skin, "t_play", BW_ + 4, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
+        make_toggle(skin, "t_pl", PLW, BT, label="PL", use_led=True, label_size=lsz)   # same look as the full player's
+        make_toggle(skin, "t_eq", PLW, BT, label="EQ", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_top", BW_, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
+        make_thumb(skin, "thumb_v", 10, 18)
+        make_title_thumb(skin, "thumb_title", BT - 2)
+        make_title_thumb(skin, "thumb_ftitle", 26)
         for st in ("up", "over"):   # volume bar in the strip's time box: the fill is the indicator, no knob
             skin.add("thumb_none_" + st, Image.new("RGBA", (1, 1), (0, 0, 0, 0)))
-        make_button(skin, "b_menu", 18, 12, "menu", icon_size=8)
-        make_toggle(skin, "t_top_s", 18, 12, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=9)
-        make_button(skin, "b_collapse", 18, 12, "collapse", icon_size=8)
-        make_button(skin, "b_min", 18, 12, "minimize", icon_size=8)
-        make_button(skin, "b_close", 18, 12, "close", icon_size=8)
-        make_button(skin, "b_flip_up", 18, 12, "arrow_up", icon_size=8)
-        make_button(skin, "b_flip_dn", 18, 12, "arrow_down", icon_size=8)
-        make_button(skin, "fb_prev", 28, 22, "prev")
-        make_button(skin, "fb_slower", 28, 22, "slower")
-        make_toggle(skin, "ft_play", 34, 22, icon_off="play", icon_on="pause", on_color=CYAN)
-        make_button(skin, "fb_faster", 28, 22, "faster")
-        make_button(skin, "fb_next", 28, 22, "next")
-        make_toggle(skin, "ft_pl", 30, 22, label="PL", use_led=True)
-        make_toggle(skin, "ft_eq", 30, 22, label="EQ", use_led=True)
-        make_thumb(skin, "thumb_s", 8, 12)
-        make_toggle(skin, "t_eqon", 34, 12, label="ON", use_led=True)
-        make_eq_thumb(skin, "thumb_eq", 12, 6)
-        make_thumb(skin, "thumb_pl", 6, 22, SCROLL_TRACK)
-        make_lcd_toggle(skin, "l_shuf", 30, 12, "SHUF")
-        make_lcd_toggle(skin, "l_loop", 30, 12, "LOOP")
-        make_lcd_toggle(skin, "l_rep", 30, 12, "REP1")
-        make_fill_frames(skin, "vol90", 90, 8, 2, 4, P(90))
-        make_fill_frames(skin, "seek", sw, 6, 1, 4, FILL_FRAMES)
+        make_strip_button(skin, "b_strip", 68, 22)
+        make_eq_frames(skin, "eqfill", "eqlbl", CYAN)
+        make_eq_frames(skin, "eqfill_pre", "eqlbl_pre", AMBER, pre=True)
+        make_button(skin, "b_menu", 24, 22, "menu", icon_size=11)
+        make_toggle(skin, "t_top_s", 24, 22, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=11)
+        make_button(skin, "b_min", 24, 22, "minimize", icon_size=11)
+        make_button(skin, "b_close", 24, 22, "close", icon_size=11)
+        make_button(skin, "b_flip_up", 24, 22, "arrow_up", icon_size=10)
+        make_button(skin, "b_flip_dn", 24, 22, "arrow_down", icon_size=10)
+        for nm, ic in (("fb_stop", "stop"), ("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"),
+                       ("fb_next", "next")):
+            make_button(skin, nm, 30, 28, ic, icon_size=13)
+        make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
+        make_toggle(skin, "ft_pl", 44, 28, label="PL", use_led=True, label_size=9)
+        make_toggle(skin, "ft_eq", 44, 28, label="EQ", use_led=True, label_size=9)
+        make_thumb(skin, "thumb_s", 12, 20)
+        make_toggle(skin, "t_eqon", 44, 22, label="ON", use_led=True, label_size=9)
+        make_eq_thumb(skin, "thumb_eq", 18, 14)
+        make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
+        for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
+            make_chip_toggle(skin, nm, 46, 16, lbl)
+        make_fill_frames(skin, "vol100", 100, 10, 0, 10, P(100), knob=(V_LO, V_HI))
+        make_fill_frames(skin, "seek", sw, 10, 0, 10, SEEK_FRAMES, lead=SEEK_LEAD)
         c = Canvas(12, 12)
         icon(c, "speaker", 0, 0, 12, LABEL)
         skin.add("ic_speaker", solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
-        lcd(c, 0, 0, TW, BT)
+        lcd(c, 0, 0, TW, BT, 3)
         skin.add("c_time_s", solid(c.done()))
-        make_mode_toggle(skin, "c_mode", TIME_ZONE, BT)
+        make_mode_toggle(skin, "c_mode", MB, MB)
         make_progress_frames(skin, "vol_fill", TW - TIME_ZONE - 1, BT - 2, FILL_FRAMES, TITLE_FILL)
-        c = Canvas(142, 44)
-        c.rrect(0, 0, 142, 44, 0, LCD_BG)
+        c = Canvas(190, 96)
+        c.rrect(0, 0, 190, 96, 0, LCD_BG)
         plain_toggle(skin, "c_time_f", c.done())
         for lbl in ("add", "rem", "sort", "load", "save"):
-            make_button(skin, "b_pl_" + lbl, 32, 14, label=lbl.upper())
+            make_button(skin, "b_pl_" + lbl, 44, 22, label=lbl.upper(), label_size=9)
         for lbl in ("shuf", "loop", "rep1"):
-            make_toggle(skin, "t_pl_" + lbl, 38, 14, label=lbl.upper(), use_led=True)
+            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), use_led=True, label_size=9)
+        c = Canvas(62, 16)
+        c.rrect(0, 0, 62, 16, 3, mix(LCD_BG, CYAN, 0.28))
+        c.rrect(1, 1, 60, 14, 2, mix(LCD_BG, CYAN, 0.08))
+        skin.add("chip", solid(c.done(), LCD_BG))
+        c = Canvas(41, 16)
+        c.rrect(0, 0, 41, 16, 3, mix(LCD_BG, CYAN, 0.28))
+        c.rrect(1, 1, 39, 14, 2, mix(LCD_BG, CYAN, 0.08))
+        skin.add("chip_fmt", solid(c.done(), LCD_BG))
         # theme button (full player title bar): a dot in the theme's accent colour
         for st in ("up", "over", "down"):
-            c = Canvas(18, 12)
-            button_face(c, 18, 12, st)
-            c.circle(9, 6, 4.4, ICON[st])
-            c.circle(9, 6, 3.3, BG_BOT)
-            c.circle(9, 6, 2.5 if st != "down" else 2.0, CYAN)
+            c = Canvas(24, 22)
+            button_face(c, 24, 22, st)
+            c.circle(12, 11, 5.2, ICON[st])
+            c.circle(12, 11, 4.1, BG_BOT)
+            c.circle(12, 11, 3.2 if st != "down" else 2.6, CYAN)
             skin.add("b_theme_" + st, solid(c.done()))
 
     def panel_toggles(lay, pl_base, eq_base, x_pl, x_eq, y):
@@ -921,112 +1261,162 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox(base, x, y, COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **kw)
 
+    # Corners: only the outer corners of the whole stack are round. The bar's side towards the
+    # panels is round only while no panel is open; the EQ's side towards the playlist only while
+    # the playlist is closed. (skins2 expressions have no "or": a square variant is placed twice.)
+    ANY_OFF = "not %s and not %s" % (EQ_ON, PL_ON)
+
+    def bar_corners(d):
+        """[(rounded top, rounded bottom, visibility)] of the bar's background in direction d."""
+        return [(True, flag, v) if d == "dn" else (flag, True, v)
+                for flag, v in ((True, ANY_OFF), (False, EQ_ON), (False, PL_ON + " and not " + EQ_ON))]
+
+    def eq_corners(d):
+        return [(False, flag, v) if d == "dn" else (flag, False, v)
+                for flag, v in ((True, "not " + PL_ON), (False, PL_ON))]
+
+    def cap_tag(rt, rb):
+        return "_%d%d" % (rt, rb)
+
     # ================= strip bar
     def add_strip(lay, d):
-        c = Canvas(W, BH)
-        panel_bg(c, 0, 0, W, BH, 4)
-        rows = M["grip_rows"]
-        grip_dots(c, 4, BH / 2 - 3 - 2 * (rows - 1), rows)
-        resize_handle(c, W - 10, 3, BH - 6)   # same 10 px as the right cap; the pin ends 12 px from the edge
-        hslice(skin, lay, "strip_bg", c.done(hard_edges=True), 0, 0, 14, 10, right_action="resizeE")
-        lay.button("b_expand", P(16), P(3), "main.setLayout(full-%s)" % d, "Expand to full player")
-        lay.button("b_prev", P(44), P(3), "playlist.previous()", "Previous")
-        lay.checkbox("t_play", P(68), P(3), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("b_next", P(96), P(3), "playlist.next()", "Next")
-        dx, dw = 124, W - (TW + 100) - 124   # slower / faster live in the full player only
+        base_vis = lay.vis
+        for rt, rb, v in bar_corners(d):
+            c = Canvas(W, BH)
+            panel_bg(c, 0, 0, W, BH, 6, rt=rt, rb=rb)
+            rows = M["grip_rows"]
+            grip_dots(c, 4, BH / 2 - 3 - 2 * (rows - 1), rows)
+            resize_handle(c, grip_x(W), 3, BH - 6)
+            lay.vis = vis_and(base_vis, v)
+            bg = c.done(hard_edges=True)
+            hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+        lay.vis = base_vis
+        grip_tab(skin, lay, bg, grip_x(W), 3, BH - 6)
+        x = 16
+        lay.button("b_expand", P(x), P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
+        x += BW_ + G_
+        lay.button("b_prev", P(x), P(BY), "playlist.previous()", "Previous")
+        x += BW_ + G_
+        lay.checkbox("t_play", P(x), P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        x += BW_ + 4 + G_
+        lay.button("b_next", P(x), P(BY), "playlist.next()", "Next")
+        dx = x + BW_ + G_
+        RP = 14 + BW_ + 2 * (G_ + PLW)           # distance of the PL button's left edge from the right edge
+        MG = 3                                       # tight gap around the mode button
+        dw = W - (RP + G_ + TW + 2 * MG + MB) - dx
         c = Canvas(dw, BT)
-        lcd(c, 0, 0, dw, BT)
-        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(3), 4, 4)
+        lcd(c, 0, 0, dw, BT, 3)
+        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(BY), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
-        make_progress_frames(skin, "title_fill", fw, fh, FILL_FRAMES, TITLE_FILL)
-        lay.slider("s_title_" + lay.id, P(dx + 1), P(4), "(0,%d),(%d,%d)" % (P(fh) // 2, P(fw) - 1, P(fh) // 2),
-                   "thumb_title", "time", "$T / $D  (click to jump, wheel = 5 %)", bg="title_fill", nbvert=FILL_FRAMES,
-                   rb="righttop")
+        title_slider(lay, skin, "s_title_" + lay.id, "title", P(dx) + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
         ty = round(BH / 2 - 0.582 * M["font"])   # text top: the line (1.164 em) is centred in the bar
-        lay.text(P(dx + 5), P(ty), P(dw - 10), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
+        lay.text(P(dx + 8), P(ty), P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         R = lambda v: PW - P(v)
-        tx = R(TW + 96)
-        # time box: left = switch elapsed <-> time left (remembered by VLC), right = volume bar
-        # filled from the left like the title's seek fill; click / drag / wheel sets the volume
-        lay.image("c_time_s", tx, P(3), action="move", **tr)
-        lay.checkbox("c_mode", tx, P(3), COUNTDOWN, "tflag.show()", "tflag.hide()",
+        tx = R(RP + G_ + TW)
+        # time box = volume bar filled from the left like the title's seek fill; click / drag / wheel sets
+        # the volume. The small button on its left switches elapsed <-> time left (remembered by VLC)
+        lay.image("c_time_s", tx, P(BY), action="move", **tr)
+        lay.checkbox("c_mode", R(RP + G_ + TW + MG + MB), P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
         vw, vfh = TW - TIME_ZONE - 1, BT - 2
-        lay.slider("s_vol_" + lay.id, tx + P(TIME_ZONE), P(4), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
+        lay.slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
                    "thumb_none", "volume", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
                    nbvert=FILL_FRAMES, **tr)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
             lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        panel_toggles(lay, "t_pl", "t_eq", R(90), R(62), P(3))
-        lay.checkbox("t_top", R(34), P(3), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
+        panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
+        lay.checkbox("t_top", R(14 + BW_), P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
 
     # ================= full player bar
     def add_full(lay, d):
         F = lambda v: PW - P(v)
-        c = Canvas(W, FH)
-        panel_bg(c, 0, 0, W, FH, 6)
-        grip_dots(c, 4, 4)
-        resize_handle(c, W - 10, 33, 56)   # right edge column (10 px): LCD, seek bar and the bottom row stay clear of it
-        bg = c.done(hard_edges=True)
-        hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, right_action="resizeE")
-        # theme button, left of the menu button: steps to the next theme (none with one theme)
+        base_vis = lay.vis
+        for rt, rb, v in bar_corners(d):
+            c = Canvas(W, FH)
+            panel_bg(c, 0, 0, W, FH, 6, rt=rt, rb=rb)
+            grip_dots(c, 4, 12)
+            resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
+            lay.vis = vis_and(base_vis, v)
+            bg = c.done(hard_edges=True)
+            hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+        lay.vis = base_vis
+        grip_tab(skin, lay, bg, grip_x(W), grip_y(44, 108), GRIP_H)
         nxt = (cur["theme"] + 1) % len(THEMES)
         if nxt != cur["theme"]:
-            lay.button("b_theme", F(122), P(5), select_theme(nxt),
+            lay.button("b_theme", F(148), P(9), select_theme(nxt),
                        "Theme: %s (click: %s)" % (THEMES[cur["theme"]][1], THEMES[nxt][1]), **tr)
-        lay.button("b_menu", F(102), P(5), "dialogs.popup()", "VLC menu (open files, skins, settings)", **tr)
-        lay.checkbox("t_top_s", F(82), P(5), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
+        lay.button("b_menu", F(120), P(9), "dialogs.popup()", "VLC menu (open files, skins, settings)", **tr)
+        lay.checkbox("t_top_s", F(92), P(9), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
-        lay.button("b_collapse", F(62), P(5), "main.setLayout(strip-%s)" % d, "Collapse to title-bar strip", **tr)
-        lay.button("b_min", F(42), P(5), "vlc.minimize()", "Minimize", **tr)
-        lay.button("b_close", F(22), P(5), "vlc.quit()", "Quit VLC", **tr)
-        # LCD: left column = time (wide enough for -1:23:45), right column = title, info, toggles
-        c = Canvas(W - 16, 54)
-        lcd(c, 0, 0, W - 16, 54, 3)
-        c.rrect(150, 4, 1, 46, 0, DIVIDER)         # divider (inside left cap)
-        hslice(skin, lay, "full_lcd", solid(c.done()), P(4), P(20), 154, 6)
-        time_toggle(lay, "c_time_f", P(8), P(22))
-        # big = elapsed or time left (click switches), small = total only: VLC truncates time and
-        # length to seconds separately, so "time left" next to "elapsed" would tick at a different
-        # moment and can disagree by a second (skins2 vars/time.cpp)
-        for big, small, vis, s1, s2 in (("$t", "of $d", "not " + COUNTDOWN, "1:02", "of 4:12"),
-                                        ("-$l", "of $d", COUNTDOWN, "-3:10", "of 4:12")):
-            lay.text(P(18), P(24), P(130), "lcd26", big, CYAN_TXT, scrolling="none", sample=s1,
-                     focus=False).vis = vis_and(lay.theme_vis, vis)
-            lay.text(P(18), P(56), P(128), "lcd10", small, CYAN2, scrolling="none", sample=s2,
-                     focus=False).vis = vis_and(lay.theme_vis, vis)
-        lay.text(P(162), P(24), P(W - 180), "lcd14", "$N", CYAN_TXT, rb="righttop",
+        lay.button("b_min", F(64), P(9), "vlc.minimize()", "Minimize", **tr)
+        lay.button("b_close", F(36), P(9), "vlc.quit()", "Quit VLC", **tr)
+        lay.button("b_strip", P(16), P(9), "main.setLayout(strip-%s)" % d, "Collapse to title-bar strip")
+        # display: left card = time, right = title (seek box), spec chips, mode toggles
+        c = Canvas(W - 24, 108)
+        lcd(c, 0, 0, W - 24, 108, 4, outline=False)
+        c.rrect(200, 8, 1, 92, 0, DIVIDER)
+        hslice(skin, lay, "full_lcd", solid(c.done()), P(12), P(44), 206, 8)
+        time_toggle(lay, "c_time_f", P(18), P(48))
+        for big, small, lbl, vis, s1, s2 in (("$t", "of $d", "ELAPSED", "not " + COUNTDOWN, "1:02", "of 4:12"),
+                                             ("-$l", "of $d", "REMAINING", COUNTDOWN, "-3:10", "of 4:12")):
+            v = vis_and(lay.theme_vis, vis)
+            lay.text(P(26), P(54), P(150), "lcd10", lbl, CYAN_DIM, scrolling="none", sample=lbl,
+                     focus=False).vis = v
+            lay.text(P(18), P(70), P(190), "lcd30", big, CYAN_TXT, scrolling="none", align="center", sample=s1,
+                     focus=False).vis = v
+            lay.text(P(26), P(128), P(150), "lcd10", small, CYAN2, scrolling="none", sample=s2,
+                     focus=False).vis = v
+        # title box = seek bar (like the strip's): progress fills it from the left, a click jumps there
+        tx0, ty0, tw0, th0 = 222, 52, W - 242, 28
+        c = Canvas(tw0, th0)
+        lcd(c, 0, 0, tw0, th0, 3)
+        hslice(skin, lay, "full_title", solid(c.done(), LCD_BG), P(tx0), P(ty0), 4, 4)
+        fw0, fh0 = tw0 - 2, th0 - 2
+        title_slider(lay, skin, "s_ftitle_" + lay.id, "ftitle", P(tx0) + inset(), P(ty0) + inset(), fw0, fh0, TITLE_FRAMES, "thumb_ftitle")
+        lay.text(P(tx0 + 8), P(ty0 + 6), P(tw0 - 16), "lcd14", "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        lay.text(P(162), P(43), P(W - 180), "lcd10", "$B kbps  $S kHz", CYAN2, rb="righttop",
-                 scrolling="none", sample="320 kbps  44.1 kHz")
-        lay.checkbox("l_shuf", P(162), P(58), "playlist.isRandom", "playlist.setRandom(true)",
+        lay.image("chip", P(222), P(90), action="move")
+        lay.image("chip", P(290), P(90), action="move")
+        lay.text(P(222), P(92), P(62), "lcd10", "$B kbps", CYAN_TXT, scrolling="none", align="center",
+                 sample="320 kbps", focus=False)
+        lay.text(P(290), P(92), P(62), "lcd10", "$S kHz", CYAN_TXT, scrolling="none", align="center",
+                 sample="44.1 kHz", focus=False)
+        # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
+        # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
+        lay.image("chip_fmt", P(358), P(90), action="move")
+        lay.text(P(367), P(92), P(24), "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+                 sample=".wav", focus=False)
+        lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
-        lay.checkbox("l_loop", P(198), P(58), "playlist.isLoop", "playlist.setLoop(true)",
+        lay.checkbox("l_loop", P(274), P(122), "playlist.isLoop", "playlist.setLoop(true)",
                      "playlist.setLoop(false)", "Loop playlist: off", "Loop playlist: on")
-        lay.checkbox("l_rep", P(234), P(58), "playlist.isRepeat", "playlist.setRepeat(true)",
+        lay.checkbox("l_rep", P(326), P(122), "playlist.isRepeat", "playlist.setRepeat(true)",
                      "playlist.setRepeat(false)", "Repeat one: off", "Repeat one: on")
-        lay.text(F(90), P(58), P(72), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
+        lay.text(F(120), P(124), P(100), "lcd10", "SPEED $Rx", CYAN2, align="right", scrolling="none",
                  sample="SPEED 1x", **tr)
         # seek bar (stretches; the fill frames scale with it)
-        lay.slider("s_seek_" + lay.id, P(8), P(78), "(0,%d),(%d,%d)" % (P(3), P(sw) - 1, P(3)), "thumb_s",
-                   "time", "$T / $D", bg="seek", nbvert=FILL_FRAMES, rb="righttop")
+        lay.slider("s_seek_" + lay.id, P(12), P(164), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)), "thumb_s",
+                   "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, rb="righttop")
         # transport row
-        ty = 96
-        lay.button("fb_prev", P(8), P(ty), "playlist.previous()", "Previous")
-        lay.button("fb_slower", P(38), P(ty), "vlc.slower()", "Slower")
-        lay.checkbox("ft_play", P(68), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("fb_faster", P(104), P(ty), "vlc.faster()", "Faster")
-        lay.button("fb_next", P(134), P(ty), "playlist.next()", "Next")
-        lay.image("ic_speaker", F(186), P(ty + 5), lt="righttop", rb="righttop", action="move")
-        lay.slider("s_vol_" + lay.id, F(170), P(ty + 7), "(0,%d),(%d,%d)" % (P(4), P(90) - 1, P(4)), "thumb_v",
-                   "volume", "Volume $V%", bg="vol90", nbvert=P(90), **tr)
-        panel_toggles(lay, "ft_pl", "ft_eq", F(72), F(40), P(ty))   # 6 px left of the old place: the edge column is free
+        ty = 195
+        for nm, x, act, tip in (("fb_stop", 12, "vlc.stop()", "Stop"), ("fb_prev", 46, "playlist.previous()", "Previous"),
+                                ("fb_slower", 80, "vlc.slower()", "Slower")):
+            lay.button(nm, P(x), P(ty), act, tip)
+        lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
+        lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
+        lay.image("ic_speaker", F(276), P(ty + 8), lt="righttop", rb="righttop", action="move")
+        lay.slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+                   "volume", "Volume $V%", bg="vol100", nbvert=P(100), **tr)
+        lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
+                 focus=False, **tr)
+        panel_toggles(lay, "ft_pl", "ft_eq", F(108), F(56), P(ty))
 
     def flip_button(lay, mode, d, x, y):
         other = "up" if d == "dn" else "dn"
@@ -1035,72 +1425,95 @@ def build(skin, W, BH=BAR_DEFAULT):
 
     # ================= equalizer section (y offset is applied by the layout)
     def add_eq(lay, mode, d, sfx):
-        c = Canvas(W, EH)
-        panel_bg(c, 0, 0, W, EH, 4)
-        resize_handle(c, W - 10, 44, 56)   # right edge column (10 px), below the header buttons
-        bg = c.done(hard_edges=True)
-        hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 10, right_action="resizeE")
-        label_on(skin, "lbl_eq", bg, 8, 4, 70, 12, "EQUALIZER")
-        lay.image("lbl_eq", P(8), P(4), action="move")
-        flip_button(lay, mode, d, PW - P(68), P(4))
-        lay.checkbox("t_eqon", PW - P(46), P(4), "equalizer.isEnabled", "equalizer.enable()",
+        base_vis = lay.vis
+        for rt, rb, v in eq_corners(d):
+            c = Canvas(W, EH)
+            panel_bg(c, 0, 0, W, EH, 6, rt=rt, rb=rb)
+            grip_dots(c, 4, 12, 2)
+            resize_handle(c, grip_x(W), grip_y(33, 122), GRIP_H)     # centred on the band box (y 33..155)
+            bg = c.done(hard_edges=True)
+            lay.vis = vis_and(base_vis, v)
+            hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 10, tag=cap_tag(rt, rb))
+        lay.vis = base_vis
+        grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 122), GRIP_H)
+        label_on(skin, "lbl_eq", bg, 18, 9, 110, 14, "EQUALIZER", 10)
+        lay.image("lbl_eq", P(18), P(9), action="move")
+        flip_button(lay, mode, d, PW - P(86), P(6))
+        lay.checkbox("t_eqon", PW - P(56), P(6), "equalizer.isEnabled", "equalizer.enable()",
                      "equalizer.disable()", "Equalizer is off", "Equalizer is on", **tr)
-        c = Canvas(W - 18, 90)
-        lcd(c, 0, 0, W - 18, 90, 3)
-        hslice(skin, lay, "eq_lcd", solid(c.done()), P(6), P(19), 6, 6)
-        # band block: fixed 400 px, kept centered when the window is resized
-        BW = 400
+        c = Canvas(W - 24, 122)
+        lcd(c, 0, 0, W - 24, 122, 4, outline=False)
+        hslice(skin, lay, "eq_lcd", solid(c.done()), P(12), P(33), 8, 8)
+        # band block: fixed width, kept centred when the window is resized
         names = ["PRE", "60", "170", "310", "600", "1K", "3K", "6K", "12K", "14K", "16K"]
-        cxs = [43 + i * 33 + (8 if i else 0) for i in range(11)]
-        c = Canvas(BW, 90)
-        c.rrect(0, 2, BW, 85, 0, LCD_BG)  # same as the LCD interior, keeps small text crisp
-        for lbl, yy in (("+20", 11), ("0", 40), ("-20", 69)):
-            c.text(22, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
+        cxs = [36 + i * 38 + (12 if i else 0) for i in range(11)]
+        c = Canvas(EQ_BW, 120)
+        c.rrect(0, 0, EQ_BW, 120, 0, LCD_BG)  # opaque, same as the LCD interior, keeps small text crisp
+        for lbl, yy in (("+20", 24), ("0", 60), ("-20", 96)):
+            c.text(18, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
         for i, cx in enumerate(cxs):
-            c.rrect(cx - 1, 10, 2, 60, 1, EQ_TRACK)
-            c.rrect(cx - 5, 39.5, 3, 1, 0, CYAN_DIM)          # 0 dB ticks either side of the track
-            c.rrect(cx + 2, 39.5, 3, 1, 0, CYAN_DIM)
-            c.text(cx, 81, names[i], 8, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
-        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 78, 0, DIVIDER)
-        skin.add("eq_bands", c.done())
-        lay.panel_begin("eq_panel" + sfx, P((W - BW) // 2), P(19), P(BW), P(90))
+            c.text(cx, 111, names[i], 9, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
+        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 100, 0, DIVIDER)
+        bands = c.done()
+        for i, cx in enumerate(cxs):     # the 0 dB ticks of every fader (not part of the frame sheets)
+            lb, fb, tb = eq_boxes(i == 0)
+            bands.paste(EQ_TICKS[i == 0], (P(cx - EQ_FW // 2) + tb[0], P(4) + tb[1]))
+        skin.add("eq_bands", bands)
+        fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
+        skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
+        lay.panel_begin("eq_panel" + sfx, P((W - EQ_BW) // 2), P(34), P(EQ_BW), P(120))
         lay.image("eq_bands", 0, 0)
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
             value = "equalizer.preamp" if i == 0 else "equalizer.band(%d)" % (i - 1)
-            lay.slider("s_eq%d%s" % (i, sfx), P(cx - 6), P(8),
-                       "(%d,%d),(%d,%d)" % (P(6), P(61), P(6), P(3)), "thumb_eq", value, tips[i],
-                       thickness=P(8))
+            lb, fb, tb = eq_boxes(i == 0)    # the sheets are crops of the 30 x 104 design: offsets lb / fb
+            x0 = P(cx - EQ_FW // 2)
+            pre = "_pre" if i == 0 else ""
+            # click zone: an invisible slider as wide as the fader column, under the others (skins2 hit-tests the
+            # topmost control first, so the knob and groove keep working; a click beside the groove lands here)
+            lay.slider("s_eqc%d%s" % (i, sfx), x0, P(4) + fb[1],
+                       "(%d,%d),(%d,%d)" % (P(15), eq_travel()[1] - fb[1], P(15), eq_travel()[0] - fb[1]), "thumb_none", value, tips[i],
+                       bg="eqclick", nbvert=1, thickness=P(8))
+            # dB label: its own slider on the same value (no knob), above the groove
+            lay.slider("s_eql%d%s" % (i, sfx), x0 + lb[0], P(4),
+                       "(%d,%d),(%d,%d)" % (P(15) - lb[0], P(10), P(15) - lb[0], P(2)), "thumb_none", value, tips[i],
+                       bg="eqlbl" + pre, nbvert=EQ_FRAMES, thickness=P(8))
+            lay.slider("s_eq%d%s" % (i, sfx), x0 + fb[0], P(4) + fb[1],
+                       "(%d,%d),(%d,%d)" % (P(15) - fb[0], eq_travel()[1] - fb[1], P(15) - fb[0], eq_travel()[0] - fb[1]), "thumb_eq", value, tips[i],
+                       bg="eqfill" + pre, nbvert=len(range(0, EQ_FRAMES, EQ_FILL_STEP)), thickness=P(8))
         lay.panel_end()
 
     # ================= playlist section (fixed height: the window height is shared by all layouts)
     def add_pl(lay, mode, d, sfx):
         c = Canvas(W, LH)
-        panel_bg(c, 0, 0, W, LH, 4, flat=True)
-        resize_handle(c, W - 10, 71, 56)   # right edge column (10 px)
+        rt, rb = (False, True) if d == "dn" else (True, False)     # always the last section of the stack
+        panel_bg(c, 0, 0, W, LH, 6, flat=True, rt=rt, rb=rb)
+        grip_dots(c, 4, 12, 2)
+        resize_handle(c, grip_x(W), grip_y(33, 204), GRIP_H)     # centred on the list box (y 33..237)
         bg = c.done(hard_edges=True)
-        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, actions={"mr": "resizeE"})
-        label_on(skin, "lbl_pl", bg, 8, 4, 60, 12, "PLAYLIST")
-        lay.image("lbl_pl", P(8), P(4), action="move")
-        flip_button(lay, mode, d, PW - P(26), P(4))
-        c = Canvas(W - 18, 154)
-        lcd(c, 0, 0, W - 18, 154, 3)
-        c.rrect(W - 18 - 16, 3, 8, 148, 3, SCROLL_TRACK)  # scroll track (inside right edge)
-        nslice(skin, lay, "pl_lcd", solid(c.done()), P(6), P(19), 18, actions={k: "none" for k in
+        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, tag=cap_tag(rt, rb))
+        grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 204), GRIP_H)
+        label_on(skin, "lbl_pl", bg, 18, 9, 110, 14, "PLAYLIST", 10)
+        lay.image("lbl_pl", P(18), P(9), action="move")
+        flip_button(lay, mode, d, PW - P(36), P(6))
+        c = Canvas(W - 24, 204)
+        lcd(c, 0, 0, W - 24, 204, 4, outline=False)
+        c.rrect(W - 24 - PL_GUTTER - 8, 5, 8, 194, 3, SCROLL_TRACK)  # scroll track: PL_GUTTER from the box's right edge, like the row stripes on the left
+        nslice(skin, lay, "pl_lcd", solid(c.done()), P(12), P(33), 18, actions={k: "none" for k in
                ("tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br")})
-        lay.playtree(P(10), P(23), P(W - 42), P(146), "lcd11",
-                     dict(x=PW - P(28), y=P(23), points="(%d,%d),(%d,%d)" % (P(4), P(135), P(4), P(11)),
+        lay.playtree(P(18), P(38), P(W - 60), P(194), "lcd12",
+                     dict(x=PW - P(12 + PL_GUTTER + 8), y=P(38), points="(%d,%d),(%d,%d)" % (P(4), P(182), P(4), P(12)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),
                                              ("rem", "playlist.del()", "Remove selected"),
                                              ("sort", "playlist.sort()", "Sort by name"),
                                              ("load", "playlist.load()", "Load playlist"),
                                              ("save", "playlist.save()", "Save playlist"))):
-            lay.button("b_pl_" + lbl, P(8 + i * 34), P(178), act, tip)
+            lay.button("b_pl_" + lbl, P(12 + i * 48), P(247), act, tip)
         for i, (lbl, state, name, tip) in enumerate((("shuf", "playlist.isRandom", "Random", "Shuffle"),
                                                      ("loop", "playlist.isLoop", "Loop", "Loop playlist"),
                                                      ("rep1", "playlist.isRepeat", "Repeat", "Repeat one"))):
-            lay.checkbox("t_pl_" + lbl, PW - P(132 - i * 40), P(178), state, "playlist.set%s(true)" % name,
+            lay.checkbox("t_pl_" + lbl, PW - P(176 - i * 56), P(247), state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tip + ": off", tip + ": on", **tr)
 
     # ================= main window
@@ -1115,7 +1528,7 @@ def build(skin, W, BH=BAR_DEFAULT):
     # Video window: skins2 draws video only inside a Video control. The window is "shown" all the
     # time, but every control in it needs vlc.hasVout, so with no video it has no pixels and no
     # window shape (invisible, like the flag windows). It grows to the video (autoresize).
-    VB = 6                                                 # frame width (logical px)
+    VB = 12                                                # frame width (logical px): the 12 px margin rule, room for the grip tab
     VW, VH = 480 + 2 * VB, 270 + 2 * VB
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(2 * VB + 160), maxw=P(3840),
                   minh=P(2 * VB + 90), maxh=P(2160))
@@ -1151,8 +1564,10 @@ def build(skin, W, BH=BAR_DEFAULT):
                           " and ".join("not th%d.isVisible" % j for j in range(1, len(THEMES))))
         vlay.vis = "vlc.hasVout"
         c = Canvas(VW, VH)
-        panel_bg(c, 0, 0, VW, VH, 6)
-        grip_dots(c, VW - 11, VH - 14)                    # resize grip, bottom right
+        # free-standing window: 1 px EDGE outline on all four sides (panel_bg lets the fill cover the sides)
+        c.rrect(0, 0, VW, VH, 6, EDGE)
+        c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
+        resize_handle(c, grip_x(VW), VH - 13, 12)            # resize grip: same tab as the sections, in the bottom-right corner slice
         nslice(skin, vlay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
                actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
         vlay.video(P(VB), P(VB), P(VW - 2 * VB), P(VH - 2 * VB))
@@ -1257,7 +1672,8 @@ def pack_atlases(skin):
     separate files. Returns ([(atlas id, PIL image, [(bid, x, y)])], [separate bids])."""
     groups, singles = {}, []
     for bid, im in skin.bitmaps.items():
-        if im.width * im.height > 16384:
+        # tall frame sheets stay separate too: in a shelf row they would make the whole atlas that high
+        if im.width * im.height > 16384 or im.height > P(400):
             singles.append(bid)
             continue
         m = re.match(r"(t\d+)_", bid)
@@ -1287,7 +1703,7 @@ def theme_xml(skin, label, atlases, singles):
          '<!DOCTYPE Theme PUBLIC "-//VideoLAN//DTD VLC Skins V2.0//EN" "skin.dtd">',
          '<Theme version="2.0" magnet="0" alpha="255" movealpha="255">',
          '  <ThemeInfo name=%s author="Jiri" webpage=""/>' % q("Titlebar " + label)]
-    fonts = [("lcd10", 10), ("lcd11", 11), ("lcd12", 12), ("lcd14", 14), ("lcd26", 26)]
+    fonts = [("lcd10", 10), ("lcd11", 11), ("lcd12", 12), ("lcd14", 14), ("lcd26", 26), ("lcd30", 30)]
     if skin.strip_font[0] == "lcdbar":      # taller strip: its own, bigger font for title and time
         fonts.append(skin.strip_font)
     for fid, size in fonts:
@@ -1325,10 +1741,11 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
         e = getattr(n, "vis", None)
         if not e:
             return True
+        e = e.replace("vlc.hasVout", "True")    # preview shows the video window as if a video played
         on = set(flags) | {"th%d" % theme}
         return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in on), e))
     out = Image.new("RGBA", (AW, AH), (0, 0, 0, 0))
-    font_px = {"lcd10": P(10), "lcd11": P(11), "lcd12": P(12), "lcd14": P(14), "lcd26": P(26),
+    font_px = {"lcd10": P(10), "lcd11": P(11), "lcd12": P(12), "lcd14": P(14), "lcd26": P(26), "lcd30": P(30),
                skin.strip_font[0]: P(skin.strip_font[1])}
 
     def pos(n, bw, bh, aw, ah, w, h):
@@ -1390,6 +1807,12 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 tx = (r - l - tw) / (2 if n.align == "center" else 1) if n.align != "left" and tw < r - l else 0
                 dd.text((tx, 0), n.sample, font=f, fill=H(n.color), anchor="la")
                 out.alpha_composite(txt, (ox + l, oy + t))
+            elif n.kind == "Video":
+                l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
+                dd = ImageDraw.Draw(out)
+                dd.rectangle([ox + l, oy + t, ox + r - 1, oy + b - 1], fill=(0, 0, 0, 255))
+                dd.text((ox + (l + r) // 2, oy + (t + b) // 2), "video placeholder", font=_truetype(FONT_MONO, P(10)),
+                        fill=(110, 110, 110, 255), anchor="mm")
             elif n.kind == "Playtree":
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
                 f = _truetype(FONT_MONO, font_px[n.font])
@@ -1436,7 +1859,10 @@ def preview(skin, path):
         ("expanded player", preview_layout(skin, fd)),
         ("expanded player + EQ, opening above, countdown", preview_layout(skin, fu, flags=EQ + T)),
     ] + [("theme %d: %s" % (i, n), preview_layout(skin, fd, theme=i)) for i, (m, n, _) in enumerate(THEMES)
-         if i]
+         if i] + [("video window, theme %d: %s" % (i, n), preview_layout(skin, lays["video-l"], theme=i))
+                  for i, (m, n, _) in enumerate(THEMES)] + [
+        ("video window, resized +120 x +60", preview_layout(skin, lays["video-l"], lays["video-l"].w + P(120),
+                                                              lays["video-l"].h + P(60)))]
     pad = P(24)
     lab = _truetype(FONT_BOLD, P(12))
     Wc = max(im.width for _, im in shots) + 2 * pad
@@ -1457,13 +1883,12 @@ def main():
     global S
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scale", type=float, default=1.0)
-    ap.add_argument("--width", type=int, default=556)
+    ap.add_argument("--width", type=int, default=620)
     ap.add_argument("--bar-height", type=int, default=BAR_DEFAULT,
                     help="strip height in logical px (default %%(default)s; %d for the Windows 11 taskbar, "
                     "sensible 32-40): a taller strip is written as Titlebar-taskbar-NNN.vlt" % BAR_TASKBAR)
     ap.add_argument("--out", default=os.path.join(HERE, "dist"))
     ap.add_argument("--preview", action="store_true")
-    ap.add_argument("--classic", action="store_true", help="old bevelled / gradient style instead of the flat one")
     ap.add_argument("--custom", default=CUSTOM_DEFAULT, help="accent of the Custom theme, #RRGGBB")
     ap.add_argument("--mode", choices=["dark", "light"],
                     help="build ONE single theme from --mode / --accent / --led / --font instead of the named themes")
@@ -1478,8 +1903,6 @@ def main():
                     help="comma-separated theme names to build, or 'all' (default: %(default)s): " +
                     ", ".join(t[1] for t in THEME_SEEDS))
     a = ap.parse_args()
-    global FLAT
-    FLAT = not a.classic
     single = a.mode or a.accent or a.led or a.pair
     for opt in ("accent", "led"):
         if getattr(a, opt) and not re.fullmatch(r"#[0-9A-Fa-f]{6}", getattr(a, opt)):

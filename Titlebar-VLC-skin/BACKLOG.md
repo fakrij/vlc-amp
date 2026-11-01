@@ -1,3 +1,5 @@
+> **Hi-fi redesign fork:** open items, rules and assignments for the new design are in [BACKLOG-hifi.md](BACKLOG-hifi.md).
+
 # Titlebar skin: backlog
 
 Last updated 2026-10-31 (T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:

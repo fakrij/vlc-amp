@@ -7,6 +7,7 @@ Also adds the font's licence file to the .vlt (build_skin.py only ships DejaVu's
 
 Files in the virtual FS: /work/build_skin.py, /work/fonts/... (as next to this page).
 """
+import gzip
 import json
 import os
 import runpy
@@ -23,7 +24,7 @@ def _zero(ti):
     ti.mtime = 0
     ti.uid = ti.gid = 0
     ti.uname = ti.gname = ""
-    ti.mode = 0o755 if ti.isdir() else 0o644
+    ti.mode = 0o644
     return ti
 
 
@@ -61,7 +62,9 @@ def build(opts_json):
         if o.get("licence"):
             shutil.copy(WORK + "/" + o["licence"], os.path.join(stage, "fonts"))
         vlt = "%s/Titlebar-%s.vlt" % (OUT, name)
-        with tarfile.open(vlt, "w:gz") as tar:   # same layout as the generator's, sorted + zeroed
+        # same layout and gzip header as the generator's .vlt (no name, mtime 0), sorted + zeroed
+        with open(vlt, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz, \
+                tarfile.open(fileobj=gz, mode="w") as tar:
             for root, dirs, files in os.walk(stage):
                 dirs.sort()
                 for fn in sorted(files):

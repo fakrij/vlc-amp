@@ -18,7 +18,8 @@ tools/vlc-test.sh xvfb-stop
 
 `tools/vlc-test.sh build [scale] [bar-height]` does the build step for you into
 `~/.cache/titlebar-test/skins` (`scale` 1, 1.25, 1.5, 2; bar height 24, or 36 for
-the taller taskbar strip) and prints the path.
+the taller taskbar strip; width from `TB_WIDTH`, default 620)
+and prints the path.
 
 ## Commands
 
@@ -26,7 +27,7 @@ the taller taskbar strip) and prints the path.
 |---|---|
 | `start <vlt> [files...]` | Starts Xvfb if needed, then VLC with the skin. VLC's config is reset first (`TB_KEEP_CONFIG=1` keeps it). Default files: `song1.wav`, `song2.wav`, `song3.wav`. |
 | `shot <name> [x,y,w,h]` | Screenshot to `<run dir>/shots/<name>.png`, prints the path. Crop is in screen pixels; the default is the main window. |
-| `click <x> <y>` | Left click. Coordinates are relative to the main window's top-left, i.e. the skin's own pixel coordinates (the window is 556x436 at 100 %). |
+| `click <x> <y>` | Left click. Coordinates are relative to the main window's top-left, i.e. the skin's own pixel coordinates (the window is 620x676 at 100 % with the default width). |
 | `drag <x> <y> <dx> <dy>` | Press at x,y, move by dx,dy in 10 steps, release. Moving the window by its grip: `drag 10 12 50 60`. |
 | `park` | Moves the pointer off the skin (no hover state, tooltips disappear). |
 | `geometry` | `X Y W H` of the main window on the screen. |
@@ -34,12 +35,12 @@ the taller taskbar strip) and prints the path.
 | `quit` | Expands the strip if needed and clicks the full player's quit button, so VLC writes `skins2-config` into its `vlcrc`. Prints that line. |
 | `stop` | Kills only the VLC PID this script saved. VLC does not save its state this way. |
 | `xvfb-stop` | Kills only the Xvfb PID this script saved. |
-| `build [scale] [bar-height]` | Builds a skin with the venv Python (see above); `build 1.5 36` makes `Titlebar-taskbar-150.vlt`. |
+| `build [scale] [bar-height]` | Builds a skin with the venv Python (see above); `build 1.5 36` makes `Titlebar-taskbar-150.vlt`, `build 1 40` makes `Titlebar-bar40-100.vlt`. |
 
 `quit` finds the buttons from the generator's 100 % positions times the scale,
 which it reads from `Titlebar-<n>.vlt` on VLC's command line (else `TB_SCALE`,
 default 100). `shape` and `quit` also read the strip height from the file name
-(`Titlebar-taskbar-<n>.vlt` = 36, `Titlebar-bar<h>-<n>.vlt` = h, else 24; `skin_bar`).
+(`Titlebar-taskbar-<n>.vlt` = 36, `Titlebar-bar<h>-<n>.vlt` = h, else 24; `skin_bar`). `TB_WIDTH` sets the build width (default 620).
 With a taller strip, the strip's buttons are centred at `bar / 2` (bar at the top)
 or `window height - bar / 2` (panels above); x positions do not change. If the layout of the strip or full player changes,
 update the numbers in `cmd_quit`.
@@ -74,10 +75,17 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
 - `vlc-env.sh`: paths and the environment for the extracted programs (sourced
   by both scripts).
 - `xshape.py`: reads the X11 shape (used by `shape` and `quit`).
-- `doc-shots.sh`: regenerates the screenshots in `docs/img` from real VLC.
-- `windows-sim.py`: draws the button comparison in `docs/img/windows-sim/`
-  (how skins2 on X11 and on Windows would blend our semi-transparent bitmaps;
-  no VLC needed, uses the harness venv's Pillow).
+- `doc-shots.sh`: regenerates `docs/img-thin/{strip,strip-panels,full-eq}.png` from a
+  build in one command (620 px window, 24 px strip; `BAR=40` for the concept
+  strip). Uses `TB_DISPLAY_NUM` / `TB_INSTANCE` like the other commands.
+- `bitmap-audit.py`: scans every bitmap of the builds (4 scales,
+  4 themes) for semi-transparent pixels, which X11 turns black. Use this instead of
+  `windows-sim.py`.
+- `theme-audit.py`: contrast table of every theme.
+- `windows-sim.py`: **legacy**. Draws the old button comparison in `docs/img/windows-sim/`
+  (how skins2 on X11 and on Windows would blend our semi-transparent bitmaps, from
+  the pre-hi-fi bitmaps); no VLC needed, uses the harness venv's Pillow. Kept for
+  reference only; the bitmap scan above replaces its role.
 - `make-windows-package.sh`: builds `dist/Titlebar-VLC-skin-windows/` (and a zip)
   to copy to a Windows PC. Not part of the test harness.
 - `pyodide-spike/`: a spike (node + Pyodide) that checks whether the generator
