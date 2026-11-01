@@ -1599,7 +1599,8 @@ def main():
     # VLC unpacks the .vlt to disk: on Windows (case-insensitive) b_x.png and B_x.png would collide
     lower = {}
     for bid in skin.bitmaps:
-        assert bid.lower() not in lower, "bitmap ids differ only by case: %s / %s" % (bid, lower[bid.lower()])
+        if bid.lower() in lower:
+            raise SystemExit("error: bitmap ids differ only by case: %s / %s" % (bid, lower[bid.lower()]))
         lower[bid.lower()] = bid
 
     stage = os.path.join(a.out, "stage-" + name)
@@ -1612,8 +1613,9 @@ def main():
     for bid, im in skin.bitmaps.items():
         if bid.startswith(cpre):
             r, g, b, _ = im.split()
-            assert ImageChops.difference(g, b).getextrema()[1] <= 1 and \
-                ImageChops.subtract(g, r).getextrema()[1] <= 1, "custom theme bitmap not grey + red: " + bid
+            if ImageChops.difference(g, b).getextrema()[1] > 1 or \
+                    ImageChops.subtract(g, r).getextrema()[1] > 1:
+                raise SystemExit("error: custom theme bitmap not grey + red: " + bid)
     atlases, singles = pack_atlases(skin)
     # img/ gets the Custom theme in its colour; custom-ref/ keeps the red originals (and the
     # unrecoloured theme.xml) for the colour picker tools (custom-colour/)
@@ -1632,9 +1634,11 @@ def main():
     # every element needs its own id: VLC's generated ids repeat after 999 (see next_id)
     tags = re.findall(r"<(Window|Layout|Panel|Image|Button|Checkbox|Slider|SliderBackground|Text|Playtree)\b([^>]*)>", xml)
     ids = [re.search(r'\bid="([^"]*)"', attrs) for _, attrs in tags]
-    assert all(ids), "element without id: %r" % [t for t, i in zip(tags, ids) if not i][:3]
+    if not all(ids):
+        raise SystemExit("error: element without id: %r" % [t for t, i in zip(tags, ids) if not i][:3])
     dup = [k for k, v in Counter(i.group(1) for i in ids).items() if v > 1]
-    assert not dup, "duplicate ids: %r" % sorted(dup)[:5]
+    if dup:
+        raise SystemExit("error: duplicate ids: %r" % sorted(dup)[:5])
     if CUSTOM is not None:
         with open(os.path.join(stage, "custom-ref", "theme.xml"), "w", encoding="utf-8") as fh:
             fh.write(xml)
