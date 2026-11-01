@@ -416,6 +416,14 @@ grows. Never run it against your real home unless you want the changes.
   commands by their `--no-media-library` flag as before. Tested on Windows with a
   stub program (2026-11-01): arguments with spaces and parentheses intact, no
   second helper when one runs, the shortcut's command when none runs.
+- Maximized video: while a visible VLC skin window other than the main and
+  root ones fills its monitor's work area (the skin's video window, maximized)
+  and a visible part of the player (window region, `ReadShape`) overlaps it,
+  `KeepUnderVideo` makes the player not topmost and puts it right below the
+  video, and `Place` does nothing else that tick (no re-raising). The bare strip
+  docked in the taskbar lies outside the work area and stays. When the video is
+  restored or closed, VLC's pin (if lit) is applied again (`HWND_TOPMOST`).
+  Asked for by the user (2026-11-01); compiled, not yet seen on Windows.
 - Start / exit / crash notes: `VlcDock.Note` writes the start line, the exit
   line with its reason (tray Quit, VLC gone when not `-Watch`, message loop
   ended) and an unhandled exception to `%TEMP%\vlc-amp-helper.log` even

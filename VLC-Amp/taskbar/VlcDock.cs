@@ -719,7 +719,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             // per-VLC state of moving, z-order and flipping
             dragPending = false; dragFails = 0; dragMisses = 0; dragOff = false;
             lastTargetX = int.MinValue; lastTargetY = int.MinValue;
-            helperTop = false; lastMainTop = -1; pinOddTicks = 0; pinFromMain = false;
+            helperTop = false; lastMainTop = -1; pinOddTicks = 0; pinFromMain = false; underVideo = false;
             flipTries = 0;
             flipRef = false; flipMoving = false;
             lastMain = IntPtr.Zero; lastMainShape = null; hidden = false; hiddenByUser = false;
@@ -1326,6 +1326,73 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         try { File.Delete(WidthFile()); } catch (Exception) { }
     }
 
+    // ---- maximized video (user, 2026-11-01): a pinned player stays above everything, also above the
+    // skin's video window when that is maximized. While a visible VLC skin window (not the main or
+    // root one) fills its monitor's work area and a visible part of the player overlaps it, the player
+    // is not topmost and sits right below the video; the helper's own re-raising pauses meanwhile.
+    // The bare strip docked in the taskbar is outside the work area, so it stays. When the video is
+    // restored or closed, VLC's pin (if on) is applied again.
+    static bool underVideo;
+
+    static IntPtr FindMaximizedVideo(IntPtr main, out RECT rv)
+    {
+        IntPtr hit = IntPtr.Zero;
+        RECT found = new RECT();
+        uint vlc = vlcPid;
+        EnumWindows(delegate (IntPtr h, IntPtr l)
+        {
+            uint pid;
+            GetWindowThreadProcessId(h, out pid);
+            if (pid != vlc || h == main || !IsWindowVisible(h) || ClassOf(h) != "SkinWindowClass" || IsSkinRoot(h, pid)) return true;
+            RECT r;
+            if (!GetWindowRect(h, out r)) return true;
+            MONITORINFO mi = new MONITORINFO();
+            mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+            if (!GetMonitorInfo(MonitorFromWindow(h, 2), ref mi)) return true;
+            if (W(r) < W(mi.rcWork) - 2 || H(r) < H(mi.rcWork) - 2) return true;
+            hit = h;
+            found = r;
+            return false;
+        }, IntPtr.Zero);
+        rv = found;
+        return hit;
+    }
+
+    // true = the player is kept below a maximized video (Place does nothing else this tick)
+    static bool KeepUnderVideo(IntPtr main, RECT rMain)
+    {
+        RECT rv;
+        IntPtr video = FindMaximizedVideo(main, out rv);
+        bool overlap = false;
+        if (video != IntPtr.Zero)
+        {
+            ShapeInfo s = ReadShape(main, W(rMain), H(rMain));
+            foreach (RECT p in s.Rects)
+                if (rMain.Left + p.Left < rv.Right && rv.Left < rMain.Left + p.Right &&
+                    rMain.Top + p.Top < rv.Bottom && rv.Top < rMain.Top + p.Bottom) { overlap = true; break; }
+        }
+        if (overlap)
+        {
+            if (!underVideo) Log("maximized video " + Describe(video) + ": the player goes below it");
+            underVideo = true;
+            helperTop = false;
+            uint f = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+            if (IsTopmost(main)) SetPos(main, HWND_NOTOPMOST, 0, 0, 0, 0, f);
+            if (!IsBelow(main, video)) SetPos(main, video, 0, 0, 0, 0, f);
+            return true;
+        }
+        if (underVideo)
+        {
+            underVideo = false;
+            lastMainTop = -1;
+            string detail;
+            bool pinned = VlcPinState(main, out detail) == 1;
+            if (pinned) SetPos(main, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+            Log("video no longer maximized: the player is back" + (pinned ? " on top (pinned)" : ""));
+        }
+        return false;
+    }
+
     static void SeenVisible(IntPtr main, RECT r)
     {
         if (hidden)
@@ -1529,6 +1596,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         }
         SeenVisible(main, rMain);
         ShareWidth(W(rMain));
+        if (KeepUnderVideo(main, rMain)) return;   // a maximized video: the player waits below it
         LogChange("dpi", "DPI: VLC's window " + DpiOf(main) + " dpi, " + W(rMain) + "x" + H(rMain) + " px; helper thread " + DpiAwareness());
         if (StartPinned) PinOnce(main, rMain);
         if (FollowTheme) FollowSystemTheme(main, rMain);
