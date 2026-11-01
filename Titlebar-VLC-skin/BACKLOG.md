@@ -204,7 +204,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T23 | Skin: Windows bitmap rendering check + wider resize grip (29, 27) | **DONE** (Windows unverified) | - | S-M |
 | T25 | Helper: keep the bar in place when the panels flip (32); find and fix why a taskbar click hides the player (33, 15) | **DONE** (confirmed on Windows) | - | M |
 | T26 | v1.0 code review fixes (35) | **DONE** (Linux tested; Windows: compiled / parsed, needs the item 35 checks) | - | M |
-| T27 | Linux setup: a re-run drops `follow-system-theme.sh --install`'s Exec wrap; `lua/vlcrc-keys.txt` hotkeys written even when the Lua extras are skipped | Sonnet | T26 | S |
+| T27 | Linux setup: a re-run drops `follow-system-theme.sh --install`'s Exec wrap; `lua/vlcrc-keys.txt` hotkeys written even when the Lua extras are skipped | Sonnet | T26 | S | DONE: setup re-run keeps the follow-system-theme wrap (says so); keys only with Lua extras. Verified in a private HOME: setup, --install, setup -> Exec still wrapped, --uninstall removes the file; lua-intf=mine -> warning, 0 key- lines; plain setup writes 5 keys; sh -n both. Basic-launcher path only (no system vlc.desktop here) |
 | T28 | `titlebar-pin.py --watch`: only this user's VLC processes | Haiku | T26 | XS |
 | T29 | Generator: input checks with `assert` vanish under `python -O` | Haiku | - | XS |
 

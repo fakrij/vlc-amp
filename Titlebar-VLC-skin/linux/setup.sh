@@ -428,6 +428,12 @@ make_desktop() {
         snap)    names="vlc_vlc.desktop vlc.desktop" ;;
     esac
     SYS_DESKTOP=""
+    # A follow-system-theme.sh --install wrap on the old file: remembered, re-applied below.
+    old_wrap=""
+    if [ -f "$DESKTOP_FILE" ]; then
+        old_wrap=$(awk '/^Exec=/ && index($0, "follow-system-theme") > 0 && (p = index($0, " --exec ")) > 0 {
+            print substr($0, 6, p - 6); exit }' "$DESKTOP_FILE")
+    fi
     # shellcheck disable=SC2086
     SYS_DESKTOP=$(find_system_desktop $names) || SYS_DESKTOP=""
     mkdir -p "$APPS_DIR"
@@ -478,6 +484,12 @@ Terminal=false
 Categories=AudioVideo;Audio;Player;
 MimeType=$FALLBACK_MIMES
 EOF
+    fi
+    if [ -n "$old_wrap" ]; then
+        awk -v pre="Exec=$old_wrap --exec " '
+        /^Exec=/ && index($0, "follow-system-theme") == 0 { print pre substr($0, 6); next }
+        { print }' "$DESKTOP_FILE.new" >"$DESKTOP_FILE.new2" && mv "$DESKTOP_FILE.new2" "$DESKTOP_FILE.new"
+        say "  kept the follow-system-theme.sh wrap on the Exec lines"
     fi
     mv "$DESKTOP_FILE.new" "$DESKTOP_FILE"
     chmod 644 "$DESKTOP_FILE"
@@ -717,7 +729,7 @@ fi
 # are skipped); a key is only written when vlcrc has no active, non-empty value for it.
 KEYS_FILE="$ROOT/lua/vlcrc-keys.txt"
 keys_done=0
-if [ -f "$KEYS_FILE" ]; then
+if [ "$lua_done" = 1 ] && [ -f "$KEYS_FILE" ]; then
     while IFS= read -r kl || [ -n "$kl" ]; do
         kl=$(printf '%s' "$kl" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
         case "$kl" in ""|"#"*) continue ;; esac

@@ -263,7 +263,8 @@ when no line exists. Colon lists are merged, never replaced.
 | `lua-intf` | lua | `titlebar` | yes | yes | Which script the `luaintf` interface runs (`modules/lua/vlc.c`: `lua-intf` and `lua-config` belong to the primary `lua` module) |
 | `key-subsync-markaudio` ... `key-viewpoint-fov-out` | core | the five lines of `lua/vlcrc-keys.txt` | yes | yes | Default keys of the Lua extras; written only when unset |
 
-Both setups read `lua/vlcrc-keys.txt` (`<section> <key>=<value>`), so more
+Both setups read `lua/vlcrc-keys.txt` (`<section> <key>=<value>`), only when
+the Lua extras were installed, so more
 default keys can be added there without changing either setup.
 
 ## The Linux setup (`linux/setup.sh`)
@@ -322,6 +323,9 @@ activates over D-Bus would skip `Exec`), and the marker line
 `X-Titlebar-Skin=1` (uninstall only deletes a file that has it). With no system
 launcher, a basic one is generated (Flatpak: `flatpak run --file-forwarding
 org.videolan.VLC --no-media-library --started-from-file @@u %U @@`).
+If the old launcher's `Exec=` lines carry the `follow-system-theme.sh --install`
+wrap, a re-run of setup re-applies it (same script path, `Exec="<script>" --exec
+<original>`) and says so.
 `update-desktop-database` runs on the folder when present. Checked with the
 harness: started like plain `vlc` the playlist shows a "Media Library" node,
 started through the launcher's `Exec` it does not.
@@ -359,7 +363,9 @@ moved. The setup neither copies nor edits that script.
 **Lua extras.** If `lua/intf/titlebar.lua` exists and `lua-intf` is unset,
 `dummy` or `titlebar` (another script is left alone, as on Windows), all `lua/intf/*.lua` are
 copied to the flavor's Lua dir, `luaintf` is merged into `extraintf` and
-`lua-intf=titlebar` is set (section `lua`). `lua/vlcrc-keys.txt`, if it exists,
+`lua-intf=titlebar` is set (section `lua`). Only when these extras were
+installed (as on Windows; not when another `lua-intf` script made setup skip
+them), `lua/vlcrc-keys.txt`, if it exists,
 is read line by line (blank lines and lines starting with `#` are skipped);
 the format is
 
