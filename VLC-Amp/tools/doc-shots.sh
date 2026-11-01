@@ -79,8 +79,8 @@ click "$EXPAND_X" "$SY"
 click $FULL_PL; click $FULL_EQ
 park; shot_shape full-eq
 
-# quit only with the panels closed: with them open the shape reaches the window's bottom edge,
-# and the harness takes that as "bar at the bottom" and misses the quit button
+# quit only with the panels closed: the full player with both panels open fills the whole
+# window, so the harness cannot tell from the shape where the bar is and would miss the quit button
 click $FULL_PL; click $FULL_EQ
 $T quit >/dev/null
 trap - EXIT

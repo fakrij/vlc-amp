@@ -7,7 +7,7 @@ function T($name, $line, $scale) {
   Repair-VideoWindow $l $scale
   "$name -> " + $l[0]
 }
-T "none"      'skins2-config=["main" "strip-dn" 1 2 556 436 1]' 1.25
+T "none"      'skins2-config=["main" "strip-dn" 1 2 620 676 1]' 1.25
 T "hidden"    'skins2-config=["main" "x" 1 2 5 4 1]["video" "video-l" 10 20 600 300 0]' 1
 T "shrunk"    'skins2-config=["main" "x" 1 2 5 4 1]["video" "video-min" 10 20 150 22 0]' 1.5
 T "ok"        'skins2-config=["video" "video-l" 10 20 600 300 1]' 1

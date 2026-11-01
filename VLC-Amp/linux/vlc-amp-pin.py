@@ -36,10 +36,12 @@ import time
 
 # ---------------------------------------------------------------- layout (100 % values)
 # Must follow source/build_skin.py (add_strip / add_full); every value is multiplied by
-# the skin's scale. The window is 556 x 676 at 100 % (full player 232 + EQ 164 + playlist 280).
+# the skin's scale. The window is 620 x 676 at 100 % (full player 232 + EQ 164 + playlist 280).
 BASE_H = 676            # window height at 100 %
 BAR = 24                # strip height
 FULL = 232              # full player height
+EQ = 164                # equalizer panel height
+PL = 280                # playlist panel height
 STRIP_PIN = (36, 11, 12)    # distance of the pin's left edge from the window's right edge, x offset to its centre, y
 FULL_PIN = (92, 12, 20)
 SCALES = (100, 125, 150, 200)   # the shipped VLC-Amp-NNN.vlt files
@@ -371,16 +373,33 @@ def guess_scale(win_h, hint):
 
 
 def pin_position(rects, win_w, win_h, scale):
-    """(x, y, full, bar_at_bottom) of the pin: the rule of ReadShape in taskbar/VlcDock.cs."""
+    """(x, y, full, bar_at_bottom) of the pin: the rule of DockShape.Classify in taskbar/VlcDock.cs.
+    The window is BASE_H tall in every layout; the visible HEIGHT tells the full player (FULL, with
+    or without EQ 164 / playlist 280 below or above it) from the strip (BAR, same panels); the visible
+    part touches the window's top (bar at the top) or its bottom (bar at the bottom)."""
     def p(v):
         return int(round(v * scale / 100.0))
 
     def inside(px, py):
         return any(r[0] <= px < r[0] + r[2] and r[1] <= py < r[1] + r[3] for r in rects)
+
+    def fits(h, base):
+        return any(abs(h - base - add) <= 2 for add in (0, p(EQ), p(PL), p(EQ) + p(PL)))
     if rects:
+        top = min(r[1] for r in rects)
         bottom = max(r[1] + r[3] for r in rects)
-        bar_at_bottom = bottom >= win_h - 1
-        full = inside(0, win_h - p(BAR) if bar_at_bottom else p(BAR))
+        at_top, at_end = top <= 1, bottom >= win_h - 1
+        if at_top != at_end:
+            bar_at_bottom = at_end
+        else:       # full player with both panels fills the window: the rounded corners of the seam tell
+            def seam(y):
+                return any(not inside(0, i) for i in range(y - 2, y + 2))
+            bar_at_bottom = seam(win_h - p(FULL)) and not seam(p(FULL))
+        as_full, as_strip = fits(bottom - top, p(FULL)), fits(bottom - top, p(BAR))
+        if as_full != as_strip:
+            full = as_full
+        else:       # ambiguous (or nothing fits): the pixel one bar height from the bar's outer edge
+            full = inside(0, win_h - p(BAR) if bar_at_bottom else p(BAR))
     else:       # no shape information: assume the default layout, the strip at the top
         bar_at_bottom, full = False, False
     if full:

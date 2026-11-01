@@ -1196,14 +1196,14 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
                 // video to it (a config saved by an older skin has no entry, or a hidden one).
                 string vid = lines[i];
                 if (vid.IndexOf("[\"video\" ") < 0 && vid.Length > "skins2-config=".Length)
-                    vid += "[\"video\" \"video-l\" 600 300 " + (int)Math.Round(556 * Scale) + " " + (int)Math.Round(386 * Scale) + " 1]";
+                    vid += "[\"video\" \"video-l\" 600 300 " + (int)Math.Round(620 * Scale) + " " + (int)Math.Round(439 * Scale) + " 1]";
                 else
                 {
                     // shown, and never saved as the shrunk title bar (VLC saves the active layout, and
                     // the next video would then open as a bar)
                     vid = System.Text.RegularExpressions.Regex.Replace(vid,
                         @"\[""video"" ""video-min"" (-?[0-9]+ -?[0-9]+) [0-9]+ [0-9]+ [01]\]",
-                        "[\"video\" \"video-l\" ${1} " + (int)Math.Round(556 * Scale) + " " + (int)Math.Round(386 * Scale) + " 1]");
+                        "[\"video\" \"video-l\" ${1} " + (int)Math.Round(620 * Scale) + " " + (int)Math.Round(439 * Scale) + " 1]");
                     vid = System.Text.RegularExpressions.Regex.Replace(vid,
                         @"(\[""video"" ""[^""]*"" -?[0-9]+ -?[0-9]+ -?[0-9]+ -?[0-9]+ )0\]", "${1}1]");
                 }
@@ -1804,11 +1804,11 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
 // the strip is BarHeight tall (24, 36 for the taskbar build; the file name says which). The visible height alone tells
 // strip from full player and which panels are open:
 //   strip  bar, bar + EQ, bar + PL, bar + EQ + PL
-//   full   122, 122 + EQ, 122 + PL, 122 + EQ + PL
+//   full   232, 232 + EQ, 232 + PL, 232 + EQ + PL
 // and the visible part touches the window's top ("dn" layouts, bar at the top) or bottom
 // ("up", bar at the bottom); only the full player with both panels fills it all.
 // This does not depend on how the corners are drawn. It is ambiguous only for a strip height
-// that makes two sums equal (40: strip + PL = full + EQ); then, and for heights that fit
+// that makes two sums equal (68: strip + EQ = full; none of 24 / 36 / 40); then, and for heights that fit
 // nothing, the old test decides: a pixel one bar height from the bar's outer edge is visible
 // in the full player and transparent at the rounded corner of a panel next to the strip.
 // A height that fits no strip of the configured height but a strip of 12 to 80 px is taken
