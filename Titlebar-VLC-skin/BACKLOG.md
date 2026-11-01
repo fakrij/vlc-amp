@@ -204,7 +204,7 @@ Self-contained work packages, sized for one agent each. Each brief says what to 
 | T23 | Skin: Windows bitmap rendering check + wider resize grip (29, 27) | **DONE** (Windows unverified) | - | S-M |
 | T25 | Helper: keep the bar in place when the panels flip (32); find and fix why a taskbar click hides the player (33, 15) | **DONE** (confirmed on Windows) | - | M |
 | T26 | v1.0 code review fixes (35) | **DONE** (Linux tested; Windows: compiled / parsed, needs the item 35 checks) | - | M |
-| T27 | Linux setup: a re-run drops `follow-system-theme.sh --install`'s Exec wrap; `lua/vlcrc-keys.txt` hotkeys written even when the Lua extras are skipped | Sonnet | T26 | S |
+| T27 | Linux setup: a re-run drops `follow-system-theme.sh --install`'s Exec wrap; `lua/vlcrc-keys.txt` hotkeys written even when the Lua extras are skipped | **DONE** (merged; setup re-run keeps the wrap and says so; keys only with the Lua extras. Verified in a private HOME: setup, `--install`, setup -> Exec still wrapped, `--uninstall` removes the file; `lua-intf=mine` -> warning, no `key-` lines; plain setup writes 5 keys; `sh -n`. Only the basic-launcher path: no system `vlc.desktop` on the test machine) | T26 | S |
 | T28 | `titlebar-pin.py --watch`: only this user's VLC processes | **DONE** (merged; `py_compile` OK; throwaway test with `proc_comm` patched to "vlc": own pid present, pid 1 filtered out; no VLC started or killed; not run against real VLCs of other users) | T26 | XS |
 | T29 | Generator: input checks with `assert` vanish under `python -O` | Haiku | - | XS |
 
