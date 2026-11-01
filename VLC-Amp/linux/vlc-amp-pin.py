@@ -36,12 +36,12 @@ import time
 
 # ---------------------------------------------------------------- layout (100 % values)
 # Must follow source/build_skin.py (add_strip / add_full); every value is multiplied by
-# the skin's scale. The window is 556 x 436 at 100 %.
-BASE_H = 436            # window height at 100 %
+# the skin's scale. The window is 556 x 676 at 100 % (full player 232 + EQ 164 + playlist 280).
+BASE_H = 676            # window height at 100 %
 BAR = 24                # strip height
-FULL = 122              # full player height
-STRIP_PIN = (34, 11, 12)    # distance of the pin's left edge from the window's right edge, x offset to its centre, y
-FULL_PIN = (82, 9, 11)
+FULL = 232              # full player height
+STRIP_PIN = (36, 11, 12)    # distance of the pin's left edge from the window's right edge, x offset to its centre, y
+FULL_PIN = (92, 12, 20)
 SCALES = (100, 125, 150, 200)   # the shipped VLC-Amp-NNN.vlt files
 
 POLL_VLC = 2.0          # --watch: seconds between looks at /proc
@@ -353,14 +353,14 @@ def pid_scale(pid):
         except OSError:
             pass
     for n in names:     # the command line wins over vlcrc (it is first in the list)
-        m = re.search(r"VLC-Amp-(\d+)\.vlt", n)
+        m = re.search(r"VLC-Amp-(?:taskbar-|bar\d+-)?(\d+)\.vlt", n)
         if m:
             return int(m.group(1))
     return None
 
 
 def guess_scale(win_h, hint):
-    """Scale in percent. The window height is 436 px at 100 %; trust that when it matches a shipped
+    """Scale in percent. The window height is 676 px at 100 %; trust that when it matches a shipped
     scale, else the name's scale, else the nearest shipped scale to the height."""
     for s in SCALES:
         if abs(win_h - BASE_H * s / 100.0) <= 1:

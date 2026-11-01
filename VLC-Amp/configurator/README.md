@@ -9,7 +9,7 @@ so the generator stays the single source of truth. The preview is the generator'
 
 ## Files
 - `index.html`, `app.js` (UI), `worker.js` (Pyodide worker), `glue.py` (page glue, see below)
-- `build_skin.py` + `fonts/DejaVu*` - copies of `../source/` (run `./sync.sh` after the generator changes)
+- `build_skin.py` + `fonts/DejaVu*` - copies of `../source/` (run `tools/sync-configurator.py` after EVERY generator change; it also verifies)
 - `fonts.json`, `fonts/` - the curated fonts and their licence texts
 - `test/node-build.mjs` - headless check: same staging as the worker, under node
 - `test/browser-test.mjs` - the page itself in Edge (puppeteer-core): single build, pair, own font

@@ -27,7 +27,8 @@ usage: vlc-test.sh <command> [args]
   xvfb-stop                kill the Xvfb this script started
   build [scale] [bar]      build the skin with the test venv to $CACHE/skins;
                            prints the .vlt path (scale 1 = 100 %, default 1;
-                           bar = strip height, default 24, 36 = taskbar build)
+                           bar = strip height, default 24, 36 = taskbar build;
+                           width from TB_WIDTH, default 620)
 
 Environment: TITLEBAR_TEST_CACHE (cache dir), TB_DISPLAY_NUM (default 99),
 TB_SCREEN (default 1280x1024x24), TB_KEEP_CONFIG=1 (keep VLC's config on start),
@@ -205,9 +206,8 @@ cmd_geometry() {
     echo "$WX $WY $WW $WH"
 }
 
-# skin_scale: scale in percent of the running skin (from VLC-Amp-<n>.vlt,
-# VLC-Amp-taskbar-<n>.vlt or VLC-Amp-bar<h>-<n>.vlt on VLC's command line),
-# else TB_SCALE, else 100
+# skin_scale: scale in percent of the running skin (from VLC-Amp-[taskbar-|bar<h>-]<n>.vlt
+# on VLC's command line), else TB_SCALE, else 100
 skin_scale() {
     local n
     n="$(tr '\0' '\n' <"/proc/$(vlc_pid)/cmdline" | sed -n 's/.*VLC-Amp-\(taskbar-\|bar[0-9]*-\)\{0,1\}\([0-9]*\)\.vlt$/\2/p')"
@@ -243,14 +243,14 @@ cmd_quit() {
     eval "$(cmd_shape --state)"            # sets bar_at_bottom and full
     if [ "$full" = 0 ]; then
         # expand button of the strip
-        if [ "$bar_at_bottom" = 1 ]; then cmd_click "$(p 27)" $((WH - $(p "$bar") + $(p "$bar") / 2))
-        else cmd_click "$(p 27)" $(($(p "$bar") / 2)); fi
+        if [ "$bar_at_bottom" = 1 ]; then cmd_click "$(p 28)" $((WH - $(p "$bar") + $(p "$bar") / 2))
+        else cmd_click "$(p 28)" $(($(p "$bar") / 2)); fi
         eval "$(cmd_shape --state)"
         [ "$full" = 1 ] || die "could not expand the strip to the full player"
     fi
-    # quit button of the full player (122 px tall)
-    if [ "$bar_at_bottom" = 1 ]; then cmd_click $((WW - $(p 13))) $((WH - $(p 122) + $(p 11)))
-    else cmd_click $((WW - $(p 13))) "$(p 11)"; fi
+    # quit button of the full player (232 px tall; 24 x 22 at x W-36, y 9)
+    if [ "$bar_at_bottom" = 1 ]; then cmd_click $((WW - $(p 24))) $((WH - $(p 232) + $(p 20)))
+    else cmd_click $((WW - $(p 24))) "$(p 20)"; fi
     for i in $(seq 1 50); do
         [ -d "/proc/$pid" ] || break
         sleep 0.2
@@ -263,9 +263,11 @@ cmd_quit() {
 }
 
 cmd_build() {
+    # build [scale] [bar]: the window width is TB_WIDTH (default 620, the generator's default)
     local scale="${1:-1}" bar="${2:-24}" out="$CACHE/skins" pct kind=""
     mkdir -p "$out"
-    "$VENV/bin/python" "$HERE/../source/build_skin.py" --scale "$scale" --bar-height "$bar" --out "$out" >&2
+    "$VENV/bin/python" "$HERE/../source/build_skin.py" --scale "$scale" --bar-height "$bar" --width "${TB_WIDTH:-620}" \
+        --out "$out" >&2
     pct="$(awk "BEGIN{printf \"%d\", $scale * 100 + 0.5}")"
     if [ "$bar" = 36 ]; then kind=taskbar-; elif [ "$bar" != 24 ]; then kind="bar$bar-"; fi
     echo "$out/VLC-Amp-$kind$pct.vlt"

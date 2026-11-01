@@ -1,4 +1,7 @@
-"""Simulate how skins2 draws our semi-transparent bitmaps.
+"""LEGACY - kept for reference only. It models the old (pre hi-fi) bitmaps; the check that
+replaces it is tools/bitmap-audit.py (scans every bitmap for semi-transparent pixels).
+
+Simulate how skins2 draws our semi-transparent bitmaps.
 
 skins2 (3.0.x) pipeline for buttons / checkboxes / images:
   1. FileBitmap: PNG -> RGBA, colour premultiplied  c' = c*a/255 (truncated), alpha kept.

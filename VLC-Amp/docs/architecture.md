@@ -35,8 +35,8 @@ source/build_skin.py  --(Pillow)-->  VLC-Amp-NNN.vlt  (tar.gz: theme.xml + img/*
 skins2 only carries a dragged size from one layout to the next when both have
 the same original size and limits (`GenericLayout::isTightlyCoupledWith`,
 used in `TopWindow::setActiveLayout`). So all layouts of the main window are
-**the same size**: 556 x 436 logical px, the full player (122) + EQ (116) +
-playlist (198) stacked.
+**the same size**: 556 x 676 logical px at the default width (620 for the concept
+window), the full player (232) + EQ (164) + playlist (280) stacked.
 
 | Layout | Bar position | Panels |
 |---|---|---|
@@ -57,28 +57,25 @@ Expand / collapse and the flip arrows are `main.setLayout(<id>)` actions.
 
 ### Bar height (`--bar-height`)
 
-The window height `HT` (436) does not depend on the strip height: a taller strip
+The window height `HT` (676) does not depend on the strip height: a taller strip
 only changes what is drawn inside it, so all four layouts stay the same size
 (strip-up puts the bar at `HT - bar`). `bar_metrics(bh)` in `build_skin.py`
 derives the strip's parts from `bh` (24 gives the original numbers; the default
 build is identical, member by member, to the one before the option existed):
-button height `bh - 6` (3 px margin), icon size `12 + (bh-24)//4`, PL / EQ label,
-LCD and title window height, the title window's play head, the strip font
-(`lcdbar`, `12 + (bh-24)//6`, only declared when it differs from `lcd12`; used
-for title and time), grip
-rows and the resize grip. Widths do **not** grow, so the right-edge offsets
-(`R(34)` pin, `R(62)` / `R(90)` EQ / PL, `R(96)` end of the time box) and the pin's x stay
-as they were; only the time box widens when the bigger font needs it
-(`tw`: 86 px at 24, 96 px at 36, from `bar_metrics`). `MIN_W` stays 420 at every
-height: `bar_metrics` returns the same `min_w` for all bar heights.
+button height `min(bh - 6, 24)` (3 px margin), icon 12 px (13 from 30 px), label
+8 px (9 from 30 px), the title / time font `12 + (bh-24)//6` (`lcdbar` only when
+it differs from `lcd12`), grip rows and grip height. Widths do **not** grow, except
+the time box (`tw`: 71 px at 24, 81 px at 36, enough for "-1:23:45" in that font).
+`MIN_W` is 490 at every height.
 
 Build names carry the height: `VLC-Amp-NNN` (24), `VLC-Amp-taskbar-NNN` (36,
-`BAR_TASKBAR`), `VLC-Amp-bar<N>-NNN` (any other); `ThemeInfo` reads
+`BAR_TASKBAR`), `VLC-Amp-bar<N>-NNN` (any other; `skin_name`). `ThemeInfo` reads
 "VLC Amp 150% bar 36". The helper gets the height from the file name
-(`Get-SkinInfo` in `vlc-taskbar.ps1`, `$TaskbarBarHeight` = 36 for `taskbar`),
-and `Setup` / the helper pick the `taskbar` file when docking if it exists
-(`Get-SkinPath -Taskbar`). The test harness reads the same names
-(`skin_bar` in `tools/vlc-test.sh`).
+(`Get-SkinInfo` in `vlc-taskbar.ps1`, `$TaskbarBarHeight` = 36 for `taskbar`;
+its pattern `^VLC-Amp-(?:(taskbar)-|bar(\d+)-)?(\d+)\.vlt$`, so the old
+plain names still parse), and `Setup` / the helper pick the `taskbar` file when
+docking if it exists (`Get-SkinPath -Taskbar`). The test harness reads the same
+names (`skin_bar` in `tools/vlc-test.sh`).
 
 ## State without layouts: flag windows
 
@@ -107,13 +104,12 @@ the release skins have `th0` only). Shown = on.
   `dvd.nextChapter()`, `vlc.snapshot()`, shuffle / loop / repeat, and slower /
   faster on both sides of `$Rx` centred in an LCD box; in `video-x` the panel
   then has no slower / faster).
-- Seek bars are easier to grab: skins2 hit-tests a slider that has a background
-  image by that image's rectangle (`ctrl_slider.cpp`, `CtrlSliderBg::mouseOver`),
-  so the seek frames are 14 px tall with the 4 px bar 4 px down (the padding is
-  opaque panel colour from `solid()`: on Windows slider backgrounds are copied
-  without blending), the sliders sit 3 px higher (the bar stays put), and the
-  thumb is 10 x 16. Checked in VLC 3.0.20: a click 4 px above the visible bar
-  jumps (31:50 of 63:00 at the middle). The arrow button
+- Layout (hi-fi style, integrated 2026-11-01): 12 px frame with the corner
+  resize tab, 36 px title bar (24 x 22 buttons), the control panel below the
+  video with the full player's 10 px seek bar (`seek` frames, 12 x 20 knob) 12
+  px under the video, so the knob keeps a margin, then the 30 x 28 transport
+  row. skins2 hit-tests a slider background by its rectangle
+  (`CtrlSliderBg::mouseOver`), so the thick bar is easy to grab. The arrow button
   switches with `video.setLayout(...)`. Both layouts have the same original
   size, so skins2 carries the current (also maximized) size across, as with the
   main window's layouts; the row takes its height from the Video control (a
@@ -221,6 +217,93 @@ sheet into each slider control, so a sheet used in 2 layouts is held 3 times.
 Hence `FILL_FRAMES = 51` (2 % steps); the earlier 101-frame sheets cost about 80 MB more at 150 %.
 Start-up: 1.7 s with Midnight alone, 4.6 s with all 11 themes (under Xvfb).
 
+### Hi-fi redesign, 2026-11-01
+
+Clean re-measurement (task H23, agent R2-C). Method as above (RSS from `/proc/<pid>/smaps_rollup`, 8 s
+after start, the same 3 test tracks, Xvfb display 109), but 5 runs per configuration, runs alternated
+(A B C A B C ...), a failed start retried and not counted. Other agents were running VLC at the same time
+(load average 16-24), so start-up times are only indicative; RSS is very stable (spread <= 1 MB) and
+reproduced across three separate batches (the flat original measured 87.1 / 87.2 / 87.3 MB).
+"Original" = the flat skin built from the original repo's HEAD generator, Midnight only.
+
+| Build (Midnight unless noted) | Median RSS MB (min - max) | vs original |
+|---|---|---|
+| Original flat skin, 100 % | 87.2 (87.1 - 87.9) | |
+| main before H23, bar 24, 100 % | 121.4 (120.8 - 122.0) | +34 |
+| main before H23, bar 40, 100 % | 122.2 (121.5 - 122.6, 4 runs) | +35 |
+| main before H23, bar 24, 150 % | 181.5 (181.2 - 182.0) | +79 (original 102.0) |
+| main before H23, bar 40, 150 % | 184.0 (183.7 - 184.0) | +82 |
+| main before H23, Midnight + Paper, bar 24, 100 % | 171.2 (170.8 - 171.4) | +70 (original 101.7) |
+| **after H23**, bar 24, 100 % | **103.6** (103.4 - 103.9) | +16 |
+| after H23, bar 40, 100 % | 104.7 (104.6 - 105.0, 4 runs) | +17 |
+| after H23, bar 24, 150 % | 141.0 (141.0 - 141.4) | +39 |
+| after H23, bar 40, 150 % | 143.6 (142.4 - 143.7) | +42 |
+| after H23, Midnight + Paper, bar 24, 100 % | 135.8 (135.2 - 136.2) | +34 (+17 per theme) |
+
+So H10 was right: the thin build cost about 34 MB per theme at 100 % and 79 MB at 150 % over the flat
+original (the documented 131 / 136 MB were measured with another VLC / machine state and do not compare
+with these numbers; compare only inside one table). The original adds about 14.6 MB for a second
+theme (the thin build 49.8 MB before H23). Start-up (medians under load): original 2.1 - 2.8 s, main 3.3 - 5.0 s,
+after H23 2.9 s; bar 40 about 0.3 s more.
+
+**Where the memory goes.** skins2 copies: every slider control gets its own copy of its frame sheet
+(`CtrlSliderBg`), plus the decoded bitmap itself, so a sheet of `px` pixels costs `px x (controls + 1) x 4`
+bytes. This predicts the measurements to within 1 MB: cropping the EQ sheets (below) removed exactly the
+pixels x 4 B that it should have removed from RSS (9.1 MB predicted, 9.1 MB measured). Sheets of one theme
+at 100 %, bar 24 (main before H23). The four main-window layouts (strip / full x up / dn) each have their own
+controls; all four are needed (one is shown at a time, but skins2 builds the controls of every layout):
+
+| Sheet | Size (px) | Pixels | Controls | MB held (x4 B x (controls + 1)) |
+|---|---|---|---|---|
+| `eqfill` (10 band faders x 4 layouts) | 30 x 4264 (41 frames x 104) | 127,920 | 40 | 21.0 |
+| `eqfill_pre` (preamp x 4) | 30 x 4264 | 127,920 | 4 | 2.6 |
+| `seek` (full player) | 596 x 1010 (101 x 10) | 601,960 | 2 | 7.2 |
+| `ftitle_fill` (full player title box) | 376 x 1326 (51 x 26) | 498,576 | 2 | 6.0 |
+| `title_fill` (strip title box) | 281 x 816 (51 x 16) | 229,296 | 2 | 2.8 |
+| `vol100` (full player volume) | 100 x 1000 (100 x 10) | 100,000 | 2 | 1.2 |
+| `vol_fill` (strip volume in the time box) | 69 x 816 | 56,304 | 2 | 0.7 |
+| Total | | | | 41.4 (original: 7.7) |
+
+Bar 40 differs only in `title_fill` (231 x 1122) and `vol_fill` (79 x 1122). At 150 % every sheet has 2.25 x the
+pixels (the frame count is the same). The original's sheets were `seek` 536 x 306 (4 controls), `title_fill`
+244 x 816, `vol90` 90 x 720 (4 controls) and `vol_fill`. The EQ faders alone were 23.6 MB of the 41.4.
+
+**Reductions applied** (all in the sheet functions / constants and `pack_atlases`; EQ panel screenshots of
+the 100 / 125 / 150 % builds with every fader set to a different value and a fader dragged in 7 steps are
+pixel-identical to main: 30 crops, zero differing pixels; the staged files that differ from main are
+`theme.xml`, `img/t0_eq_bands.png` and the four EQ sheets, everything else is byte-identical):
+
+| Step | Median RSS MB, bar 24, 100 % / 150 % | Effect |
+|---|---|---|
+| main | 121.4 / 181.5 | |
+| 1. crop the EQ sheets to the part that is not plain LCD background (18 x 98 instead of 30 x 104; the preamp 28 x 98 because of the "dB") | 112.5 / 161.1 | -9.0 / -20.4 |
+| 2. split each fader into a label slider (dB text, no knob, 41 frames of 18 x 14) and the groove slider that carries the knob (8 x 84); the two 0 dB ticks never change and now live in the static `eq_bands` image | 107.3 / 146.4 | -5.2 / -14.7 |
+| 3. the groove sheet has only every 2nd dB (21 frames): the knob is 14 px high and centred on the lit fill's top edge, so it hides the up-to-3.3 px gap | (see 4) | |
+| 4. `pack_atlases`: tall sheets (> 400 px) stay separate files. Step 3 alone made the sheets small enough (14,112 px) for the atlas, where a shelf row as high as the sheet made the atlas 1024 x 2026 instead of 1024 x 528 and RSS *rose* to 109.2 MB | **103.6 / 141.0** | -3.7 / -5.4 |
+
+Details that matter: the crop offsets are device pixels (`P(x0)`), the slider x is shifted by the same offset,
+so the knob path is unchanged at every scale; the old full-height sheet also hid the top pixel row of the band
+names (`eq_bands` is drawn under it), and `add_eq` pastes the background over that row so the look stays the
+same. The tick box has 1 px of slack because the ticks are anti-aliased at 125 / 150 %.
+
+**Rejected or not applied:**
+- `title_fill` / `ftitle_fill` with 26 instead of 51 frames: measured -4.2 MB at 100 % (109.2 -> 105.0 MB), but not
+  invisible. The thumb carries the fill between frames and is 10 px to each side; with 26 frames the step is
+  10.4 px (strip) and 14.2 px (full player), so the fill's end would show beyond the thumb unless the frame content
+  is biased to the middle of the value interval, which depends on whether skins2 floors or rounds the value to a
+  frame (the click tests fit both). Needs a decision by Jiri (about -4 MB / -9 MB at 150 %).
+- `seek` with fewer than 101 frames: the thumb is 12 px wide (+- 6 px) and a 1 % step is 5.96 px, so 101 frames
+  is the minimum for a floor-mapped sheet; 75 frames with a biased sheet would save only 1.2 MB.
+- Making the groove sheet 4 px instead of 8 px wide: -1.1 MB, but the clickable area of the groove would be
+  +-2 px. (With the 8 px sheet it is +-4 px; before H23 the whole 30 px box counted, with `thickness` 8.)
+- Dropping duplicate sliders: not possible, each of the 4 layouts needs its own controls, and each layout has
+  the EQ panel (the layouts are never visible at the same time, but skins2 builds all of them).
+- Sharing the sheets between controls: skins2 copies (measured, see above); there is no option for it.
+
+**Budget now:** 16 - 17 MB over the flat original per theme at 100 % (was 34), 39 MB at 150 % (was 79). The rest:
+`seek` 7.2, `ftitle_fill` 6.0, EQ 4.6, `title_fill` 2.8, volume 1.9 MB. Going below about 12 MB needs the
+`title_fill` / `ftitle_fill` decision above.
+
 ## Element ids
 
 **Every element has an explicit id** (`next_id`), and the build asserts that
@@ -269,7 +352,7 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
   Windows it is the premultiplied colour plus the blank bitmap's start content
   (`CreateCompatibleBitmap`, not guaranteed black): bright dots at button corners
   if it is not. `solid()` in the generator composites such bitmaps over the panel
-  colour (flat style), so every platform gets the same pixels:
+  colour (the panel is a flat colour), so every platform gets the same pixels:
   `tools/windows-sim.py` writes the comparison to `docs/img/windows-sim/`. Window
   outlines use hard alpha (`Canvas.done(hard_edges=True)`), small text is drawn on
   opaque crops of the background (`label_on`), and the LCD progress fill frames
@@ -280,6 +363,117 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
 - Windows extracts the `.vlt` to disk; on its case-insensitive file system
   `b_x.png` and `B_x.png` collide. Ids differing only by case are rejected by
   the build.
+
+## Hi-fi redesign internals
+
+Names are those in `source/build_skin.py`. Each rule below is one place in the
+generator.
+
+**Corner variants.** A skins2 expression has no "or", and a section's corners
+depend on what is open, so every rounded section comes in variants, each with its
+own visibility (`bar_corners`, `eq_corners`, `add_pl`):
+- The bar is rounded at its outer corner. The side towards the panels is rounded
+  only while no panel is open (`ANY_OFF`); with EQ open, or PL open and EQ closed,
+  a square variant is placed (twice, for the two conditions).
+- The EQ's corner towards the bar is square; its far corner is round only while PL is closed.
+- The playlist is always the last section: round at its far corner only.
+- A variant's bitmap id carries its corners: `cap_tag(rt, rb)` appends `_<top><bottom>`
+  (1 = round), e.g. `strip_bg_10`. The section is one `hslice` / `nslice` per variant.
+
+**`box_edge` and `EDGE`.** `EDGE` (set in `apply_theme`) is the outline of every
+section: the panel's bottom colour mixed towards white on dark themes, black on
+light ones (14 % on dark, 17 % on light).
+`box_edge(a)` is the outline of a display box: the LCD colour mixed the same way by
+`a` (0.13 in `lcd()`). Light themes therefore get dark lines.
+
+**Style.** There is one style (the former standard and flat styles were removed 2026-11-01). `panel_bg` fills without a gradient, and the fill covers the side
+outlines (only the top and bottom lines stay), title bars draw nothing;
+`lcd(..., outline=False)` is a plain `LCD_BG` box (EQ and playlist boxes).
+
+**Junction rule.** A square edge is where two sections meet. When a section's
+bottom is square, `panel_bg` makes its fill one row taller (`fh = h - 2 + 1`), so
+its own bottom outline is covered and the next section's top outline is the only
+line there: one 1 px line per junction.
+
+**Title thumb (`TITLE_S`).** The title boxes (strip and full player) are seek bars.
+The background sheet `title_fill` / `ftitle_fill` has `TITLE_FRAMES` = 51 frames
+in 2 % steps; frame i is filled up to `TITLE_S + (w - 2 TITLE_S) i / 50`, so the
+frames never reach the ends. The slider's thumb (`thumb_title`, `thumb_ftitle`) is
+`2 TITLE_S` = 20 px wide: its left half is the fill colour, its right half the box
+colour, with an accent line at its centre. It sits on the exact play position, so
+it covers the gap between two frame steps and the progress moves pixel by pixel.
+The thumb centre runs from `TITLE_S` to `w - TITLE_S - 1`, which keeps the thumb inside the box.
+
+**EQ frame sheets.** Each fader's background is a sheet of `EQ_FRAMES` = 41 frames
+(`eqfill`; `eqfill_pre` for the preamp, amber with "dB"), frame i = dB (i - 20),
+each `EQ_FW` x `EQ_FH` = 30 x 104 px: groove, lit fill from the bottom up to the
+knob, and the dB value above the groove. The sheets are opaque (`LCD_BG`), so no
+blending is needed. The knob is `thumb_eq`.
+
+**Seek and volume sheets.** The full player's seek bar is `seek`: `SEEK_FRAMES` =
+101 frames in 1 % steps, 10 px high. The strip's time-box volume uses `vol_fill`
+(`FILL_FRAMES` = 51 frames, 2 % steps); the full player's volume `vol100` has one
+frame per device pixel of its 100 px width (`P(100)`).
+
+**Memory rule.** VLC copies a slider's whole frame sheet into every control that
+uses it (`CtrlSliderBg`), and every layout has its own controls, so a sheet costs
+its size times the number of such controls, per theme. Budget: about 10 MB RSS per
+theme at 100 % (`smaps_rollup`, 8 s after start). Keep new sheets to 2 % steps where
+the thumb can cover the gap (as the title boxes do), crop them to the non-background part, and measure
+any new sheet (cost = pixels x 4 B x (controls + 1), see "Hi-fi redesign, 2026-11-01" under Memory).
+The EQ faders are two sliders each (dB label + groove / knob) for this reason.
+
+**Resize tab (`grip_tab`).** The tab is drawn into each section background (`resize_handle`) and is also its own
+`resizeE` image control cut from the same pixels, so the hit zone is exactly the drawn tab; the section slices
+(`hslice` caps, `nslice` `mr`) only move the window. One rule: 9 px wide at x = W - 11 (centred in the 12 px margin),
+70 px tall (strip: bar height - 6), centred on the section's main box (full player: display card, EQ / playlist:
+band / list box). skins2 hit-tests the control list in reverse and skips hidden controls (`TopWindow::findHitControl`).
+
+**Slider knob ends.** skins2 draws a cursor at `curve point - size / 2` (integer division) and scales the curve points by
+(control size / declared size), so a stretching slider (seek) keeps a constant 6 / 5 px knob overhang at every window width
+while any inset turns into a gap that grows with the width; the fixed-width volume slider (`V_LO`, `V_HI`) and the
+EQ faders (`eq_travel`, device px) keep the knob inside the groove. The Playtree scroll thumb is a fixed bitmap: no
+proportional size, no hiding (`CtrlTree` only forces position 1.0 when nothing scrolls); the playlist gutters are
+`PL_GUTTER` = 6 px on both sides.
+
+## Progress bar options 2026-11-01
+
+Backlog H14. Prototype in `source/build_skin.py`: `TITLE_MODE` (env `TB_TITLE_MODE`, default
+`thumb` = unchanged output), `TITLE_UL_H`, `TITLE_UL_FRAMES`, `title_slider`, `make_title_under`.
+`TB_TITLE_MODE=underline` builds option B. Crops: `docs/img-audit/r2e/` (`current-*` / `underline-*`;
+rows = click at 0 %, 50 %, 93 % of the box; 100 % cannot be held, a click at the very end jumps to
+the next track).
+
+| Option | Result |
+|---|---|
+| (d) current: 51 full-height frames + 20 px thumb | exact fill, but ~10 px lit at 0 %, bar ends ~10 px short, thumb inset |
+| (a) fewer frames (26) with a bigger thumb | not built: the thumb is centred on the position and must stay inside the control, so the inset is `TITLE_S` = frame step by construction; the lit lead-in cannot be hidden (the thumb's left half is a fixed colour). Fewer frames only make the inset larger. Rejected on paper |
+| (b) underline (built) | box slider: 1-frame fully transparent sheet (click area = whole box, tested at the top row and the middle) with a 1 px full-height line thumb on a path from 0 to w - 1 (no inset: line at the very left / right edge, no lit lead-in). Second slider bound to the same `time` variable (works: skins2 allows several sliders on one variable): a 2 px high accent underline, 101 frames over the box width, 1 px thumb |
+| (c) two sliders, coarse frames + fine thumb | feasible (the two-slider setup above proves two sliders on `time` work), but keeps the full-height frame sheet, so no memory gain; not built |
+
+Measured (default build, midnight, 24 px bar, `smaps_rollup` 8 s after start, 5 runs alternating, median Rss):
+
+| Scale | current | underline | difference |
+|---|---|---|---|
+| 100 % | 123.9 MB | 117.4 MB | -6.5 MB (Pss_Anon 70.1 -> 63.5) |
+| 150 % | 185.6 MB | 170.3 MB | -15.3 MB |
+
+Spread within a configuration was < 1 MB at 100 % and < 0.4 MB at 150 %.
+The title sheets were 51 x 22 px rows per box and control; the underline sheet is 101 x 2 px rows.
+
+Checks (underline vs current): click at 10 / 50 / 90 % puts the line 1-3 px from the click in both (same accuracy);
+drag on the line and on the underline row follows the pointer; works at 24 px, 40 px bar (`underline-b40.png`),
+150 % (`underline-150.png`), Paper (`underline-paper.png`) and at 957 px window width (the widest the resize
+tab allows here): the line is exact, the underline trails it by at most one frame step (2.5 px at 620, ~6 px at 957),
+the current design shows the fill leading by a few px there. Not measured: Windows rendering, 125 / 200 %.
+
+Judgement. The underline wins on memory, on both ends (line reaches the box edges, nothing lit at 0 %), and on
+frame count; it loses on the look of the "filled box" (a design change Jiri must accept) and the fill
+trails by up to one frame step when the window is wide (fix: more frames, each costs only 2 px rows;
+or build the sheet per width). Recommendation: keep (d) as the default for now (it is not better on every
+criterion: fill exactness and the filled-box look), and switch to underline (`TITLE_MODE = "underline"`) if the
+memory budget (H23) still needs ~7 MB at 100 % / ~15 MB at 150 % after the other cuts, or if Jiri prefers the
+lighter look. The switch is one constant.
 
 ## vlcrc keys (what both setups write)
 
@@ -821,21 +1015,23 @@ the same advance. The line width in characters (`pl_columns`, at start): the
 Playtree draws a flat list's text 7 px in (`ctrl_tree.cpp` `makeImage`,
 `itemImageWidth` = 5 + 2) and cuts what does not fit with "..." (`ft2_font.cpp`
 `drawString`, glyph advance = FreeType's hinted `advance.x >> 6`); the skin's
-playtree is `P(42)` narrower than the main window, its font `P(11)` =
-`round(11 x scale)` px (Python rounding, half to even: 16 at 150 %), and the
-advance `round(px x 0.6021)` = 7 / 8 / 10 / 13 px at 100 / 125 / 150 / 200 %
+playtree is `P(W - 60)` wide (hi-fi skin, default window 620 px), its font
+`P(12)` = `round(12 x scale)` px (Python rounding, half to even), and the
+advance `round(px x 0.6021)` = 7 / 9 / 11 / 14 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
 comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
-VLC saved at its last exit). The playtree is `P(W - 42)` wide, so `P(556) -
-P(514)` px narrower than the window (42 / 53 / 63 / 84 px: rounding differs
-from `P(42)` at 125 %). skins2's `drawString` shows the whole line only if,
-after every character, the pen plus "..." (two advances and the ink width of
-".", 2 px at 11 px and 3 px at 14-22 px) is left of the limit `playtree - 7`;
+VLC saved at its last exit). The playtree is `P(620) - P(560)` px narrower
+than the window (60 / 75 / 90 / 120 px). skins2's `drawString` shows the whole
+line only if, after every character, the pen plus "..." (two advances and the
+ink width of ".", 3 px at 12-22 px, 4 px at 24 px) is left of the limit
+`playtree - 7`;
 otherwise it ends the line with "..." (`maxIndex < len`), even when the text
 itself would fit. So columns = the largest `n` with `n x adv + 2 x adv + dot <
-playtree - 7`. Checked in VLC 3.0.20: 70 at 100 % (71 cut), 76 at 125 % (77
-cut), 74 at 150 % (75 cut), 91 at 100 % with a 706 px window. The script also
+playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin: 76 at 100 % (77
+cut), 74 at 125 % (75 cut); predicted 73 at 150 %, 77 at 200 % (the rule was
+also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
+the Windows helper is read on Windows only. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
 the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
 spaces. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
@@ -991,7 +1187,7 @@ python3 source/build_skin.py --scale 1.5 --preview   # Python 3 + Pillow
 tools/setup-test-env.sh                               # once: VLC + Xvfb without sudo
 tools/vlc-test.sh start "$(tools/vlc-test.sh build 1)"
 tools/vlc-test.sh click 479 12 && tools/vlc-test.sh shot pl
-tools/doc-shots.sh                                    # regenerate docs/img
+tools/doc-shots.sh                                    # regenerate docs/img-thin (thin 40 px strip)
 ```
 
 - [tools/README.md](../tools/README.md): the test harness.

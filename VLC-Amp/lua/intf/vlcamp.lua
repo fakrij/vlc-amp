@@ -348,6 +348,7 @@ end
 -- 'off' none; columns=N overrides the computed width.
 ----------------------------------------------------------------------
 local PL_EVERY_US = 2000000                    -- full playlist pass
+local PL_SKIN_W, PL_MARGIN, PL_FONT = 620, 60, 12   -- the skin's default width, playtree = width - margin, font px (build_skin.py)
 local PL_DECORATED = {                         -- a title we (or a saved playlist) decorated
     "^(.-) %(%d+:%d%d%)$", "^(.-) %(%d+:%d%d:%d%d%)$", "^(.-)  +%d+:%d%d$", "^(.-)  +%d+:%d%d:%d%d$" }
 local pl = { mode = "right", cols = 72, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
@@ -363,8 +364,8 @@ end
 -- Characters that fit in a playlist line. skins2 (ctrl_tree.cpp makeImage) draws a flat playtree's
 -- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
 -- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses DejaVu Sans Mono at
--- P(11) = round(11 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
--- the playtree P(W - 42) wide. Scale from the skin's file name
+-- P(12) = round(12 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
+-- the playtree P(W - 60) wide (default window 620 px). Scale from the skin's file name
 -- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
 -- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
 local function pl_columns(w)
@@ -373,19 +374,19 @@ local function pl_columns(w)
     local pct = last:match("%-(%d+)%.vlt$")
     if pct then s = tonumber(pct) / 100 end
     if not w then
-        w = py_round(556 * s)
+        w = py_round(PL_SKIN_W * s)
         local cfg = vlc.config.get("skins2-config") or ""
         local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
         if mw then w = tonumber(mw) end
     end
-    local px = py_round(11 * s)
+    local px = py_round(PL_FONT * s)
     local adv = py_round(px * 0.6021)
-    local dot = (px < 13 and 2) or (px <= 24 and 3) or math.floor(px / 7)   -- ink width of "." (FreeType)
-    local tree = w - (py_round(556 * s) - py_round(514 * s))               -- the playtree is P(W - 42) wide
+    local dot = (px <= 11 and 2) or (px <= 22 and 3) or (px <= 30 and 4) or math.floor(px / 6)   -- ink of "." (FreeType)
+    local tree = w - (py_round(PL_SKIN_W * s) - py_round((PL_SKIN_W - PL_MARGIN) * s))   -- the playtree is P(W - 60) wide
     -- skins2 (ft2_font.cpp drawString) shows the whole line only if after every character the pen
     -- plus "..." (2 advances + the dot's ink) stays left of the limit (tree - 7); otherwise it ends
     -- the line with "...". So the most characters n with n*adv + 2*adv + dot < tree - 7. Checked
-    -- in VLC 3.0.20: 70 at 100 %, 76 at 125 %, 74 at 150 % (one more is cut each time), 91 at 706 px.
+    -- in VLC 3.0.20 (hi-fi skin, 620 px): see docs/architecture.md "Playlist durations".
     local limit = tree - 7 - 2 * adv - dot
     return math.max(20, math.floor((limit - 1) / adv))
 end
@@ -481,7 +482,7 @@ local function pl_follow_width()
     if pl.mode ~= "right" or pl.fixed or now() < (pl.next_width or 0) then return end
     pl.next_width = now() + PL_WIDTH_EVERY_US
     local w
-    local f = io.open(pl_width_file(), "r")
+    local f = is_windows and io.open(pl_width_file(), "r")   -- only the Windows helper writes it
     if f then
         w = tonumber(f:read("*l") or "")
         f:close()

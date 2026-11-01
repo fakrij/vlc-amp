@@ -1,0 +1,11666 @@
+{
+ "scenes": [
+  {
+   "scene": "strip-dn-pl0-eq0",
+   "controls": [
+    {
+     "id": "b337",
+     "tag": "Button",
+     "x": 20,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        19,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        47,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        48,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        34,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b338",
+     "tag": "Button",
+     "x": 50,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        50,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        49,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        77,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        78,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        64,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        64,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        64,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        64,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c339",
+     "tag": "Checkbox",
+     "x": 80,
+     "y": 4,
+     "w": 32,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        80,
+        15
+       ],
+       "changed_px": 588
+      },
+      "left_out": {
+       "pt": [
+        79,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        111,
+        15
+       ],
+       "changed_px": 588
+      },
+      "right_out": {
+       "pt": [
+        112,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        96,
+        4
+       ],
+       "changed_px": 588
+      },
+      "top_out": {
+       "pt": [
+        96,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        96,
+        25
+       ],
+       "changed_px": 588
+      },
+      "bottom_out": {
+       "pt": [
+        96,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b340",
+     "tag": "Button",
+     "x": 115,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        115,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        114,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        142,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        143,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        129,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        129,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        129,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        129,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_title_strip-dn",
+     "tag": "Slider",
+     "x": 146,
+     "y": 5,
+     "w": 351,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        146,
+        15
+       ],
+       "changed_px": 3230
+      },
+      "left_out": {
+       "pt": [
+        145,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        496,
+        15
+       ],
+       "changed_px": 3316
+      },
+      "right_out": {
+       "pt": [
+        497,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        409,
+        5
+       ],
+       "changed_px": 1816
+      },
+      "top_out": {
+       "pt": [
+        409,
+        4
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        409,
+        24
+       ],
+       "changed_px": 1816
+      },
+      "bottom_out": {
+       "pt": [
+        409,
+        25
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c346",
+     "tag": "Checkbox",
+     "x": 503,
+     "y": 6,
+     "w": 18,
+     "h": 18,
+     "edges": {
+      "left_in": {
+       "pt": [
+        503,
+        15
+       ],
+       "changed_px": 252
+      },
+      "left_out": {
+       "pt": [
+        502,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        15
+       ],
+       "changed_px": 252
+      },
+      "right_out": {
+       "pt": [
+        521,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        512,
+        6
+       ],
+       "changed_px": 252
+      },
+      "top_out": {
+       "pt": [
+        512,
+        5
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        512,
+        23
+       ],
+       "changed_px": 252
+      },
+      "bottom_out": {
+       "pt": [
+        512,
+        24
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_vol_strip-dn",
+     "tag": "Slider",
+     "x": 525,
+     "y": 5,
+     "w": 86,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        525,
+        15
+       ],
+       "changed_px": 840
+      },
+      "left_out": {
+       "pt": [
+        524,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        610,
+        15
+       ],
+       "changed_px": 846
+      },
+      "right_out": {
+       "pt": [
+        611,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        589,
+        5
+       ],
+       "changed_px": 406
+      },
+      "top_out": {
+       "pt": [
+        589,
+        4
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        589,
+        24
+       ],
+       "changed_px": 406
+      },
+      "bottom_out": {
+       "pt": [
+        589,
+        25
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c349",
+     "tag": "Checkbox",
+     "x": 615,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        615,
+        15
+       ],
+       "changed_px": 1036
+      },
+      "left_out": {
+       "pt": [
+        614,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        669,
+        15
+       ],
+       "changed_px": 1036
+      },
+      "right_out": {
+       "pt": [
+        670,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        642,
+        4
+       ],
+       "changed_px": 1036
+      },
+      "top_out": {
+       "pt": [
+        642,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        642,
+        25
+       ],
+       "changed_px": 1036
+      },
+      "bottom_out": {
+       "pt": [
+        642,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c350",
+     "tag": "Checkbox",
+     "x": 673,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        673,
+        15
+       ],
+       "changed_px": 1034
+      },
+      "left_out": {
+       "pt": [
+        672,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        727,
+        15
+       ],
+       "changed_px": 1034
+      },
+      "right_out": {
+       "pt": [
+        728,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        700,
+        4
+       ],
+       "changed_px": 1034
+      },
+      "top_out": {
+       "pt": [
+        700,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        700,
+        25
+       ],
+       "changed_px": 1034
+      },
+      "bottom_out": {
+       "pt": [
+        700,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c351",
+     "tag": "Checkbox",
+     "x": 730,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        729,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        757,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        758,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        744,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        744,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        744,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        744,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "strip-dn-pl1-eq0",
+   "controls": [
+    {
+     "id": "b337",
+     "tag": "Button",
+     "x": 20,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        19,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        47,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        48,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        34,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b338",
+     "tag": "Button",
+     "x": 50,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        50,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        49,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        77,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        78,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        64,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        64,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        64,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        64,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c339",
+     "tag": "Checkbox",
+     "x": 80,
+     "y": 4,
+     "w": 32,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        80,
+        15
+       ],
+       "changed_px": 588
+      },
+      "left_out": {
+       "pt": [
+        79,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        111,
+        15
+       ],
+       "changed_px": 588
+      },
+      "right_out": {
+       "pt": [
+        112,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        96,
+        4
+       ],
+       "changed_px": 588
+      },
+      "top_out": {
+       "pt": [
+        96,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        96,
+        25
+       ],
+       "changed_px": 588
+      },
+      "bottom_out": {
+       "pt": [
+        96,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b340",
+     "tag": "Button",
+     "x": 115,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        115,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        114,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        142,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        143,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        129,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        129,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        129,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        129,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c346",
+     "tag": "Checkbox",
+     "x": 503,
+     "y": 6,
+     "w": 18,
+     "h": 18,
+     "edges": {
+      "left_in": {
+       "pt": [
+        503,
+        15
+       ],
+       "changed_px": 252
+      },
+      "left_out": {
+       "pt": [
+        502,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        15
+       ],
+       "changed_px": 252
+      },
+      "right_out": {
+       "pt": [
+        521,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        512,
+        6
+       ],
+       "changed_px": 252
+      },
+      "top_out": {
+       "pt": [
+        512,
+        5
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        512,
+        23
+       ],
+       "changed_px": 252
+      },
+      "bottom_out": {
+       "pt": [
+        512,
+        24
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c349",
+     "tag": "Checkbox",
+     "x": 615,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        615,
+        15
+       ],
+       "changed_px": 1009
+      },
+      "left_out": {
+       "pt": [
+        614,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        669,
+        15
+       ],
+       "changed_px": 1009
+      },
+      "right_out": {
+       "pt": [
+        670,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        642,
+        4
+       ],
+       "changed_px": 1009
+      },
+      "top_out": {
+       "pt": [
+        642,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        642,
+        25
+       ],
+       "changed_px": 1009
+      },
+      "bottom_out": {
+       "pt": [
+        642,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c350",
+     "tag": "Checkbox",
+     "x": 673,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        673,
+        15
+       ],
+       "changed_px": 1034
+      },
+      "left_out": {
+       "pt": [
+        672,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        727,
+        15
+       ],
+       "changed_px": 1034
+      },
+      "right_out": {
+       "pt": [
+        728,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        700,
+        4
+       ],
+       "changed_px": 1034
+      },
+      "top_out": {
+       "pt": [
+        700,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        700,
+        25
+       ],
+       "changed_px": 1034
+      },
+      "bottom_out": {
+       "pt": [
+        700,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c351",
+     "tag": "Checkbox",
+     "x": 730,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        729,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        757,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        758,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        744,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        744,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        744,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        744,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b375",
+     "tag": "Button",
+     "x": 730,
+     "y": 38,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        52
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        52
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        52
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        52
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        38
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        37
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        65
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        66
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b385",
+     "tag": "Button",
+     "x": 15,
+     "y": 339,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        14,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        69,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        70,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        42,
+        339
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        42,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        42,
+        366
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        42,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b386",
+     "tag": "Button",
+     "x": 75,
+     "y": 339,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        75,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        74,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        129,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        130,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        102,
+        339
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        102,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        102,
+        366
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        102,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b387",
+     "tag": "Button",
+     "x": 135,
+     "y": 339,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        134,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        189,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        190,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        162,
+        339
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        162,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        162,
+        366
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        162,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b388",
+     "tag": "Button",
+     "x": 195,
+     "y": 339,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        195,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        194,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        249,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        250,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        222,
+        339
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        222,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        222,
+        366
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        222,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b389",
+     "tag": "Button",
+     "x": 255,
+     "y": 339,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        255,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        254,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        309,
+        353
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        310,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        282,
+        339
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        282,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        282,
+        366
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        282,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c390",
+     "tag": "Checkbox",
+     "x": 555,
+     "y": 339,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        555,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        554,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        619,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        620,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        587,
+        339
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        587,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        587,
+        366
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        587,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c391",
+     "tag": "Checkbox",
+     "x": 625,
+     "y": 339,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        624,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        690,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        657,
+        339
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        657,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        657,
+        366
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        657,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c392",
+     "tag": "Checkbox",
+     "x": 695,
+     "y": 339,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        694,
+        353
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        353
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        760,
+        353
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        727,
+        339
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        727,
+        338
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        727,
+        366
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        727,
+        367
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "strip-dn-pl0-eq1",
+   "controls": [
+    {
+     "id": "b337",
+     "tag": "Button",
+     "x": 20,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        15
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        19,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        47,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        48,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        34,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b338",
+     "tag": "Button",
+     "x": 50,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        50,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        49,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        77,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        78,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        64,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        64,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        64,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        64,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c339",
+     "tag": "Checkbox",
+     "x": 80,
+     "y": 4,
+     "w": 32,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        80,
+        15
+       ],
+       "changed_px": 588
+      },
+      "left_out": {
+       "pt": [
+        79,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        111,
+        15
+       ],
+       "changed_px": 588
+      },
+      "right_out": {
+       "pt": [
+        112,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        96,
+        4
+       ],
+       "changed_px": 588
+      },
+      "top_out": {
+       "pt": [
+        96,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        96,
+        25
+       ],
+       "changed_px": 588
+      },
+      "bottom_out": {
+       "pt": [
+        96,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b340",
+     "tag": "Button",
+     "x": 115,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        115,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        114,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        142,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        143,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        129,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        129,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        129,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        129,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_title_strip-dn",
+     "tag": "Slider",
+     "x": 146,
+     "y": 5,
+     "w": 351,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        146,
+        15
+       ],
+       "changed_px": 3230
+      },
+      "left_out": {
+       "pt": [
+        145,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        496,
+        15
+       ],
+       "changed_px": 3316
+      },
+      "right_out": {
+       "pt": [
+        497,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        409,
+        5
+       ],
+       "changed_px": 1816
+      },
+      "top_out": {
+       "pt": [
+        409,
+        4
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        409,
+        24
+       ],
+       "changed_px": 1816
+      },
+      "bottom_out": {
+       "pt": [
+        409,
+        25
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c346",
+     "tag": "Checkbox",
+     "x": 503,
+     "y": 6,
+     "w": 18,
+     "h": 18,
+     "edges": {
+      "left_in": {
+       "pt": [
+        503,
+        15
+       ],
+       "changed_px": 252
+      },
+      "left_out": {
+       "pt": [
+        502,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        15
+       ],
+       "changed_px": 252
+      },
+      "right_out": {
+       "pt": [
+        521,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        512,
+        6
+       ],
+       "changed_px": 252
+      },
+      "top_out": {
+       "pt": [
+        512,
+        5
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        512,
+        23
+       ],
+       "changed_px": 252
+      },
+      "bottom_out": {
+       "pt": [
+        512,
+        24
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_vol_strip-dn",
+     "tag": "Slider",
+     "x": 525,
+     "y": 5,
+     "w": 86,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        525,
+        15
+       ],
+       "changed_px": 840
+      },
+      "left_out": {
+       "pt": [
+        524,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        610,
+        15
+       ],
+       "changed_px": 846
+      },
+      "right_out": {
+       "pt": [
+        611,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        589,
+        5
+       ],
+       "changed_px": 406
+      },
+      "top_out": {
+       "pt": [
+        589,
+        4
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        589,
+        24
+       ],
+       "changed_px": 406
+      },
+      "bottom_out": {
+       "pt": [
+        589,
+        25
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c349",
+     "tag": "Checkbox",
+     "x": 615,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        615,
+        15
+       ],
+       "changed_px": 1036
+      },
+      "left_out": {
+       "pt": [
+        614,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        669,
+        15
+       ],
+       "changed_px": 1036
+      },
+      "right_out": {
+       "pt": [
+        670,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        642,
+        4
+       ],
+       "changed_px": 1036
+      },
+      "top_out": {
+       "pt": [
+        642,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        642,
+        25
+       ],
+       "changed_px": 1036
+      },
+      "bottom_out": {
+       "pt": [
+        642,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c350",
+     "tag": "Checkbox",
+     "x": 673,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        673,
+        15
+       ],
+       "changed_px": 1005
+      },
+      "left_out": {
+       "pt": [
+        672,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        727,
+        15
+       ],
+       "changed_px": 1005
+      },
+      "right_out": {
+       "pt": [
+        728,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        700,
+        4
+       ],
+       "changed_px": 1005
+      },
+      "top_out": {
+       "pt": [
+        700,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        700,
+        25
+       ],
+       "changed_px": 1005
+      },
+      "bottom_out": {
+       "pt": [
+        700,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c351",
+     "tag": "Checkbox",
+     "x": 730,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        729,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        757,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        758,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        744,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        744,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        744,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        744,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b359",
+     "tag": "Button",
+     "x": 667,
+     "y": 38,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        667,
+        52
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        666,
+        52
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        696,
+        52
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        697,
+        52
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        682,
+        38
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        682,
+        37
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        682,
+        65
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        682,
+        66
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c360",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 38,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        52
+       ],
+       "changed_px": 1352
+      },
+      "left_out": {
+       "pt": [
+        704,
+        52
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        52
+       ],
+       "changed_px": 1352
+      },
+      "right_out": {
+       "pt": [
+        760,
+        52
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        38
+       ],
+       "changed_px": 1352
+      },
+      "top_out": {
+       "pt": [
+        732,
+        37
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        65
+       ],
+       "changed_px": 1352
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        66
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq0_strip_dn",
+     "tag": "Slider",
+     "x": 135,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        142
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        134,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        172,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        173,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        163,
+        77
+       ],
+       "changed_px": 1075
+      },
+      "top_out": {
+       "pt": [
+        163,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        163,
+        206
+       ],
+       "changed_px": 1107
+      },
+      "bottom_out": {
+       "pt": [
+        163,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq1_strip_dn",
+     "tag": "Slider",
+     "x": 198,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        197,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        236,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        226,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        226,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        226,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        226,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq2_strip_dn",
+     "tag": "Slider",
+     "x": 245,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        245,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        244,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        282,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        283,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        273,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        273,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        273,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        273,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq3_strip_dn",
+     "tag": "Slider",
+     "x": 293,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        293,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        292,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        330,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        331,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        321,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        321,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        321,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        321,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq4_strip_dn",
+     "tag": "Slider",
+     "x": 340,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        340,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        339,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        377,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        378,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        368,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        368,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        368,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        368,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq5_strip_dn",
+     "tag": "Slider",
+     "x": 388,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        388,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        387,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        425,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        426,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        416,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        416,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        416,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        416,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq6_strip_dn",
+     "tag": "Slider",
+     "x": 435,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        435,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        434,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        472,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        473,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        463,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        463,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        463,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        463,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq7_strip_dn",
+     "tag": "Slider",
+     "x": 483,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        483,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        482,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        521,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        511,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        511,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        511,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        511,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq8_strip_dn",
+     "tag": "Slider",
+     "x": 530,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        530,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        529,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        567,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        568,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        558,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        558,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        558,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        558,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq9_strip_dn",
+     "tag": "Slider",
+     "x": 578,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        578,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        577,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        615,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        616,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        606,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        606,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        606,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        606,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq10_strip_dn",
+     "tag": "Slider",
+     "x": 625,
+     "y": 77,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        142
+       ],
+       "changed_px": 559
+      },
+      "left_out": {
+       "pt": [
+        624,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        662,
+        142
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        663,
+        142
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        653,
+        77
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        653,
+        76
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        653,
+        206
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        653,
+        207
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "strip-dn-pl1-eq1",
+   "controls": [
+    {
+     "id": "b337",
+     "tag": "Button",
+     "x": 20,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        19,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        47,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        48,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        34,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b338",
+     "tag": "Button",
+     "x": 50,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        50,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        49,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        77,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        78,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        64,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        64,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        64,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        64,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c339",
+     "tag": "Checkbox",
+     "x": 80,
+     "y": 4,
+     "w": 32,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        80,
+        15
+       ],
+       "changed_px": 588
+      },
+      "left_out": {
+       "pt": [
+        79,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        111,
+        15
+       ],
+       "changed_px": 588
+      },
+      "right_out": {
+       "pt": [
+        112,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        96,
+        4
+       ],
+       "changed_px": 588
+      },
+      "top_out": {
+       "pt": [
+        96,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        96,
+        25
+       ],
+       "changed_px": 588
+      },
+      "bottom_out": {
+       "pt": [
+        96,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b340",
+     "tag": "Button",
+     "x": 115,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        115,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        114,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        142,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        143,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        129,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        129,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        129,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        129,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c346",
+     "tag": "Checkbox",
+     "x": 503,
+     "y": 6,
+     "w": 18,
+     "h": 18,
+     "edges": {
+      "left_in": {
+       "pt": [
+        503,
+        15
+       ],
+       "changed_px": 252
+      },
+      "left_out": {
+       "pt": [
+        502,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        15
+       ],
+       "changed_px": 252
+      },
+      "right_out": {
+       "pt": [
+        521,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        512,
+        6
+       ],
+       "changed_px": 252
+      },
+      "top_out": {
+       "pt": [
+        512,
+        5
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        512,
+        23
+       ],
+       "changed_px": 252
+      },
+      "bottom_out": {
+       "pt": [
+        512,
+        24
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c349",
+     "tag": "Checkbox",
+     "x": 615,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        615,
+        15
+       ],
+       "changed_px": 1009
+      },
+      "left_out": {
+       "pt": [
+        614,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        669,
+        15
+       ],
+       "changed_px": 1009
+      },
+      "right_out": {
+       "pt": [
+        670,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        642,
+        4
+       ],
+       "changed_px": 1009
+      },
+      "top_out": {
+       "pt": [
+        642,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        642,
+        25
+       ],
+       "changed_px": 1009
+      },
+      "bottom_out": {
+       "pt": [
+        642,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c350",
+     "tag": "Checkbox",
+     "x": 673,
+     "y": 4,
+     "w": 55,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        673,
+        15
+       ],
+       "changed_px": 1005
+      },
+      "left_out": {
+       "pt": [
+        672,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        727,
+        15
+       ],
+       "changed_px": 1005
+      },
+      "right_out": {
+       "pt": [
+        728,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        700,
+        4
+       ],
+       "changed_px": 1005
+      },
+      "top_out": {
+       "pt": [
+        700,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        700,
+        25
+       ],
+       "changed_px": 1005
+      },
+      "bottom_out": {
+       "pt": [
+        700,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c351",
+     "tag": "Checkbox",
+     "x": 730,
+     "y": 4,
+     "w": 28,
+     "h": 22,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        15
+       ],
+       "changed_px": 508
+      },
+      "left_out": {
+       "pt": [
+        729,
+        15
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        757,
+        15
+       ],
+       "changed_px": 508
+      },
+      "right_out": {
+       "pt": [
+        758,
+        15
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        744,
+        4
+       ],
+       "changed_px": 508
+      },
+      "top_out": {
+       "pt": [
+        744,
+        3
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        744,
+        25
+       ],
+       "changed_px": 508
+      },
+      "bottom_out": {
+       "pt": [
+        744,
+        26
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b359",
+     "tag": "Button",
+     "x": 667,
+     "y": 38,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        667,
+        52
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        666,
+        52
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        696,
+        52
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        697,
+        52
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        682,
+        38
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        682,
+        37
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        682,
+        65
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        682,
+        66
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c360",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 38,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        52
+       ],
+       "changed_px": 1352
+      },
+      "left_out": {
+       "pt": [
+        704,
+        52
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        52
+       ],
+       "changed_px": 1352
+      },
+      "right_out": {
+       "pt": [
+        760,
+        52
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        38
+       ],
+       "changed_px": 1352
+      },
+      "top_out": {
+       "pt": [
+        732,
+        37
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        65
+       ],
+       "changed_px": 1352
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        66
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b403",
+     "tag": "Button",
+     "x": 730,
+     "y": 243,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        257
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        257
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        257
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        257
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        243
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        242
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        270
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        271
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b413",
+     "tag": "Button",
+     "x": 15,
+     "y": 544,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        14,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        69,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        70,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        42,
+        544
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        42,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        42,
+        571
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        42,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b414",
+     "tag": "Button",
+     "x": 75,
+     "y": 544,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        75,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        74,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        129,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        130,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        102,
+        544
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        102,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        102,
+        571
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        102,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b415",
+     "tag": "Button",
+     "x": 135,
+     "y": 544,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        134,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        189,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        190,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        162,
+        544
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        162,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        162,
+        571
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        162,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b416",
+     "tag": "Button",
+     "x": 195,
+     "y": 544,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        195,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        194,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        249,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        250,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        222,
+        544
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        222,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        222,
+        571
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        222,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b417",
+     "tag": "Button",
+     "x": 255,
+     "y": 544,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        255,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        254,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        309,
+        558
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        310,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        282,
+        544
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        282,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        282,
+        571
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        282,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c418",
+     "tag": "Checkbox",
+     "x": 555,
+     "y": 544,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        555,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        554,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        619,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        620,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        587,
+        544
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        587,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        587,
+        571
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        587,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c419",
+     "tag": "Checkbox",
+     "x": 625,
+     "y": 544,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        624,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        690,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        657,
+        544
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        657,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        657,
+        571
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        657,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c420",
+     "tag": "Checkbox",
+     "x": 695,
+     "y": 544,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        694,
+        558
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        558
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        760,
+        558
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        727,
+        544
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        727,
+        543
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        727,
+        571
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        727,
+        572
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "full-dn-pl0-eq0",
+   "controls": [
+    {
+     "id": "b127",
+     "tag": "Button",
+     "x": 625,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        624,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        654,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        655,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        640,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        640,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        640,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        640,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c128",
+     "tag": "Checkbox",
+     "x": 660,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        660,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        659,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        690,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        675,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        675,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        675,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        675,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b129",
+     "tag": "Button",
+     "x": 695,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        694,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        724,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        725,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        710,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        710,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        710,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        710,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b130",
+     "tag": "Button",
+     "x": 730,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b131",
+     "tag": "Button",
+     "x": 20,
+     "y": 11,
+     "w": 85,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "left_out": {
+       "pt": [
+        19,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        104,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "right_out": {
+       "pt": [
+        105,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        62,
+        11
+       ],
+       "changed_px": 2035
+      },
+      "top_out": {
+       "pt": [
+        62,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        62,
+        38
+       ],
+       "changed_px": 2035
+      },
+      "bottom_out": {
+       "pt": [
+        62,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c135",
+     "tag": "Checkbox",
+     "x": 22,
+     "y": 60,
+     "w": 238,
+     "h": 120,
+     "edges": {
+      "left_in": {
+       "pt": [
+        22,
+        120
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        21,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        259,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        260,
+        120
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        141,
+        60
+       ],
+       "changed_px": 0
+      },
+      "top_out": {
+       "pt": [
+        141,
+        59
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        141,
+        179
+       ],
+       "changed_px": 0
+      },
+      "bottom_out": {
+       "pt": [
+        141,
+        180
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_ftitle_full-dn",
+     "tag": "Slider",
+     "x": 279,
+     "y": 66,
+     "w": 470,
+     "h": 32,
+     "edges": {
+      "left_in": {
+       "pt": [
+        279,
+        82
+       ],
+       "changed_px": 6820
+      },
+      "left_out": {
+       "pt": [
+        278,
+        82
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        748,
+        82
+       ],
+       "changed_px": 7190
+      },
+      "right_out": {
+       "pt": [
+        749,
+        82
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        631,
+        66
+       ],
+       "changed_px": 3800
+      },
+      "top_out": {
+       "pt": [
+        631,
+        65
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        631,
+        97
+       ],
+       "changed_px": 3800
+      },
+      "bottom_out": {
+       "pt": [
+        631,
+        98
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c152",
+     "tag": "Checkbox",
+     "x": 278,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        278,
+        162
+       ],
+       "changed_px": 978
+      },
+      "left_out": {
+       "pt": [
+        277,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        335,
+        162
+       ],
+       "changed_px": 978
+      },
+      "right_out": {
+       "pt": [
+        336,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        307,
+        152
+       ],
+       "changed_px": 978
+      },
+      "top_out": {
+       "pt": [
+        307,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        307,
+        171
+       ],
+       "changed_px": 978
+      },
+      "bottom_out": {
+       "pt": [
+        307,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c153",
+     "tag": "Checkbox",
+     "x": 342,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        342,
+        162
+       ],
+       "changed_px": 979
+      },
+      "left_out": {
+       "pt": [
+        341,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        399,
+        162
+       ],
+       "changed_px": 979
+      },
+      "right_out": {
+       "pt": [
+        400,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        371,
+        152
+       ],
+       "changed_px": 979
+      },
+      "top_out": {
+       "pt": [
+        371,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        371,
+        171
+       ],
+       "changed_px": 979
+      },
+      "bottom_out": {
+       "pt": [
+        371,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c154",
+     "tag": "Checkbox",
+     "x": 408,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        408,
+        162
+       ],
+       "changed_px": 966
+      },
+      "left_out": {
+       "pt": [
+        407,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        465,
+        162
+       ],
+       "changed_px": 966
+      },
+      "right_out": {
+       "pt": [
+        466,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        437,
+        152
+       ],
+       "changed_px": 966
+      },
+      "top_out": {
+       "pt": [
+        437,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        437,
+        171
+       ],
+       "changed_px": 966
+      },
+      "bottom_out": {
+       "pt": [
+        437,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_seek_full-dn",
+     "tag": "Slider",
+     "x": 15,
+     "y": 205,
+     "w": 745,
+     "h": 12,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        211
+       ],
+       "changed_px": 3140
+      },
+      "left_out": {
+       "pt": [
+        14,
+        211
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        211
+       ],
+       "changed_px": 3130
+      },
+      "right_out": {
+       "pt": [
+        760,
+        211
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        573,
+        205
+       ],
+       "changed_px": 1718
+      },
+      "top_out": {
+       "pt": [
+        573,
+        204
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        573,
+        216
+       ],
+       "changed_px": 1718
+      },
+      "bottom_out": {
+       "pt": [
+        573,
+        217
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b156",
+     "tag": "Button",
+     "x": 15,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        14,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        52,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        53,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        34,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b157",
+     "tag": "Button",
+     "x": 58,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        58,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        57,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        95,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        96,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        77,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        77,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        77,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        77,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b158",
+     "tag": "Button",
+     "x": 100,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        100,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        99,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        137,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        138,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        119,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        119,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        119,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        119,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c159",
+     "tag": "Checkbox",
+     "x": 142,
+     "y": 244,
+     "w": 50,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        142,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "left_out": {
+       "pt": [
+        141,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        191,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "right_out": {
+       "pt": [
+        192,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        167,
+        244
+       ],
+       "changed_px": 1572
+      },
+      "top_out": {
+       "pt": [
+        167,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        167,
+        278
+       ],
+       "changed_px": 1572
+      },
+      "bottom_out": {
+       "pt": [
+        167,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b160",
+     "tag": "Button",
+     "x": 198,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        197,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        236,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        217,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        217,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        217,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        217,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b161",
+     "tag": "Button",
+     "x": 240,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        240,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        239,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        277,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        278,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        259,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        259,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        259,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        259,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_vol_full-dn",
+     "tag": "Slider",
+     "x": 455,
+     "y": 255,
+     "w": 125,
+     "h": 12,
+     "edges": {
+      "left_in": {
+       "pt": [
+        455,
+        261
+       ],
+       "changed_px": 624
+      },
+      "left_out": {
+       "pt": [
+        454,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        579,
+        261
+       ],
+       "changed_px": 628
+      },
+      "right_out": {
+       "pt": [
+        580,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        548,
+        255
+       ],
+       "changed_px": 440
+      },
+      "top_out": {
+       "pt": [
+        548,
+        254
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        548,
+        266
+       ],
+       "changed_px": 440
+      },
+      "bottom_out": {
+       "pt": [
+        548,
+        267
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c164",
+     "tag": "Checkbox",
+     "x": 640,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        640,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "left_out": {
+       "pt": [
+        639,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        694,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "right_out": {
+       "pt": [
+        695,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        667,
+        244
+       ],
+       "changed_px": 1722
+      },
+      "top_out": {
+       "pt": [
+        667,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        667,
+        278
+       ],
+       "changed_px": 1722
+      },
+      "bottom_out": {
+       "pt": [
+        667,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c165",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "left_out": {
+       "pt": [
+        704,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "right_out": {
+       "pt": [
+        760,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        244
+       ],
+       "changed_px": 1722
+      },
+      "top_out": {
+       "pt": [
+        732,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        278
+       ],
+       "changed_px": 1722
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "full-dn-pl1-eq0",
+   "controls": [
+    {
+     "id": "b127",
+     "tag": "Button",
+     "x": 625,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        25
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        624,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        654,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        655,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        640,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        640,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        640,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        640,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c128",
+     "tag": "Checkbox",
+     "x": 660,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        660,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        659,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        690,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        675,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        675,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        675,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        675,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b129",
+     "tag": "Button",
+     "x": 695,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        694,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        724,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        725,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        710,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        710,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        710,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        710,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b130",
+     "tag": "Button",
+     "x": 730,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b131",
+     "tag": "Button",
+     "x": 20,
+     "y": 11,
+     "w": 85,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "left_out": {
+       "pt": [
+        19,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        104,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "right_out": {
+       "pt": [
+        105,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        62,
+        11
+       ],
+       "changed_px": 2035
+      },
+      "top_out": {
+       "pt": [
+        62,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        62,
+        38
+       ],
+       "changed_px": 2035
+      },
+      "bottom_out": {
+       "pt": [
+        62,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c135",
+     "tag": "Checkbox",
+     "x": 22,
+     "y": 60,
+     "w": 238,
+     "h": 120,
+     "edges": {
+      "left_in": {
+       "pt": [
+        22,
+        120
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        21,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        259,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        260,
+        120
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        141,
+        60
+       ],
+       "changed_px": 0
+      },
+      "top_out": {
+       "pt": [
+        141,
+        59
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        141,
+        179
+       ],
+       "changed_px": 0
+      },
+      "bottom_out": {
+       "pt": [
+        141,
+        180
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c152",
+     "tag": "Checkbox",
+     "x": 278,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        278,
+        162
+       ],
+       "changed_px": 978
+      },
+      "left_out": {
+       "pt": [
+        277,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        335,
+        162
+       ],
+       "changed_px": 978
+      },
+      "right_out": {
+       "pt": [
+        336,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        307,
+        152
+       ],
+       "changed_px": 978
+      },
+      "top_out": {
+       "pt": [
+        307,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        307,
+        171
+       ],
+       "changed_px": 978
+      },
+      "bottom_out": {
+       "pt": [
+        307,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c153",
+     "tag": "Checkbox",
+     "x": 342,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        342,
+        162
+       ],
+       "changed_px": 979
+      },
+      "left_out": {
+       "pt": [
+        341,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        399,
+        162
+       ],
+       "changed_px": 979
+      },
+      "right_out": {
+       "pt": [
+        400,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        371,
+        152
+       ],
+       "changed_px": 979
+      },
+      "top_out": {
+       "pt": [
+        371,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        371,
+        171
+       ],
+       "changed_px": 979
+      },
+      "bottom_out": {
+       "pt": [
+        371,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c154",
+     "tag": "Checkbox",
+     "x": 408,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        408,
+        162
+       ],
+       "changed_px": 966
+      },
+      "left_out": {
+       "pt": [
+        407,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        465,
+        162
+       ],
+       "changed_px": 966
+      },
+      "right_out": {
+       "pt": [
+        466,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        437,
+        152
+       ],
+       "changed_px": 966
+      },
+      "top_out": {
+       "pt": [
+        437,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        437,
+        171
+       ],
+       "changed_px": 966
+      },
+      "bottom_out": {
+       "pt": [
+        437,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b156",
+     "tag": "Button",
+     "x": 15,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        14,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        52,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        53,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        34,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b157",
+     "tag": "Button",
+     "x": 58,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        58,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        57,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        95,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        96,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        77,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        77,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        77,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        77,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b158",
+     "tag": "Button",
+     "x": 100,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        100,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        99,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        137,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        138,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        119,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        119,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        119,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        119,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c159",
+     "tag": "Checkbox",
+     "x": 142,
+     "y": 244,
+     "w": 50,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        142,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "left_out": {
+       "pt": [
+        141,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        191,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "right_out": {
+       "pt": [
+        192,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        167,
+        244
+       ],
+       "changed_px": 1572
+      },
+      "top_out": {
+       "pt": [
+        167,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        167,
+        278
+       ],
+       "changed_px": 1572
+      },
+      "bottom_out": {
+       "pt": [
+        167,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b160",
+     "tag": "Button",
+     "x": 198,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        197,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        236,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        217,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        217,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        217,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        217,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b161",
+     "tag": "Button",
+     "x": 240,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        240,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        239,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        277,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        278,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        259,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        259,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        259,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        259,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c164",
+     "tag": "Checkbox",
+     "x": 640,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        640,
+        261
+       ],
+       "changed_px": 1680
+      },
+      "left_out": {
+       "pt": [
+        639,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        694,
+        261
+       ],
+       "changed_px": 1680
+      },
+      "right_out": {
+       "pt": [
+        695,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        667,
+        244
+       ],
+       "changed_px": 1680
+      },
+      "top_out": {
+       "pt": [
+        667,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        667,
+        278
+       ],
+       "changed_px": 1680
+      },
+      "bottom_out": {
+       "pt": [
+        667,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c165",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "left_out": {
+       "pt": [
+        704,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "right_out": {
+       "pt": [
+        760,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        244
+       ],
+       "changed_px": 1722
+      },
+      "top_out": {
+       "pt": [
+        732,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        278
+       ],
+       "changed_px": 1722
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b189",
+     "tag": "Button",
+     "x": 730,
+     "y": 298,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        312
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        312
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        312
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        312
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        298
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        297
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        325
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        326
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b199",
+     "tag": "Button",
+     "x": 15,
+     "y": 599,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        14,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        69,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        70,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        42,
+        599
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        42,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        42,
+        626
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        42,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b200",
+     "tag": "Button",
+     "x": 75,
+     "y": 599,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        75,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        74,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        129,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        130,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        102,
+        599
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        102,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        102,
+        626
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        102,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b201",
+     "tag": "Button",
+     "x": 135,
+     "y": 599,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        134,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        189,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        190,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        162,
+        599
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        162,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        162,
+        626
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        162,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b202",
+     "tag": "Button",
+     "x": 195,
+     "y": 599,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        195,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        194,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        249,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        250,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        222,
+        599
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        222,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        222,
+        626
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        222,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b203",
+     "tag": "Button",
+     "x": 255,
+     "y": 599,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        255,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        254,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        309,
+        613
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        310,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        282,
+        599
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        282,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        282,
+        626
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        282,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c204",
+     "tag": "Checkbox",
+     "x": 555,
+     "y": 599,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        555,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        554,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        619,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        620,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        587,
+        599
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        587,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        587,
+        626
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        587,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c205",
+     "tag": "Checkbox",
+     "x": 625,
+     "y": 599,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        624,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        690,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        657,
+        599
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        657,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        657,
+        626
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        657,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c206",
+     "tag": "Checkbox",
+     "x": 695,
+     "y": 599,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        694,
+        613
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        613
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        760,
+        613
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        727,
+        599
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        727,
+        598
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        727,
+        626
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        727,
+        627
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "full-dn-pl0-eq1",
+   "controls": [
+    {
+     "id": "b127",
+     "tag": "Button",
+     "x": 625,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        624,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        654,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        655,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        640,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        640,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        640,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        640,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c128",
+     "tag": "Checkbox",
+     "x": 660,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        660,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        659,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        690,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        675,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        675,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        675,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        675,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b129",
+     "tag": "Button",
+     "x": 695,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        694,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        724,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        725,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        710,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        710,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        710,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        710,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b130",
+     "tag": "Button",
+     "x": 730,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b131",
+     "tag": "Button",
+     "x": 20,
+     "y": 11,
+     "w": 85,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "left_out": {
+       "pt": [
+        19,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        104,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "right_out": {
+       "pt": [
+        105,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        62,
+        11
+       ],
+       "changed_px": 2035
+      },
+      "top_out": {
+       "pt": [
+        62,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        62,
+        38
+       ],
+       "changed_px": 2035
+      },
+      "bottom_out": {
+       "pt": [
+        62,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c135",
+     "tag": "Checkbox",
+     "x": 22,
+     "y": 60,
+     "w": 238,
+     "h": 120,
+     "edges": {
+      "left_in": {
+       "pt": [
+        22,
+        120
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        21,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        259,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        260,
+        120
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        141,
+        60
+       ],
+       "changed_px": 0
+      },
+      "top_out": {
+       "pt": [
+        141,
+        59
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        141,
+        179
+       ],
+       "changed_px": 0
+      },
+      "bottom_out": {
+       "pt": [
+        141,
+        180
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_ftitle_full-dn",
+     "tag": "Slider",
+     "x": 279,
+     "y": 66,
+     "w": 470,
+     "h": 32,
+     "edges": {
+      "left_in": {
+       "pt": [
+        279,
+        82
+       ],
+       "changed_px": 6852
+      },
+      "left_out": {
+       "pt": [
+        278,
+        82
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        748,
+        82
+       ],
+       "changed_px": 7190
+      },
+      "right_out": {
+       "pt": [
+        749,
+        82
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        631,
+        66
+       ],
+       "changed_px": 3800
+      },
+      "top_out": {
+       "pt": [
+        631,
+        65
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        631,
+        97
+       ],
+       "changed_px": 3800
+      },
+      "bottom_out": {
+       "pt": [
+        631,
+        98
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c152",
+     "tag": "Checkbox",
+     "x": 278,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        278,
+        162
+       ],
+       "changed_px": 978
+      },
+      "left_out": {
+       "pt": [
+        277,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        335,
+        162
+       ],
+       "changed_px": 978
+      },
+      "right_out": {
+       "pt": [
+        336,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        307,
+        152
+       ],
+       "changed_px": 978
+      },
+      "top_out": {
+       "pt": [
+        307,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        307,
+        171
+       ],
+       "changed_px": 978
+      },
+      "bottom_out": {
+       "pt": [
+        307,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c153",
+     "tag": "Checkbox",
+     "x": 342,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        342,
+        162
+       ],
+       "changed_px": 979
+      },
+      "left_out": {
+       "pt": [
+        341,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        399,
+        162
+       ],
+       "changed_px": 979
+      },
+      "right_out": {
+       "pt": [
+        400,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        371,
+        152
+       ],
+       "changed_px": 979
+      },
+      "top_out": {
+       "pt": [
+        371,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        371,
+        171
+       ],
+       "changed_px": 979
+      },
+      "bottom_out": {
+       "pt": [
+        371,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c154",
+     "tag": "Checkbox",
+     "x": 408,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        408,
+        162
+       ],
+       "changed_px": 966
+      },
+      "left_out": {
+       "pt": [
+        407,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        465,
+        162
+       ],
+       "changed_px": 966
+      },
+      "right_out": {
+       "pt": [
+        466,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        437,
+        152
+       ],
+       "changed_px": 966
+      },
+      "top_out": {
+       "pt": [
+        437,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        437,
+        171
+       ],
+       "changed_px": 966
+      },
+      "bottom_out": {
+       "pt": [
+        437,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_seek_full-dn",
+     "tag": "Slider",
+     "x": 15,
+     "y": 205,
+     "w": 745,
+     "h": 12,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        211
+       ],
+       "changed_px": 3140
+      },
+      "left_out": {
+       "pt": [
+        14,
+        211
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        211
+       ],
+       "changed_px": 3130
+      },
+      "right_out": {
+       "pt": [
+        760,
+        211
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        573,
+        205
+       ],
+       "changed_px": 1718
+      },
+      "top_out": {
+       "pt": [
+        573,
+        204
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        573,
+        216
+       ],
+       "changed_px": 1718
+      },
+      "bottom_out": {
+       "pt": [
+        573,
+        217
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b156",
+     "tag": "Button",
+     "x": 15,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        14,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        52,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        53,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        34,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b157",
+     "tag": "Button",
+     "x": 58,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        58,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        57,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        95,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        96,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        77,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        77,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        77,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        77,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b158",
+     "tag": "Button",
+     "x": 100,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        100,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        99,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        137,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        138,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        119,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        119,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        119,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        119,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c159",
+     "tag": "Checkbox",
+     "x": 142,
+     "y": 244,
+     "w": 50,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        142,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "left_out": {
+       "pt": [
+        141,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        191,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "right_out": {
+       "pt": [
+        192,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        167,
+        244
+       ],
+       "changed_px": 1572
+      },
+      "top_out": {
+       "pt": [
+        167,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        167,
+        278
+       ],
+       "changed_px": 1572
+      },
+      "bottom_out": {
+       "pt": [
+        167,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b160",
+     "tag": "Button",
+     "x": 198,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        197,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        236,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        217,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        217,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        217,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        217,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b161",
+     "tag": "Button",
+     "x": 240,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        240,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        239,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        277,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        278,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        259,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        259,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        259,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        259,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_vol_full-dn",
+     "tag": "Slider",
+     "x": 455,
+     "y": 255,
+     "w": 125,
+     "h": 12,
+     "edges": {
+      "left_in": {
+       "pt": [
+        455,
+        261
+       ],
+       "changed_px": 616
+      },
+      "left_out": {
+       "pt": [
+        454,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        579,
+        261
+       ],
+       "changed_px": 628
+      },
+      "right_out": {
+       "pt": [
+        580,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        548,
+        255
+       ],
+       "changed_px": 440
+      },
+      "top_out": {
+       "pt": [
+        548,
+        254
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        548,
+        266
+       ],
+       "changed_px": 440
+      },
+      "bottom_out": {
+       "pt": [
+        548,
+        267
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c164",
+     "tag": "Checkbox",
+     "x": 640,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        640,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "left_out": {
+       "pt": [
+        639,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        694,
+        261
+       ],
+       "changed_px": 1722
+      },
+      "right_out": {
+       "pt": [
+        695,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        667,
+        244
+       ],
+       "changed_px": 1722
+      },
+      "top_out": {
+       "pt": [
+        667,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        667,
+        278
+       ],
+       "changed_px": 1722
+      },
+      "bottom_out": {
+       "pt": [
+        667,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c165",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        261
+       ],
+       "changed_px": 1681
+      },
+      "left_out": {
+       "pt": [
+        704,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        261
+       ],
+       "changed_px": 1681
+      },
+      "right_out": {
+       "pt": [
+        760,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        244
+       ],
+       "changed_px": 1681
+      },
+      "top_out": {
+       "pt": [
+        732,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        278
+       ],
+       "changed_px": 1681
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b173",
+     "tag": "Button",
+     "x": 667,
+     "y": 298,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        667,
+        312
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        666,
+        312
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        696,
+        312
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        697,
+        312
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        682,
+        298
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        682,
+        297
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        682,
+        325
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        682,
+        326
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c174",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 298,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        312
+       ],
+       "changed_px": 1352
+      },
+      "left_out": {
+       "pt": [
+        704,
+        312
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        312
+       ],
+       "changed_px": 1352
+      },
+      "right_out": {
+       "pt": [
+        760,
+        312
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        298
+       ],
+       "changed_px": 1352
+      },
+      "top_out": {
+       "pt": [
+        732,
+        297
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        325
+       ],
+       "changed_px": 1352
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        326
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq0_full_dn",
+     "tag": "Slider",
+     "x": 135,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        134,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        172,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        173,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        163,
+        337
+       ],
+       "changed_px": 1075
+      },
+      "top_out": {
+       "pt": [
+        163,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        163,
+        466
+       ],
+       "changed_px": 1107
+      },
+      "bottom_out": {
+       "pt": [
+        163,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq1_full_dn",
+     "tag": "Slider",
+     "x": 198,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        197,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        236,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        226,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        226,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        226,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        226,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq2_full_dn",
+     "tag": "Slider",
+     "x": 245,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        245,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        244,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        282,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        283,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        273,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        273,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        273,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        273,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq3_full_dn",
+     "tag": "Slider",
+     "x": 293,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        293,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        292,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        330,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        331,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        321,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        321,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        321,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        321,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq4_full_dn",
+     "tag": "Slider",
+     "x": 340,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        340,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        339,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        377,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        378,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        368,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        368,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        368,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        368,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq5_full_dn",
+     "tag": "Slider",
+     "x": 388,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        388,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        387,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        425,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        426,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        416,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        416,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        416,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        416,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq6_full_dn",
+     "tag": "Slider",
+     "x": 435,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        435,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        434,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        472,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        473,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        463,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        463,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        463,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        463,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq7_full_dn",
+     "tag": "Slider",
+     "x": 483,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        483,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        482,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        520,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        521,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        511,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        511,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        511,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        511,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq8_full_dn",
+     "tag": "Slider",
+     "x": 530,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        530,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        529,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        567,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        568,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        558,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        558,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        558,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        558,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq9_full_dn",
+     "tag": "Slider",
+     "x": 578,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        578,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        577,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        615,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        616,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        606,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        606,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        606,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        606,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "t0_s_eq10_full_dn",
+     "tag": "Slider",
+     "x": 625,
+     "y": 337,
+     "w": 38,
+     "h": 130,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        402
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        624,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        662,
+        402
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        663,
+        402
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        653,
+        337
+       ],
+       "changed_px": 964
+      },
+      "top_out": {
+       "pt": [
+        653,
+        336
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        653,
+        466
+       ],
+       "changed_px": 996
+      },
+      "bottom_out": {
+       "pt": [
+        653,
+        467
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "scene": "full-dn-pl1-eq1",
+   "controls": [
+    {
+     "id": "b127",
+     "tag": "Button",
+     "x": 625,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        624,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        654,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        655,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        640,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        640,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        640,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        640,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c128",
+     "tag": "Checkbox",
+     "x": 660,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        660,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        659,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        690,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        675,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        675,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        675,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        675,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b129",
+     "tag": "Button",
+     "x": 695,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        694,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        724,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        725,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        710,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        710,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        710,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        710,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b130",
+     "tag": "Button",
+     "x": 730,
+     "y": 11,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        25
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        25
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        11
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        38
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b131",
+     "tag": "Button",
+     "x": 20,
+     "y": 11,
+     "w": 85,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        20,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "left_out": {
+       "pt": [
+        19,
+        25
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        104,
+        25
+       ],
+       "changed_px": 2035
+      },
+      "right_out": {
+       "pt": [
+        105,
+        25
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        62,
+        11
+       ],
+       "changed_px": 2035
+      },
+      "top_out": {
+       "pt": [
+        62,
+        10
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        62,
+        38
+       ],
+       "changed_px": 2035
+      },
+      "bottom_out": {
+       "pt": [
+        62,
+        39
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c135",
+     "tag": "Checkbox",
+     "x": 22,
+     "y": 60,
+     "w": 238,
+     "h": 120,
+     "edges": {
+      "left_in": {
+       "pt": [
+        22,
+        120
+       ],
+       "changed_px": 0
+      },
+      "left_out": {
+       "pt": [
+        21,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        259,
+        120
+       ],
+       "changed_px": 0
+      },
+      "right_out": {
+       "pt": [
+        260,
+        120
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        141,
+        60
+       ],
+       "changed_px": 0
+      },
+      "top_out": {
+       "pt": [
+        141,
+        59
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        141,
+        179
+       ],
+       "changed_px": 0
+      },
+      "bottom_out": {
+       "pt": [
+        141,
+        180
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c152",
+     "tag": "Checkbox",
+     "x": 278,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        278,
+        162
+       ],
+       "changed_px": 978
+      },
+      "left_out": {
+       "pt": [
+        277,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        335,
+        162
+       ],
+       "changed_px": 978
+      },
+      "right_out": {
+       "pt": [
+        336,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        307,
+        152
+       ],
+       "changed_px": 978
+      },
+      "top_out": {
+       "pt": [
+        307,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        307,
+        171
+       ],
+       "changed_px": 978
+      },
+      "bottom_out": {
+       "pt": [
+        307,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c153",
+     "tag": "Checkbox",
+     "x": 342,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        342,
+        162
+       ],
+       "changed_px": 979
+      },
+      "left_out": {
+       "pt": [
+        341,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        399,
+        162
+       ],
+       "changed_px": 979
+      },
+      "right_out": {
+       "pt": [
+        400,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        371,
+        152
+       ],
+       "changed_px": 979
+      },
+      "top_out": {
+       "pt": [
+        371,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        371,
+        171
+       ],
+       "changed_px": 979
+      },
+      "bottom_out": {
+       "pt": [
+        371,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c154",
+     "tag": "Checkbox",
+     "x": 408,
+     "y": 152,
+     "w": 58,
+     "h": 20,
+     "edges": {
+      "left_in": {
+       "pt": [
+        408,
+        162
+       ],
+       "changed_px": 966
+      },
+      "left_out": {
+       "pt": [
+        407,
+        162
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        465,
+        162
+       ],
+       "changed_px": 966
+      },
+      "right_out": {
+       "pt": [
+        466,
+        162
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        437,
+        152
+       ],
+       "changed_px": 966
+      },
+      "top_out": {
+       "pt": [
+        437,
+        151
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        437,
+        171
+       ],
+       "changed_px": 966
+      },
+      "bottom_out": {
+       "pt": [
+        437,
+        172
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b156",
+     "tag": "Button",
+     "x": 15,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        14,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        52,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        53,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        34,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        34,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        34,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        34,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b157",
+     "tag": "Button",
+     "x": 58,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        58,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        57,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        95,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        96,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        77,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        77,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        77,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        77,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b158",
+     "tag": "Button",
+     "x": 100,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        100,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        99,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        137,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        138,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        119,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        119,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        119,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        119,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c159",
+     "tag": "Checkbox",
+     "x": 142,
+     "y": 244,
+     "w": 50,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        142,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "left_out": {
+       "pt": [
+        141,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        191,
+        261
+       ],
+       "changed_px": 1572
+      },
+      "right_out": {
+       "pt": [
+        192,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        167,
+        244
+       ],
+       "changed_px": 1572
+      },
+      "top_out": {
+       "pt": [
+        167,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        167,
+        278
+       ],
+       "changed_px": 1572
+      },
+      "bottom_out": {
+       "pt": [
+        167,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b160",
+     "tag": "Button",
+     "x": 198,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        198,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        197,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        235,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        236,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        217,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        217,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        217,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        217,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b161",
+     "tag": "Button",
+     "x": 240,
+     "y": 244,
+     "w": 38,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        240,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "left_out": {
+       "pt": [
+        239,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        277,
+        261
+       ],
+       "changed_px": 1176
+      },
+      "right_out": {
+       "pt": [
+        278,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        259,
+        244
+       ],
+       "changed_px": 1176
+      },
+      "top_out": {
+       "pt": [
+        259,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        259,
+        278
+       ],
+       "changed_px": 1176
+      },
+      "bottom_out": {
+       "pt": [
+        259,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c164",
+     "tag": "Checkbox",
+     "x": 640,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        640,
+        261
+       ],
+       "changed_px": 1680
+      },
+      "left_out": {
+       "pt": [
+        639,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        694,
+        261
+       ],
+       "changed_px": 1680
+      },
+      "right_out": {
+       "pt": [
+        695,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        667,
+        244
+       ],
+       "changed_px": 1680
+      },
+      "top_out": {
+       "pt": [
+        667,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        667,
+        278
+       ],
+       "changed_px": 1680
+      },
+      "bottom_out": {
+       "pt": [
+        667,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c165",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 244,
+     "w": 55,
+     "h": 35,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        261
+       ],
+       "changed_px": 1681
+      },
+      "left_out": {
+       "pt": [
+        704,
+        261
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        261
+       ],
+       "changed_px": 1681
+      },
+      "right_out": {
+       "pt": [
+        760,
+        261
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        244
+       ],
+       "changed_px": 1681
+      },
+      "top_out": {
+       "pt": [
+        732,
+        243
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        278
+       ],
+       "changed_px": 1681
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        279
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b173",
+     "tag": "Button",
+     "x": 667,
+     "y": 298,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        667,
+        312
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        666,
+        312
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        696,
+        312
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        697,
+        312
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        682,
+        298
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        682,
+        297
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        682,
+        325
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        682,
+        326
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c174",
+     "tag": "Checkbox",
+     "x": 705,
+     "y": 298,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        705,
+        312
+       ],
+       "changed_px": 1352
+      },
+      "left_out": {
+       "pt": [
+        704,
+        312
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        312
+       ],
+       "changed_px": 1352
+      },
+      "right_out": {
+       "pt": [
+        760,
+        312
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        732,
+        298
+       ],
+       "changed_px": 1352
+      },
+      "top_out": {
+       "pt": [
+        732,
+        297
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        732,
+        325
+       ],
+       "changed_px": 1352
+      },
+      "bottom_out": {
+       "pt": [
+        732,
+        326
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b217",
+     "tag": "Button",
+     "x": 730,
+     "y": 503,
+     "w": 30,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        730,
+        517
+       ],
+       "changed_px": 716
+      },
+      "left_out": {
+       "pt": [
+        729,
+        517
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        517
+       ],
+       "changed_px": 716
+      },
+      "right_out": {
+       "pt": [
+        760,
+        517
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        745,
+        503
+       ],
+       "changed_px": 716
+      },
+      "top_out": {
+       "pt": [
+        745,
+        502
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        745,
+        530
+       ],
+       "changed_px": 716
+      },
+      "bottom_out": {
+       "pt": [
+        745,
+        531
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b227",
+     "tag": "Button",
+     "x": 15,
+     "y": 804,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        15,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        14,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        69,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        70,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        42,
+        804
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        42,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        42,
+        831
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        42,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b228",
+     "tag": "Button",
+     "x": 75,
+     "y": 804,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        75,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        74,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        129,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        130,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        102,
+        804
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        102,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        102,
+        831
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        102,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b229",
+     "tag": "Button",
+     "x": 135,
+     "y": 804,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        135,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        134,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        189,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        190,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        162,
+        804
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        162,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        162,
+        831
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        162,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b230",
+     "tag": "Button",
+     "x": 195,
+     "y": 804,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        195,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        194,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        249,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        250,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        222,
+        804
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        222,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        222,
+        831
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        222,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "b231",
+     "tag": "Button",
+     "x": 255,
+     "y": 804,
+     "w": 55,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        255,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "left_out": {
+       "pt": [
+        254,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        309,
+        818
+       ],
+       "changed_px": 1366
+      },
+      "right_out": {
+       "pt": [
+        310,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        282,
+        804
+       ],
+       "changed_px": 1366
+      },
+      "top_out": {
+       "pt": [
+        282,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        282,
+        831
+       ],
+       "changed_px": 1366
+      },
+      "bottom_out": {
+       "pt": [
+        282,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c232",
+     "tag": "Checkbox",
+     "x": 555,
+     "y": 804,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        555,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        554,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        619,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        620,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        587,
+        804
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        587,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        587,
+        831
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        587,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c233",
+     "tag": "Checkbox",
+     "x": 625,
+     "y": 804,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        625,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        624,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        689,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        690,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        657,
+        804
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        657,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        657,
+        831
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        657,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    },
+    {
+     "id": "c234",
+     "tag": "Checkbox",
+     "x": 695,
+     "y": 804,
+     "w": 65,
+     "h": 28,
+     "edges": {
+      "left_in": {
+       "pt": [
+        695,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "left_out": {
+       "pt": [
+        694,
+        818
+       ],
+       "changed_px": 0
+      },
+      "right_in": {
+       "pt": [
+        759,
+        818
+       ],
+       "changed_px": 1612
+      },
+      "right_out": {
+       "pt": [
+        760,
+        818
+       ],
+       "changed_px": 0
+      },
+      "top_in": {
+       "pt": [
+        727,
+        804
+       ],
+       "changed_px": 1612
+      },
+      "top_out": {
+       "pt": [
+        727,
+        803
+       ],
+       "changed_px": 0
+      },
+      "bottom_in": {
+       "pt": [
+        727,
+        831
+       ],
+       "changed_px": 1612
+      },
+      "bottom_out": {
+       "pt": [
+        727,
+        832
+       ],
+       "changed_px": 0
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "window": [
+  252,
+  89,
+  775,
+  845
+ ]
+}
