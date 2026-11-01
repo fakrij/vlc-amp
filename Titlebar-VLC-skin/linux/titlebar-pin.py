@@ -489,10 +489,15 @@ def proc_comm(pid):
 
 
 def vlc_pids():
-    """PIDs of VLC processes (of this user, as far as /proc shows them)."""
+    """PIDs of VLC processes owned by this user."""
     out = []
     for d in os.listdir("/proc"):
         if d.isdigit() and proc_comm(int(d)) in VLC_NAMES:
+            try:
+                if os.stat("/proc/%d" % int(d)).st_uid != os.getuid():
+                    continue
+            except OSError:
+                continue
             out.append(int(d))
     return out
 
