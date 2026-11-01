@@ -33,7 +33,7 @@ if [ "${PAIR:-1}" = 1 ]; then
 fi
 # Windows scripts need CRLF. Done here, not by .gitattributes: git archive ignores the
 # attributes of a subfolder (this project is a subfolder of the git repository).
-find "$PKG" -type f \( -name '*.ps1' -o -name '*.cs' -o -name '*.cmd' \) -exec sed -i 's/\r*$/\r/' {} +
+find "$PKG" -type f \( -name '*.ps1' -o -name '*.cs' -o -name '*.cmd' -o -name '*.vbs' \) -exec sed -i 's/\r*$/\r/' {} +
 sed 's/$/\r/' > "$PKG/READ ME FIRST.txt" <<'TXT'
 VLC Amp - a VLC skin
 
