@@ -1259,8 +1259,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_fill_frames(skin, "seek", sw, 10, 0, 10, SEEK_FRAMES, lead=SEEK_LEAD)
         for on in (False, True):                           # the speaker next to the volume slider = mute button
             for st in ("up", "over", "down"):
-                c = Canvas(16, 16)
-                icon(c, "speaker_off" if on else "speaker", 2, 2, 12, AMBER if on else (LABEL if st == "up" else ICON[st]))
+                c = Canvas(22, 28)                         # 22 x 28 click zone around the 12 px icon
+                icon(c, "speaker_off" if on else "speaker", 5, 8, 12, AMBER if on else (LABEL if st == "up" else ICON[st]))
                 skin.add("c_mute_%s_%s" % ("on" if on else "off", st), solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
@@ -1455,7 +1455,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
         lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
-        lay.checkbox("c_mute", F(278), P(ty + 6), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
+        lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
         lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
         lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
@@ -1732,7 +1732,7 @@ def build(skin, W, BH=BAR_DEFAULT):
                   focus=False)
         flay.checkbox("ft_more", P(W - 222), P(32), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
                       "More controls", "Fewer controls")
-        flay.checkbox("c_mute", P(W - 188), P(38), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
+        flay.checkbox("c_mute", P(W - 191), P(32), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
         flay.vol_slider("s_vol_fsc", P(W - 168), P(41), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                     "Volume $V%", bg="vol100", nbvert=P(100))
         flay.button("fb_fs", P(W - 42), P(32), "vlc.fullscreen()", "Leave full screen")
