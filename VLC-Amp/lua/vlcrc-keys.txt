@@ -1,0 +1,13 @@
+# Default vlcrc settings for lua/intf/vlcamp.lua (read by taskbar/vlc-taskbar.ps1 -Setup and linux/setup.sh).
+# Format: <section> <key>=<value>   (section = vlcrc header: core, lua or skins2; value = everything after the first "=").
+# A key is written only if vlcrc has no active, non-empty value for it. Blank lines and lines starting with # are ignored.
+#
+# The five triggers are VLC hotkey actions that do nothing for music (see docs/architecture.md, "Lua interface"):
+#   subsync-markaudio = A-B loop, viewpoint-roll-clock / -anticlock = next / previous folder,
+#   viewpoint-fov-in / -out = next / previous equalizer preset.
+# The setups also add luaintf to extraintf and set lua-intf=vlcamp themselves (not listed here).
+core key-subsync-markaudio=Ctrl+Shift+a
+core key-viewpoint-roll-clock=Ctrl+Shift+Right
+core key-viewpoint-roll-anticlock=Ctrl+Shift+Left
+core key-viewpoint-fov-in=Ctrl+Shift+Up
+core key-viewpoint-fov-out=Ctrl+Shift+Down
