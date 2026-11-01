@@ -59,7 +59,10 @@ if ($src.TrimEnd('\') -ne $dest.TrimEnd('\')) {
     # a running helper uses the old copy: stop it (the setup starts it again)
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
         Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*vlc-taskbar.ps1*" } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+        ForEach-Object {
+            try { Add-Content -LiteralPath (Join-Path $env:TEMP "vlc-amp-helper.log") -Value ((Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff") + "  helper (pid " + $_.ProcessId + ") stopped by Install (new copy)") } catch { }
+            Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue
+        }
     New-Item -ItemType Directory -Force -Path $dest | Out-Null
     # mirror: the folder holds only this package (your own edits of vlc-taskbar.ps1 there are replaced)
     # (file-associations.txt is written by the setup, it is not in the package: /XF keeps /MIR from deleting it)
@@ -89,10 +92,11 @@ foreach ($e in @(
 
 # VLC's own Start menu entry, desktop icon and a pinned taskbar icon start vlc.exe without the flag, so the
 # Media Library entry shows there. Those shortcuts are in the all-users Start menu or pinned (changing them needs
-# admin, or is not allowed for pins), so this extra per-user one is the way to start VLC without it.
+# admin, or is not allowed for pins), so this extra per-user one is the way to start VLC without it. It starts
+# vlc.exe through taskbar\launch.vbs, which also starts the helper if it should run and does not.
 $s = $sh.CreateShortcut((Join-Path $menu "VLC Amp.lnk"))
-$s.TargetPath = $vlc
-$s.Arguments = "--no-media-library"
+$s.TargetPath = Join-Path $env:SystemRoot "System32\wscript.exe"
+$s.Arguments = "`"$dest\taskbar\launch.vbs`" `"$vlc`" --no-media-library"
 $s.WorkingDirectory = Split-Path -Parent $vlc
 $s.IconLocation = "$vlc,0"
 $s.Description = "VLC with the VLC Amp skin, without the Media Library entry in the playlist"

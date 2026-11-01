@@ -38,6 +38,14 @@ $TaskbarAppId      = "auto"             # its taskbar group: "auto" = VLC's (gro
 
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Start, exit and crash lines go to this file even without -DebugLog (the helper's Note), so a helper that is
+# gone can be explained. A script error before the helper runs (a failed compile, ...) is written there too.
+$EventLog = Join-Path $env:TEMP "vlc-amp-helper.log"
+function Write-HelperNote($text) {
+    try { Add-Content -LiteralPath $EventLog -Value ((Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff") + "  " + $text) } catch { }
+}
+trap { if (-not $Setup) { Write-HelperNote ("helper script error: " + $_) }; break }
 $root = Split-Path -Parent $here
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -291,9 +299,12 @@ function Set-VlcDefaults([System.Collections.Generic.List[string]]$lines, $file)
 # PlayWithVLC / AddToPlaylistVLC under "Directory", "AudioCD" and "DVD"; every command is
 # "<dir>\vlc.exe" --started-from-file ... "%1"). Per-user keys under HKCU\Software\Classes win over HKLM,
 # so Setup writes the same command with the flag after vlc.exe there (no admin needed) and lists the keys in
-# file-associations.txt; uninstall.ps1 removes exactly those. Windows' own "default app" choice (UserChoice)
+# file-associations.txt; uninstall.ps1 removes exactly those. The command runs vlc.exe through taskbar\launch.vbs
+# (wscript.exe, no console window), which then starts the helper if it should run and does not (it was quit or
+# crashed; otherwise it only starts at login). Windows' own "default app" choice (UserChoice)
 # is not touched: it names a ProgID, and only the VLC ProgIDs are changed.
 $NoMediaLibrary = "--no-media-library"
+$Launcher = '"' + (Join-Path $env:SystemRoot "System32\wscript.exe") + '" "' + (Join-Path $here "launch.vbs") + '"'   # + vlc.exe and its arguments
 $AssocFile = Join-Path $env:LOCALAPPDATA "VLC-Amp\file-associations.txt"
 
 # HKLM\SOFTWARE\Classes in the 64-bit and the 32-bit registry view (VLC 64-bit writes to the first,
@@ -325,7 +336,7 @@ function Test-SameFile($a, $b) {
 function Test-HasNoMediaLibrary($cmd) { return [bool]($cmd -match '(^|\s)--no-media-library(\s|$)') }
 
 # The shell commands VLC's installer registered for this vlc.exe, as @{ Rel = 'VLC.mp3\shell\Open\command';
-# New = '<same command with the flag after vlc.exe>' }. Only commands that run $vlcExe with --started-from-file
+# New = '<launcher> <same command with the flag after vlc.exe>' }. Only commands that run $vlcExe with --started-from-file
 # and have no flag yet (so other programs' verbs, VLC's skin file types and a flag we added are skipped).
 function Get-VlcShellCommands($vlcExe) {
     $seen = @{}
@@ -349,7 +360,7 @@ function Get-VlcShellCommands($vlcExe) {
                     if ($cmd -notlike '*--started-from-file*' -or (Test-HasNoMediaLibrary $cmd)) { continue }
                     $parts = Split-ShellCommand $cmd
                     if (-not $parts -or -not (Test-SameFile $parts.Exe $vlcExe)) { continue }
-                    $new = $parts.Quote + $parts.Exe + $parts.Quote + " $NoMediaLibrary" + $parts.Rest
+                    $new = "$Launcher `"" + $parts.Exe + "`" $NoMediaLibrary" + $parts.Rest
                     [void]$out.Add(@{ Rel = $rel; New = $new })
                 }
             } catch { }
@@ -491,7 +502,7 @@ function Invoke-Setup {
     # a helper that is already running read the old settings: stop it (a new one starts below)
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
         Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*vlc-taskbar.ps1*" -and $_.CommandLine -notlike "*-Setup*" } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+        ForEach-Object { Write-HelperNote ("helper (pid " + $_.ProcessId + ") stopped by Setup (new settings)"); Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
 
     $startup = [Environment]::GetFolderPath("Startup")
     $lnk = Join-Path $startup "VLC Amp helper.lnk"
@@ -583,7 +594,8 @@ if (-not ('VlcDock' -as [type])) {
 [VlcDock]::StartPinned = $StartPinned
 [VlcDock]::FollowTheme = $FollowSystemTheme
 [VlcDock]::FlipPanels  = $FlipPanels
-if ($DebugLog) { [VlcDock]::LogPath = Join-Path $env:TEMP "vlc-amp-helper.log" }
+if ($DebugLog) { [VlcDock]::LogPath = $EventLog }
+[VlcDock]::EventLogPath = $EventLog
 if ($remote) { [VlcDock]::RemotePort = $remote.Port; [VlcDock]::RemotePassword = $remote.Password }
 [VlcDock]::TaskbarButton = $TaskbarButton   # only works with the web interface (RemotePort)
 [VlcDock]::TaskbarAppId  = $TaskbarAppId

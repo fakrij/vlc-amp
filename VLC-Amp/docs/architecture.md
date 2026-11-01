@@ -404,6 +404,24 @@ grows. Never run it against your real home unless you want the changes.
   one and a marker `vlcrc.vlc-amp-created` next to it, and a second run makes
   no backup of its own file; `uninstall.ps1` then deletes the `vlcrc` and the
   marker instead of restoring a backup.
+- The helper with VLC: the per-user file association commands and the Start
+  menu entry "VLC Amp" run `wscript.exe taskbar\launch.vbs "<vlc.exe>" <args>`.
+  `launch.vbs` starts VLC at once (arguments re-quoted when they contain a space),
+  then, only if the Startup shortcut "VLC Amp helper.lnk" exists (Setup: start
+  the helper with Windows) and no `powershell.exe` / `pwsh.exe` runs
+  `vlc-taskbar.ps1` (WMI `Win32_Process`, a running `-Setup` does not count),
+  runs that shortcut's target and arguments hidden. So a helper that was quit
+  or crashed comes back with the next VLC; the helper's own mutex guards against
+  a race. `wscript.exe` has no console, so nothing flashes. Uninstall finds these
+  commands by their `--no-media-library` flag as before. Tested on Windows with a
+  stub program (2026-11-01): arguments with spaces and parentheses intact, no
+  second helper when one runs, the shortcut's command when none runs.
+- Start / exit / crash notes: `VlcDock.Note` writes the start line, the exit
+  line with its reason (tray Quit, VLC gone when not `-Watch`, message loop
+  ended) and an unhandled exception to `%TEMP%\vlc-amp-helper.log` even
+  without `-DebugLog` (`EventLogPath`; the debug log is the same file). The
+  script adds a line for its own errors before the helper runs (`trap`), and
+  Setup / Install add one when they stop a running helper.
 - Which `vlc.exe`: with several running (a second one with another interface,
   or one still exiting) `VlcDock.PickVlc` takes the one that owns the skin's
   root window (`HasSkinRoot`) and keeps following it while it qualifies,

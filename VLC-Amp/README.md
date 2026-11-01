@@ -141,7 +141,11 @@ The setup:
   and to the Start menu entry **VLC Amp**;
 - asks whether to start the helper with Windows. The helper pins the player
   on top each time VLC starts, gives VLC a taskbar button with previous /
-  play / next on hover and, if you want, docks it in the taskbar;
+  play / next on hover and, if you want, docks it in the taskbar. It starts
+  at login, and also comes with VLC if it is not running (quit from the tray,
+  or crashed) when VLC is started from a file, a folder or the Start menu
+  entry **VLC Amp** (they run VLC through `taskbar\launch.vbs`); VLC's own
+  Start menu entry and a pinned VLC icon do not bring it back;
 - turns on VLC's built-in web interface for this computer only (`127.0.0.1`,
   port 48080, protected by a random password stored in `vlcrc`). The helper
   uses it to read what VLC is playing and to send commands; nothing is
@@ -563,7 +567,8 @@ start). Then restart VLC and pick Custom with the theme button.
 |---|---|
 | Double-clicking a file opens a second, normal VLC | Run `taskbar\Setup.cmd` (with VLC closed). |
 | The player disappears when I click the taskbar | Make sure the helper runs (tray icon); docked, it restores a minimized player at once. If it still happens, turn the log on (below), send `%TEMP%\vlc-amp-helper.log`, and say what you clicked and whether a single or only a double click on VLC's tray icon brought the player back. |
-| Helper log | Change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `vlc-amp-helper.log.old`. |
+| Helper log | `%TEMP%\vlc-amp-helper.log` always gets one line when the helper starts, exits (with the reason: tray menu Quit, stopped by Setup / Install, VLC gone) or crashes. For everything it does: change `$false` to `$true` on the `$DebugLog` line of `vlc-taskbar.ps1`, or run it with `-DebugLog`. Up to 1 MB, the older part in `vlc-amp-helper.log.old`. |
+| The helper is not running | It starts at login (Startup shortcut "VLC Amp helper") and with VLC opened from a file, a folder or the Start menu entry **VLC Amp**. Look at the last lines of `%TEMP%\vlc-amp-helper.log` for why it stopped. |
 | The skin looks too small / too big | Use the file that matches Windows' display scaling (`VLC-Amp-150.vlt` for 150 %), or run Setup again. |
 | Media keys do nothing / VLC is missing from the Windows media panel | Run Setup again and answer Yes to media controls. Check that `libwin10smtc_plugin.dll` is in VLC's `plugins\misc` folder and that `extraintf` in `vlcrc` contains `win10smtc`. |
 | Windows: the playlist shows a "Media Library" entry | VLC's launcher forces it on, so only starts with `--no-media-library` hide it. Opening a file from Explorer and the helper's start do that after Setup (run Setup again with VLC closed if you installed VLC or changed the default app later). VLC's own Start menu entry, its desktop icon and a VLC icon pinned to the taskbar start plain `vlc.exe`: use Start menu > VLC Amp > **VLC Amp**, or re-pin that one. Another app set as the default for the file type opens files its own way. |

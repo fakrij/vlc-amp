@@ -42,6 +42,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     public static bool StartPinned = false;// click VLC's pin button once after each VLC start
     public static bool FlipPanels = true;  // docked strip with PL / EQ open off the screen (below a bottom taskbar): click the flip arrow
     public static string LogPath = null;   // debug log file (null = no log)
+    public static string EventLogPath = null;  // start / exit / crash lines, written even without the debug log (Note)
     public static bool TrayIcon = true;    // notification-area icon with a menu (dock, pin now, quit)
     public static int RemotePort = 0;      // VLC web interface port (from vlcrc); 0 = no control channel
     public static string SkinFile = null;  // the skin file Scale / BarHeight come from, and where it was found (log only)
@@ -205,7 +206,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         // A hidden helper that dies leaves nothing behind: log what killed it.
         AppDomain.CurrentDomain.UnhandledException += delegate(object o, UnhandledExceptionEventArgs e)
         {
-            Log("CRASH (unhandled, terminating=" + e.IsTerminating + "): " + e.ExceptionObject);
+            Note("CRASH (unhandled, terminating=" + e.IsTerminating + "): " + e.ExceptionObject);
         };
         DpiInit();   // first: every coordinate the helper reads or posts is in physical pixels from here on
         fgHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, IntPtr.Zero,
@@ -216,7 +217,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         lastVlcSeen = DateTime.Now;
         Remote = new VlcRemote("127.0.0.1", RemotePort, RemotePassword);
         Remote.Logger = Log;
-        Log("helper started: scale=" + Scale + " barHeight=" + BarHeight + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
+        Note("helper started (pid " + Process.GetCurrentProcess().Id + "): scale=" + Scale + " barHeight=" + BarHeight + " dockTo=" + DockTo + " gap=" + Gap + " offsetY=" + OffsetY +
             " dock=" + Dock + " startPinned=" + StartPinned + " exitWithVlc=" + ExitWithVlc +
             " remote=" + (Remote.Configured ? "port " + RemotePort : "off") +
             " skinFile=" + (SkinFile ?? "?") + " dpi: " + dpiSetup);
@@ -238,7 +239,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         }
         finally
         {
-            Log("helper exiting (message loop ended)");
+            Note("helper exiting: " + (exitReason ?? "message loop ended"));
             remoteStop = true;
             TaskbarStop();
             DisposeTray();   // also when VLC quit (not -Watch): no ghost icon left behind
@@ -480,7 +481,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
 
     static void OnMenuPlay(object sender, EventArgs e) { Remote.SendAsync("pl_pause"); }
 
-    static void OnMenuQuit(object sender, EventArgs e) { PostQuitMessage(0); }
+    static void OnMenuQuit(object sender, EventArgs e) { exitReason = "Quit helper in the tray menu"; PostQuitMessage(0); }
 
     // Every 250 ms; every 50 ms while the mouse is over VLC's window or a move is on its way, so
     // a layout change from a click (flip, expand) is followed at once instead of a quarter
@@ -582,6 +583,16 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
     static void Log(string text)
     {
         string path = LogPath;
+        if (path == null) return;
+        lock (logLock) LogLocked(path, text);
+    }
+
+    // Start, exit (with the reason) and crash: always written, to the debug log when it is on, else to
+    // EventLogPath (the same file name), so a helper that disappeared can be explained without -DebugLog.
+    static string exitReason;
+    static void Note(string text)
+    {
+        string path = LogPath ?? EventLogPath;
         if (path == null) return;
         lock (logLock) LogLocked(path, text);
     }
@@ -725,7 +736,10 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             }
         }
         if (ExitWithVlc && pid == 0 && (DateTime.Now - lastVlcSeen).TotalSeconds > 5)
+        {
+            exitReason = "VLC is gone (not -Watch)";
             PostQuitMessage(0);
+        }
     }
 
     // More than one vlc.exe (a second one started with another interface, or one still exiting):
