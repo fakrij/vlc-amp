@@ -102,21 +102,32 @@ the release skins have `th0` only). Shown = on.
   `video-l` (the default, listed last). Every control needs `vlc.hasVout`, so
   without video the window has no pixels (invisible). The title bar shows `$N`
   (the name of what plays; `focus="false"`, so clicks reach the move area).
-- Extra row: `video-x` is `video-l` plus a row of controls above the panel
-  (chapters `dvd.previousChapter()` / `dvd.nextChapter()`, `vlc.nextFrame()`,
-  `vlc.snapshot()`, shuffle / loop / repeat, `$R` speed). The arrow button
+- Extra row: `video-x` is `video-l` with the panel moved up and a row of
+  controls below it (A-B, chapters `dvd.previousChapter()` /
+  `dvd.nextChapter()`, `vlc.snapshot()`, shuffle / loop / repeat, "SPEED $Rx"
+  in an LCD box). The arrow button
   switches with `video.setLayout(...)`. Both layouts have the same original
   size, so skins2 carries the current (also maximized) size across, as with the
   main window's layouts; the row takes its height from the Video control (a
-  control cannot change size inside a layout). A-B loop, folder jump and EQ
-  presets cannot be buttons (a skin button runs only skins2's actions).
+  control cannot change size inside a layout).
+- A-B button: a skin button runs only skins2's actions, so it is a checkbox
+  that toggles the flag window `abflag`, the only 2 x 1 px window of the skin
+  (the other flags are 1 x 1). The Windows helper (`WatchAbFlag`, each tick
+  while the player is visible) counts every change of its visibility as one
+  press and sends VLC's A-B hotkey action through the web interface
+  (`command=key&val=subsync-markaudio`, as the tray menu); `vlcamp.lua` runs
+  the loop. Minimizing hides every skin window, so while the player is not
+  visible the last state is forgotten. skins2 may create a flag window only
+  when it is first shown, so "not found" counts as hidden. Without the helper
+  (Linux) the button does nothing. Checked in VLC 3.0.20 under X11: each click
+  maps / unmaps the 2 x 1 window.
 - Window `fullscreenController` (layout `fsc-l`): shown by skins2 over a full
-  screen video on mouse moves. Its extra row is the same controls, shown by
-  the flag window `fxflag` (toggled by the arrow checkbox). The layout always
-  has the row's height above the controls: skins2 places the window once at
-  the bottom (`position="South"`), so a taller layout would grow off the
-  screen; without the row that part has no pixels, so it is transparent and
-  click-through. Checked in VLC 3.0.20 (2026-11-01, with the video window
+  screen video on mouse moves. Its extra row is the same controls, below
+  them, shown by the flag window `fxflag` (toggled by the arrow checkbox). The
+  layout always has the row's height: skins2 places the window once at the
+  bottom (`position="South"`), so a taller layout would grow off the screen;
+  without the row that part has no pixels, so it is transparent and
+  click-through (the controls then sit a row's height above the bottom). Checked in VLC 3.0.20 (2026-11-01, with the video window
   forced visible: no video output in the harness): the arrow switches to
   `video-x` at the same size, the row and `$N` render; the fullscreen
   controller's layout checked in `theme.xml` only.

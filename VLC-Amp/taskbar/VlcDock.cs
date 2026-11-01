@@ -719,7 +719,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
             // per-VLC state of moving, z-order and flipping
             dragPending = false; dragFails = 0; dragMisses = 0; dragOff = false;
             lastTargetX = int.MinValue; lastTargetY = int.MinValue;
-            helperTop = false; lastMainTop = -1; pinOddTicks = 0; pinFromMain = false; underVideo = false;
+            helperTop = false; lastMainTop = -1; pinOddTicks = 0; pinFromMain = false; underVideo = false; abLast = -1;
             flipTries = 0;
             flipRef = false; flipMoving = false;
             lastMain = IntPtr.Zero; lastMainShape = null; hidden = false; hiddenByUser = false;
@@ -1451,6 +1451,35 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         return false;
     }
 
+    // ---- A-B button in the skin (video window / fullscreen controller): a skin button can run only
+    // skins2's own actions, so it toggles the flag window abflag, the only 2 x 1 px window of VLC's skin.
+    // Every change of its visibility is one press: send VLC's A-B hotkey action through the web
+    // interface, as the tray menu does (lua/intf/vlcamp.lua runs the loop). While the player is not
+    // visible (minimized: every skin window hides) the last state is forgotten, so that is no press.
+    static int abLast = -1;                // abflag shown 1 / hidden 0 at the last look; -1 = unknown
+
+    static void WatchAbFlag()
+    {
+        uint vlc = vlcPid;
+        int state = 0;                     // not found = hidden: skins2 may create a flag window when it is first shown
+        EnumWindows(delegate (IntPtr h, IntPtr l)
+        {
+            uint pid;
+            GetWindowThreadProcessId(h, out pid);
+            if (pid != vlc || ClassOf(h) != "SkinWindowClass") return true;
+            RECT r;
+            if (!GetWindowRect(h, out r) || W(r) != 2 || H(r) != 1) return true;
+            state = IsWindowVisible(h) ? 1 : 0;
+            return false;
+        }, IntPtr.Zero);
+        if (abLast >= 0 && state != abLast)
+        {
+            Log("A-B button in the skin: sending the A-B loop action" + (Remote.Configured ? "" : " (no web interface: not sent)"));
+            Remote.SendAsync("key", "subsync-markaudio");
+        }
+        abLast = state;
+    }
+
     static void SeenVisible(IntPtr main, RECT r)
     {
         if (hidden)
@@ -1649,11 +1678,13 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         bool docked = Dock && enabled;
         if (!FindMain(wins, out main, out rMain))
         {
+            abLast = -1;           // minimized: all VLC windows hide, the A-B flag included (not a click)
             KeepVisible(docked);   // item 33: hidden or minimized?
             return;
         }
         SeenVisible(main, rMain);
         ShareWidth(W(rMain));
+        WatchAbFlag();
         FitMaximizedVideo(main);                   // skins2 maximizes over the taskbar: back into the work area
         if (KeepUnderVideo(main, rMain)) return;   // a maximized video: the player waits below it
         LogChange("dpi", "DPI: VLC's window " + DpiOf(main) + " dpi, " + W(rMain) + "x" + H(rMain) + " px; helper thread " + DpiAwareness());
