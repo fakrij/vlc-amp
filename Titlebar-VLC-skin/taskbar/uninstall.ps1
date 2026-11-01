@@ -38,6 +38,7 @@ if (Test-Path $backup) {
     Remove-Item $rc      # there was no vlcrc before the setup: VLC starts with its defaults
     Write-Host "   vlcrc removed (there was none before the setup); VLC starts with its defaults"
 }
+if (Test-Path "$rc.titlebar-created") { Remove-Item "$rc.titlebar-created" }
 
 Step "Removing the file association overrides (--no-media-library)"
 # Setup wrote HKCU\Software\Classes\<ProgID>\shell\<verb>\command for the VLC ProgIDs and listed them, one

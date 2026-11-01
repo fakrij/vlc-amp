@@ -17,18 +17,7 @@ function Show-Msg($text, $buttons = "OK", $icon = "Information") {
 }
 function Step($text) { Write-Host "-> $text" -ForegroundColor Cyan }
 
-function Find-Vlc {
-    foreach ($key in 'HKLM:\SOFTWARE\VideoLAN\VLC', 'HKLM:\SOFTWARE\WOW6432Node\VideoLAN\VLC') {
-        try {
-            $k = Get-ItemProperty -Path $key -ErrorAction Stop
-            if ($k.InstallDir -and (Test-Path (Join-Path $k.InstallDir 'vlc.exe'))) { return (Join-Path $k.InstallDir 'vlc.exe') }
-        } catch { }
-    }
-    foreach ($p in "$env:ProgramFiles\VideoLAN\VLC\vlc.exe", "${env:ProgramFiles(x86)}\VideoLAN\VLC\vlc.exe") {
-        if ($p -and (Test-Path $p)) { return $p }
-    }
-    return $null
-}
+. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) 'find-vlc.ps1')   # Find-Vlc (shared with vlc-taskbar.ps1)
 
 Write-Host "Titlebar VLC skin - install`n"
 if (-not (Test-Path (Join-Path $src "taskbar\vlc-taskbar.ps1")) -or -not (Get-ChildItem $src -Filter "Titlebar-*.vlt")) {

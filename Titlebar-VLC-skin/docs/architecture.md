@@ -293,7 +293,10 @@ their `[section]` headers; VLC fills in the rest at the next exit. An existing
 one is backed up once as `vlcrc.before-titlebar` (`cp -p`), edited in a
 temporary copy and written back in one go. Edits are done by the `rc_edit` awk
 function (values go through the environment so backslashes survive). Running
-the setup twice changes nothing.
+the setup twice changes nothing; a `vlcrc` that an earlier run created
+(`rc_created=1` for the same `rc`) is never backed up, so `--uninstall` still
+removes it. The state file records one VLC: setting up another flavor is
+refused until `--uninstall` has run.
 
 **Scale.** `--scale N` (`150` or `1.5`), else the first of these that gives a
 number: `GDK_SCALE`, `QT_SCALE_FACTOR`, `Xft.dpi` / 96 from `xrdb -query`,
@@ -353,7 +356,8 @@ files; runs `titlebar-pin.py --uninstall-autostart`.
 at that file's real path, so the setup must be run again after the folder is
 moved. The setup neither copies nor edits that script.
 
-**Lua extras.** If `lua/intf/titlebar.lua` exists, all `lua/intf/*.lua` are
+**Lua extras.** If `lua/intf/titlebar.lua` exists and `lua-intf` is unset,
+`dummy` or `titlebar` (another script is left alone, as on Windows), all `lua/intf/*.lua` are
 copied to the flavor's Lua dir, `luaintf` is merged into `extraintf` and
 `lua-intf=titlebar` is set (section `lua`). `lua/vlcrc-keys.txt`, if it exists,
 is read line by line (blank lines and lines starting with `#` are skipped);

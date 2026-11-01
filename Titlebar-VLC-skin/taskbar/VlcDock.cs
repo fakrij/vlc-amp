@@ -691,9 +691,8 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         // look for VLC every second while it runs, every 2 s while waiting for it (-Watch)
         if ((DateTime.Now - lastPidCheck).TotalMilliseconds < (vlcPid != 0 ? 1000 : 2000)) return;
         lastPidCheck = DateTime.Now;
-        uint pid = 0;
         Process[] ps = Process.GetProcessesByName("vlc");
-        if (ps.Length > 0) pid = (uint)ps[0].Id;
+        uint pid = PickVlc(ps);
         foreach (Process p in ps) p.Dispose();
 
         if (pid != 0) lastVlcSeen = DateTime.Now;
@@ -727,6 +726,37 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         }
         if (ExitWithVlc && pid == 0 && (DateTime.Now - lastVlcSeen).TotalSeconds > 5)
             PostQuitMessage(0);
+    }
+
+    // More than one vlc.exe (a second one started with another interface, or one still exiting):
+    // the order of GetProcessesByName is not fixed, so prefer the one with the skin's root window,
+    // and keep the one already followed while it qualifies, instead of switching every check.
+    static uint PickVlc(Process[] ps)
+    {
+        if (ps.Length == 0) return 0;
+        if (ps.Length == 1) return (uint)ps[0].Id;
+        bool alive = false;
+        uint skinned = 0;
+        foreach (Process p in ps)
+        {
+            uint id = (uint)p.Id;
+            if (id == vlcPid) alive = true;
+            if (skinned == 0 && HasSkinRoot(id)) skinned = id;
+        }
+        if (alive && (skinned == 0 || skinned == vlcPid || HasSkinRoot(vlcPid))) return vlcPid;
+        return skinned != 0 ? skinned : (uint)ps[0].Id;
+    }
+
+    static bool HasSkinRoot(uint pid)
+    {
+        bool found = false;
+        TbNative.EnumWindows(delegate (IntPtr h, IntPtr l)
+        {
+            if (!IsSkinRoot(h, pid)) return true;
+            found = true;
+            return false;
+        }, IntPtr.Zero);
+        return found;
     }
 
     static void UnhookVlc()

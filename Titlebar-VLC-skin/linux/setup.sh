@@ -624,6 +624,10 @@ set_flavor_paths
 case "$FLAVOR" in native) vlc_desc="VLC (distro package)" ;; flatpak) vlc_desc="VLC (Flatpak)" ;; snap) vlc_desc="VLC (Snap)" ;; esac
 say "Found: $vlc_desc"
 say "  settings file: $RC"
+# the state file records one VLC: setting up a second one would lose the first one's undo
+if [ -n "$ST_RC" ] && [ "$ST_RC" != "$RC" ]; then
+    die "already set up for ${ST_FLAVOR:-another} VLC ($ST_RC). Run $0 --uninstall first, then set up $FLAVOR VLC."
+fi
 refuse_if_running
 
 # 2. which skin file
@@ -657,9 +661,13 @@ rc_existed=0
 if [ -f "$RC" ]; then
     rc_existed=1
     cat "$RC" >"$WORK"
-    if [ ! -e "$RC.before-titlebar" ]; then
-        cp -p "$RC" "$RC.before-titlebar"
-        say "  backup: $RC.before-titlebar"
+    # a vlcrc that an earlier run of this setup created is ours: no backup (--uninstall moves it away)
+    if [ "$ST_RC_CREATED" != 1 ] || [ "$ST_RC" != "$RC" ]; then
+        ST_RC_CREATED=0
+        if [ ! -e "$RC.before-titlebar" ]; then
+            cp -p "$RC" "$RC.before-titlebar"
+            say "  backup: $RC.before-titlebar"
+        fi
     fi
 else
     ST_RC_CREATED=1
@@ -690,7 +698,11 @@ fi
 
 LUA_SRC="$ROOT/lua/intf/titlebar.lua"
 lua_done=0
-if [ -f "$LUA_SRC" ]; then
+lua_other=$(rc_get lua-intf)
+case "$lua_other" in ""|dummy|titlebar) lua_other="" ;; esac
+if [ -n "$lua_other" ]; then
+    warn "vlcrc already runs the Lua interface '$lua_other' (lua-intf): the Titlebar Lua extras are not installed"
+elif [ -f "$LUA_SRC" ]; then
     mkdir -p "$LUA_DIR"
     for f in "$ROOT"/lua/intf/*.lua; do
         cp "$f" "$LUA_DIR/$(basename "$f")"

@@ -31,7 +31,8 @@
 # preference" = dark. --scheme dark|light (or TB_SCHEME) forces it.
 #
 # Test and override variables: VLCRC (path of vlcrc), VLC (program, default vlc);
-# HOME / XDG_CONFIG_HOME / XDG_DATA_HOME are honoured.
+# HOME / XDG_CONFIG_HOME / XDG_DATA_HOME / XDG_STATE_HOME are honoured. Without
+# VLCRC, the vlcrc that linux/setup.sh recorded is used, else the first one found.
 # Needs only POSIX sh, awk, grep, sed, mktemp, cmp, mv.
 
 set -eu
@@ -52,6 +53,7 @@ SELF=$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")
 xdg_dir() { case "$1" in /*) printf '%s' "$1" ;; *) printf '%s' "$2" ;; esac; }
 DATA_HOME=$(xdg_dir "${XDG_DATA_HOME:-}" "${HOME:-}/.local/share")
 CONFIG_HOME=$(xdg_dir "${XDG_CONFIG_HOME:-}" "${HOME:-}/.config")
+STATE_HOME=$(xdg_dir "${XDG_STATE_HOME:-}" "${HOME:-}/.local/state")
 DESKTOP_FILE="$DATA_HOME/applications/$DESKTOP_ID"
 
 # ---------------------------------------------------------------- scheme
@@ -99,6 +101,9 @@ vlc_running() {
 
 find_vlcrc() {
     if [ -n "${VLCRC:-}" ]; then echo "$VLCRC"; return; fi
+    # the vlcrc linux/setup.sh set up (more than one VLC flavor can have a vlcrc)
+    c=$(sed -n 's/^rc=//p' "$STATE_HOME/titlebar-vlc-skin/linux-setup.state" 2>/dev/null | tail -n 1)
+    if [ -n "$c" ] && [ -f "$c" ]; then echo "$c"; return; fi
     for c in "$CONFIG_HOME/vlc/vlcrc" \
              "${HOME:-}/.var/app/$APP_ID_FLATPAK/config/vlc/vlcrc" \
              "${HOME:-}/snap/vlc/common/vlcrc" \

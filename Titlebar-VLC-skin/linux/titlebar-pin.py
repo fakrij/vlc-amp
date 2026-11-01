@@ -345,6 +345,7 @@ def pid_scale(pid):
     cfg = os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config")
     for rc in (os.path.join(cfg, "vlc", "vlcrc"), os.path.join(home, ".config/vlc/vlcrc"),
                os.path.join(home, ".var/app/org.videolan.VLC/config/vlc/vlcrc"),
+               os.path.join(home, "snap/vlc/common/vlcrc"),
                os.path.join(home, "snap/vlc/common/.config/vlc/vlcrc")):
         try:
             with open(rc, errors="replace") as f:

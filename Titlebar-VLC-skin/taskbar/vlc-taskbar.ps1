@@ -87,19 +87,7 @@ function Get-SkinPath([switch]$Taskbar) {
     return $null
 }
 
-function Find-Vlc {
-    foreach ($key in 'HKLM:\SOFTWARE\VideoLAN\VLC', 'HKLM:\SOFTWARE\WOW6432Node\VideoLAN\VLC') {
-        try {
-            $k = Get-ItemProperty -Path $key -ErrorAction Stop
-            if ($k.InstallDir -and (Test-Path (Join-Path $k.InstallDir 'vlc.exe'))) { return (Join-Path $k.InstallDir 'vlc.exe') }
-            if ($k.'(default)' -and (Test-Path $k.'(default)')) { return $k.'(default)' }
-        } catch { }
-    }
-    foreach ($p in "$env:ProgramFiles\VideoLAN\VLC\vlc.exe", "${env:ProgramFiles(x86)}\VideoLAN\VLC\vlc.exe") {
-        if ($p -and (Test-Path $p)) { return $p }
-    }
-    return $null
-}
+. (Join-Path $here 'find-vlc.ps1')   # Find-Vlc (shared with install.ps1)
 
 # The skin's video window must be "shown" in the saved window state (skins2-config), or skins2
 # never attaches a video to it: a state saved by an older skin has no entry for it, and VLC saves
@@ -125,10 +113,14 @@ function Set-VlcOption([System.Collections.Generic.List[string]]$lines, $section
         if ($lines[$i] -match $pattern) { $lines[$i] = "$key=$value"; $found = $true }
     }
     if ($found) { return }
-    $head = $lines.IndexOf("[$section]")
+    $head = -1   # VLC writes section headers as "[core] # core program"
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -eq "[$section]" -or $lines[$i].StartsWith("[$section] ")) { $head = $i; break }
+    }
     if ($head -lt 0) { $lines.Add(""); $lines.Add("[$section]"); $lines.Add("$key=$value"); return }
     $end = $head + 1
     while ($end -lt $lines.Count -and -not $lines[$end].StartsWith("[")) { $end++ }
+    while ($end - 1 -gt $head -and $lines[$end - 1] -eq "") { $end-- }   # stay above the blank line before the next section
     $lines.Insert($end, "$key=$value")
 }
 
@@ -442,12 +434,16 @@ function Invoke-Setup {
 
     $rc = Join-Path $env:APPDATA "vlc\vlcrc"
     $lines = New-Object 'System.Collections.Generic.List[string]'
+    # vlcrc.titlebar-created: an earlier Setup created vlcrc, so it is ours and gets no backup
+    # (else a second Setup would back up our settings and the uninstaller would restore them)
+    $created = "$rc.titlebar-created"
     if (Test-Path $rc) {
         $backup = "$rc.before-titlebar"
-        if (-not (Test-Path $backup)) { Copy-Item $rc $backup }
+        if (-not (Test-Path $backup) -and -not (Test-Path $created)) { Copy-Item $rc $backup }
         foreach ($l in [IO.File]::ReadAllLines($rc)) { $lines.Add($l) }
     } else {
         New-Item -ItemType Directory -Force -Path (Split-Path $rc) | Out-Null
+        if (-not (Test-Path "$rc.before-titlebar")) { [IO.File]::WriteAllText($created, "") }
     }
     Set-VlcOption $lines "core"   "intf" "skins2"                              # skin instead of the normal VLC window
     Set-VlcOption $lines "skins2" "skins2-last" $skinPath
@@ -560,7 +556,8 @@ if ($StartVlc -and -not $Watch -and -not (Get-Process vlc -ErrorAction SilentlyC
         Show-Msg "VLC was not found. Install VLC or set its path in vlc-taskbar.ps1." | Out-Null
         exit 1
     }
-    $vlcArgs = @('--intf', 'skins2', $NoMediaLibrary, "--skins2-last=`"$skinPath`"")   # the flag beats the launcher's --media-library
+    $vlcArgs = @('--intf', 'skins2', $NoMediaLibrary)   # the flag beats the launcher's --media-library
+    if ($skinPath) { $vlcArgs += "--skins2-last=`"$skinPath`"" }   # no skin file found: VLC keeps vlcrc's skins2-last
     # no VLC taskbar button when docked, or when the helper shows its own (it needs the web interface)
     if (($HideVlcTaskbarButton -and -not $NoDock) -or ($TaskbarButton -and $remote)) { $vlcArgs += '--no-skins2-taskbar' }
     Start-Process -FilePath $exe -ArgumentList $vlcArgs

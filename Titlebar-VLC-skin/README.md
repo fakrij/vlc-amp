@@ -136,7 +136,9 @@ The setup:
   keys; see [Lua extras](#lua-extras));
 - asks whether to add Windows media controls (see [Media controls](#media-controls)).
 
-Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`.
+Your previous VLC settings are kept as `%APPDATA%\vlc\vlcrc.before-titlebar`
+(if VLC had none, Setup leaves a `vlcrc.titlebar-created` marker instead, and
+the uninstaller removes the `vlcrc` it made).
 
 **Undo**: Start menu > Titlebar VLC skin > **Uninstall Titlebar skin** (or
 `Uninstall.cmd`). It restores `vlcrc.before-titlebar` (keeping your last
