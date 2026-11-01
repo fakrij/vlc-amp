@@ -57,3 +57,40 @@ that name (a subset counts as modification), ship the unmodified file.
 Fonts must not be sold on their own; the skin is free, so that is fine.
 A user-supplied TTF in the configurator stays on the user's machine; the page
 must not re-host it, and its licence is the user's responsibility.
+
+## Re-check 2026-11-01 (T19, builds with `--font`, real VLC 3.0.20 under Xvfb)
+
+Each font was built with `source/build_skin.py --font <file> --scale 1` and
+`--scale 1.5`, started with `tools/vlc-test.sh start` (song1.wav playing), and
+the time box was captured at about 3 s and 10 s. "Tabular" = ink width of the
+time text identical in both shots (+-1 px antialiasing) and all ten digits
+have the same Pillow advance at 12 / 18 px. Screenshots are not committed.
+
+| Font | File | Size (bytes) | Renders (100 / 150 %) | Tabular | Licence file |
+|---|---|---|---|---|---|
+| DejaVu Sans Mono | .ttf | 343,140 | yes / yes | yes | LICENSE-DejaVu.txt |
+| JetBrains Mono Regular | .ttf | 270,224 | yes / yes | yes | OFL.txt |
+| Roboto Mono (variable) | .ttf | 183,700 | yes / yes (Regular instance) | yes | OFL.txt |
+| Source Code Pro Regular | .otf | 131,128 | yes / yes | yes | LICENSE.md (OFL) |
+| Source Sans 3 (variable) | .ttf | 646,340 | yes / yes, but thin (ExtraLight default instance) | digits yes (6 / 9 px) | OFL.txt |
+| Inter (variable) | .ttf | 876,576 | yes / yes | **no**: ink width 33 -> 27 px (100 %), 47 -> 43 px (150 %) between two times; digit advances 5-8 px at 12 px | OFL.txt |
+
+No font produced a "missing file" or font error in `vlc.log`. Confirms the
+earlier table above; Inter and Source Sans 3 came from the Google Fonts
+repository (download worked).
+
+Source references (VLC branch 3.0.x, `modules/gui/skins2`):
+- `parser/builder.cpp:308-340` `Builder::addFont`: theme-dir file first, then
+  `<resource path>/fonts/<file>`; failure is silent (no fallback font).
+- `parser/builder.cpp:1247-1275` `getFilePath`: `m_path + sep + file`, `\`
+  converted to `/` with a warning, `vlc_stat` check ("missing file" error).
+- `src/ft2_font.cpp:67,95,103` file opened with `vlc_fopen`, read whole, then
+  `FT_New_Memory_Face(..., 0, ...)` (index 0, no extension check, so .otf and
+  variable .ttf both load; only the default instance).
+- `src/ft2_font.cpp:118,126` Unicode charmap, `FT_Set_Pixel_Sizes`.
+- `src/ft2_font.cpp:200,223,308-312` `FT_Get_Kerning`, `FT_LOAD_DEFAULT`,
+  integer advance `advance.x >> 6`: no `tnum`, no GPOS.
+
+Licence: ship the font's licence text beside it in the .vlt (see Licences
+above); Source Code Pro / Source Sans 3 have Reserved Font Name "Source", so
+ship them unmodified.
