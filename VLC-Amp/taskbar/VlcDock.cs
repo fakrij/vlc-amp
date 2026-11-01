@@ -855,7 +855,7 @@ public static partial class VlcDock   // partial: the taskbar button is at the e
         lastFullTick = DateTime.Now;
         IntPtr dpi = DpiEnter();   // whatever window's message brought us here: physical pixels
         try { Place(); }
-        catch (Exception) { }
+        catch (Exception ex) { LogChange("tick", "placement failed: " + ex.GetType().Name + ": " + ex.Message + " at " + ex.StackTrace); }
         finally { DpiLeave(dpi); busy = false; }
     }
 
