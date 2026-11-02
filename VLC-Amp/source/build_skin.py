@@ -566,6 +566,58 @@ def icon(c, name, ox, oy, size, color):
         c.crisp = False
 
 
+def _speaker(c, ox, oy, f, color, off):
+    """Speaker with two sound waves, or with a cross (off = muted), laid out in whole device pixels (PP12):
+    proportions of a 12-unit glyph (f = logical px per unit) rounded to device px, with at least 1 px between
+    the waves, so they never melt into one blurred oval at 13 / 16 px. Vertical edges sit on pixel edges and
+    stay mirror-symmetric about the centre row (icon() put it on a half device pixel). The ink (speaker + waves;
+    the cross ends where the waves end) is centred on the glyph box, not the box's left part."""
+    sx, sy = c.kx / SS, c.ky / SS                      # device px per logical px
+    u = f * sx                                         # device px per glyph unit
+
+    def n(v, lo=1):
+        return max(lo, int(math.floor(v + 0.5)))
+
+    cx, cy = c.X(ox + 6 * f) / SS, c.Y(oy + 6 * f) / SS
+
+    def half(h):                                       # half height snapped so cy +- it are pixel edges
+        hh = cy - math.floor(cy - h + 0.5)
+        return hh if hh > 0 else hh + 1
+
+    def P2(x, y):                                      # device px -> logical (what the Canvas draws in)
+        return (x / sx - c.ox, y / sy - c.oy)
+
+    bw, cw = n(2.1 * u), n(3.0 * u)                    # box, cone
+    bh, ch = half(1.5 * u), half(4.0 * u)
+    # wave width, gap between the waves (2 px at least: 1 px fills up with the anti-aliasing), cone tip -> first wave
+    w, g, d1 = n(1.3 * u), n(1.2 * u, 2), n(1.7 * u)
+    width = bw + cw + d1 + 2 * w + g
+    left = math.floor(cx - width / 2 + 0.5)
+    tip, right = left + bw + cw, left + width
+    c.poly([P2(left, cy - bh), P2(left + bw, cy - bh), P2(tip, cy - ch), P2(tip, cy + ch),
+            P2(left + bw, cy + bh), P2(left, cy + bh)], color)
+    if off:
+        # a cross ending where the waves end, drawn as exact 45-degree pixel steps (an anti-aliased X of this size is
+        # a blob): each device row holds a run of w px per diagonal, one px further per row, so the cross is
+        # rows + w - 1 px wide; it keeps 1 px clear of the cone
+        avail = right - tip - 1
+        k = half((avail - w + 1) / 2.0)
+        if 2 * k + w - 1 > avail:
+            k -= 1
+        rows = int(round(2 * k))
+        x0, y0 = right - (rows + w - 1), cy - k
+        for i in range(rows):
+            for xr in (x0 + i, x0 + rows - 1 - i):
+                c.poly([P2(xr, y0 + i), P2(xr + w, y0 + i), P2(xr + w, y0 + i + 1), P2(xr, y0 + i + 1)], color)
+        return
+    a1 = tip + d1 + w                                  # outer edge of the first wave on the centre row
+    r1 = max(w + 1, n(3.0 * u))                        # a smaller inner wave is only a dot at 16 px
+    xa = a1 - r1
+    for r in (r1, r1 + g + w):
+        a = min(50.0, math.degrees(math.asin(min(1.0, ch / r))))   # no taller than the cone
+        c.arc(*P2(xa, cy), r / sx, -a, a, color, w / sx)
+
+
 def _icon(c, name, ox, oy, size, color):
     f = size / 12.0
 
@@ -613,10 +665,8 @@ def _icon(c, name, ox, oy, size, color):
     elif name == "restore":  # a window outline: "open the video window again"
         c.lines(T([(2, 2.5), (10, 2.5), (10, 9.5), (2, 9.5), (2, 2.5)]), color, 1.4 * f)
         c.lines(T([(2, 4.5), (10, 4.5)]), color, 1.4 * f)
-    elif name == "speaker_off":  # muted: the speaker with a cross
-        c.poly(T([(1.2, 4.5), (3.3, 4.5), (6.3, 2), (6.3, 10), (3.3, 7.5), (1.2, 7.5)]), color)
-        c.lines(T([(7.6, 4.2), (11, 7.8)]), color, 1.4 * f)
-        c.lines(T([(11, 4.2), (7.6, 7.8)]), color, 1.4 * f)
+    elif name in ("speaker", "speaker_off"):
+        _speaker(c, ox, oy, f, color, name == "speaker_off")
     elif name == "close":
         c.lines(T([(2.5, 2.5), (9.5, 9.5)]), color, 1.6 * f)
         c.lines(T([(9.5, 2.5), (2.5, 9.5)]), color, 1.6 * f)
@@ -641,10 +691,6 @@ def _icon(c, name, ox, oy, size, color):
         for a in range(320, 39, -10):
             pts.append((8.6 + 4 * math.cos(math.radians(a)), 6 + 4 * math.sin(math.radians(a))))
         c.poly(T(pts), color)
-    elif name == "speaker":
-        c.poly(T([(1.5, 4.5), (3.6, 4.5), (6.6, 2), (6.6, 10), (3.6, 7.5), (1.5, 7.5)]), color)
-        c.arc(ox + 7 * f, oy + 6 * f, 2.6 * f, -50, 50, color, 1.3 * f)
-        c.arc(ox + 7 * f, oy + 6 * f, 4.6 * f, -50, 50, color, 1.3 * f)
 
 
 # ---------------------------------------------------------------- skin model
