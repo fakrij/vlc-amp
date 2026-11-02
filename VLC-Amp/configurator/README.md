@@ -6,7 +6,7 @@ an optional light + dark pair (`--pair`: the theme button switches; about twice 
 secondary colour, preview, download.
 No server and no build step: `source/build_skin.py` runs **unchanged** in Pyodide + Pillow (a Web Worker),
 so the generator stays the single source of truth. The preview is the generator's own `--preview` image.
-It builds the thin hi-fi skin (24 px strip, 620 x 676 px window, minimum width 490, video window with control panel
+It builds the thin hi-fi skin (24 px strip, 620 x 676 px window, minimum width 510, video window with control panel
 and extra row); the page offers no strip height or width option (use `--bar-height` / `--width` locally).
 
 ## Files

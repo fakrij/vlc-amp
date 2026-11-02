@@ -35,7 +35,7 @@ source/build_skin.py  --(Pillow)-->  VLC-Amp-NNN.vlt  (tar.gz: theme.xml + img/*
 skins2 only carries a dragged size from one layout to the next when both have
 the same original size and limits (`GenericLayout::isTightlyCoupledWith`,
 used in `TopWindow::setActiveLayout`). So all layouts of the main window are
-**the same size**: 620 x 676 logical px at the default width (minimum 490), the
+**the same size**: 620 x 676 logical px at the default width (minimum 510), the
 full player (232) + EQ (164) + playlist (280) stacked.
 
 | Layout | Bar position | Panels |
@@ -66,7 +66,7 @@ button height `min(bh - 6, 24)` (3 px margin), icon 12 px (13 from 30 px), label
 8 px (9 from 30 px), the title / time font `12 + (bh-24)//6` (`lcdbar` only when
 it differs from `lcd12`), grip rows and grip height. Widths do **not** grow, except
 the time box (`tw`: 71 px at 24, 81 px at 36, enough for "-1:23:45" in that font).
-`MIN_W` is 490 at every height.
+`MIN_W` is 510 at every height.
 
 Build names carry the height: `VLC-Amp-NNN` (24), `VLC-Amp-taskbar-NNN` (36,
 `BAR_TASKBAR`), `VLC-Amp-bar<N>-NNN` (any other; `skin_name`). `ThemeInfo` reads

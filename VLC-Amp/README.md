@@ -18,7 +18,7 @@ or make your own colours in the [online configurator](https://fakrij.github.io/v
 Unpack it, then see [Install](#install).
 
 The skin is a thin hi-fi design (flat panels, hairline outlines). The player window is 620 x 676 px at 100 % (minimum
-width 490); the default strip is 24 px high (for a title bar), 36 px is the taskbar build and 40 px the
+width 510); the default strip is 24 px high (for a title bar), 36 px is the taskbar build and 40 px the
 floating strip of the original concept: `python3 source/build_skin.py --bar-height 24`.
 
 The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from real VLC 3.0.20 by
@@ -761,7 +761,7 @@ python3 source/build_skin.py --bar-height 40 --width 620 --scale 1   # concept s
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (default 620, minimum 490 at every bar height; the video window is never narrower than 580), `--bar-height` the strip height in logical
+width in logical pixels (default 620, minimum 510 at every bar height; the video window is never narrower than 580), `--bar-height` the strip height in logical
 pixels (default 24; 36 for the taskbar build, written as
 `VLC-Amp-taskbar-NNN.vlt`, other heights as `VLC-Amp-bar<N>-NNN.vlt`; 24 to 60),
 `--out` the output folder (default

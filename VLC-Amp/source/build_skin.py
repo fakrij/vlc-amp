@@ -1258,7 +1258,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, 
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 490   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 94 px title window
+MIN_W = 510   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490; 510 since PP2: mute clear of Next)
 TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (VLC-Amp-taskbar-NNN.vlt); the helper assumes the same
