@@ -487,6 +487,7 @@ function Invoke-Setup {
     # Lua interface: the script goes into VLC's user Lua folder and starts next to the skin and the web interface
     # (extraintf=http:luaintf; lua-intf only names the script that "luaintf" runs, "http" is not affected).
     $luaOn = $false
+    $luaOther = $null
     $luaSrc = Join-Path $root "lua\intf\vlcamp.lua"
     if (Test-Path $luaSrc) {
         $other = Get-VlcSetting $lines "lua-intf"
@@ -498,6 +499,8 @@ function Invoke-Setup {
             Set-VlcOption $lines "lua" "lua-intf" "vlcamp"                       # (the key lives in vlcrc's [lua] section)
             Set-VlcDefaults $lines (Join-Path $root "lua\vlcrc-keys.txt")             # default key bindings
             $luaOn = $true
+        } else {
+            $luaOther = $other                                                     # said in the Done message
         }
     }
     [IO.File]::WriteAllLines($rc, $lines, (New-Object System.Text.UTF8Encoding $false))  # vlcrc: UTF-8 without BOM
@@ -532,6 +535,10 @@ function Invoke-Setup {
     if ($luaOn) {
         $extra += "Extra keys (while the player has focus): Ctrl+Shift+A = A-B loop, Ctrl+Shift+Left / Right = previous / next folder, " +
             "Ctrl+Shift+Up / Down = next / previous equalizer preset. The helper's tray menu has them too.`n`n"
+    }
+    if ($luaOther) {   # (linux/setup.sh warns the same way)
+        $extra += "The Lua extras (song lengths in the playlist, A-B loop, folder jump, EQ preset keys) were NOT installed: " +
+            "vlcrc already runs the Lua interface '$luaOther' (lua-intf). Remove that line from vlcrc and run Setup again to get them.`n`n"
     }
     if ($assoc -gt 0) {
         $extra += "Files and folders opened from Explorer start VLC without the Media Library entry ($assoc per-user file association entries, removed by the uninstaller). " +

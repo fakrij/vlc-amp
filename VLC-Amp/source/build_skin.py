@@ -2166,20 +2166,44 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 dd.text((ox + (l + r) // 2, oy + (t + b) // 2), "video placeholder", font=_truetype(FONT_MONO, P(10)),
                         fill=(110, 110, 110, 255), anchor="mm")
             elif n.kind == "Playtree":
+                # As skins2 draws it (ctrl_tree.cpp makeImage) with lua/intf/vlcamp.lua's lengths: rows of
+                # ceil(1.2 x font px), stripes bg1 / bg2 from the first row, text 7 px in, bottom-aligned in
+                # the row (baseline = row bottom - descent); every item but the playing one gets its length
+                # in one right-aligned column (vlcamp.lua pl_columns / decorate: same rule, change both).
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
-                f = _truetype(FONT_MONO, font_px[n.font])
+                px = font_px[n.font]
+                f = _truetype(FONT_MONO, px)
                 dd = ImageDraw.Draw(out)
-                lh = int(font_px[n.font] * 1.35)
-                songs = ["Harbour Lights", "Paper Satellites", "Slow Burn Across the River (Extended Mix)",
-                         "Static Bloom", "Glass Elevator", "Northbound", "Low Tide Radio", "Afterimage",
-                         "Late Train to Brno", "Copper Wire", "Quiet Hours", "Field Recording No. 3"]
-                for i, s in enumerate(songs):
+                lh = int(math.ceil(1.2 * px - 1e-9))
+                for i in range(-(-(b - t) // lh)):
+                    yy = oy + t + i * lh
+                    dd.rectangle([ox + l, yy, ox + r - 1, min(yy + lh, oy + b) - 1],
+                                 fill=H(n.colors["bg2" if i % 2 else "bg1"]))
+                songs = [("Harbour Lights", 222), ("Paper Satellites", 245),
+                         ("Slow Burn Across the River (Extended Mix)", 451), ("Static Bloom", 197),
+                         ("Glass Elevator", 252), ("Northbound", 190),
+                         ("Low Tide Radio - Live at the Harbour Hall, Night Two (Remastered Deluxe Edition)", 728),
+                         ("Afterimage", 203), ("Late Train to Brno", 274), ("Copper Wire", 166),
+                         ("Quiet Hours", 312), ("Field Recording No. 3", 95)]
+                playing = 2
+                adv, dot = int(round(px * 0.6021)), int(math.ceil(px * 1233 / 2048))
+                cols = max(20, (r - l - 7 - 2 * adv - dot - 1) // adv)      # vlcamp.lua pl_columns
+
+                def mss(sec):
+                    return "%d:%02d:%02d" % (sec // 3600, sec // 60 % 60, sec % 60) if sec >= 3600 else \
+                        "%d:%02d" % (sec // 60, sec % 60)
+                field = max([5] + [len(mss(sec)) for _, sec in songs])      # vlcamp.lua decorate
+                for i, (s, sec) in enumerate(songs):
                     yy = oy + t + i * lh
                     if yy + lh > oy + b:
                         break
-                    if i == 2:
-                        dd.rectangle([ox + l, yy, ox + r - 1, yy + lh - 1], fill=H(n.colors["sel"]))
-                    dd.text((ox + l + 2, yy + 1), s, font=f, fill=H(n.colors["play" if i == 2 else "fg"]))
+                    if i != playing:
+                        room = cols - field - 2
+                        if len(s) > room:
+                            s = s[:room - 1] + "…"
+                        s = s + " " * (cols - len(s) - len(mss(sec))) + mss(sec)
+                    dd.text((ox + l + 7, yy + lh - f.getmetrics()[1]), s, font=f, anchor="ls",
+                            fill=H(n.colors["play" if i == playing else "fg"]))
                 sl = n.slider
                 th = skin.bitmaps[sl["thumb"] + "_up"]
                 sx = sl["x"] - bw + aw
