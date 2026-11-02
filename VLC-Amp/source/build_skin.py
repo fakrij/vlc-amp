@@ -657,8 +657,6 @@ def _icon(c, name, ox, oy, size, color):
     elif name == "prev":
         c.poly(T([(2, 2), (3.6, 2), (3.6, 10), (2, 10)]), color)
         c.poly(T([(10, 2), (4.4, 6), (10, 10)]), color)
-    elif name == "stop":   # hollow square
-        c.lines(T([(2.5, 2.5), (9.5, 2.5), (9.5, 9.5), (2.5, 9.5), (2.5, 2.5)]), color, 1.4 * f)
     elif name == "next":
         c.poly(T([(2, 2), (7.6, 6), (2, 10)]), color)
         c.poly(T([(8.4, 2), (10, 2), (10, 10), (8.4, 10)]), color)
@@ -1272,7 +1270,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, 
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 510   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490; 510 since PP2: mute clear of Next)
+MIN_W = 510   # narrowest strip: expand / prev / play / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490). Full player: prev .. next end at 188, the mute zone starts at width - 282 (PP2 raised 490 to 510; the Stop button is gone, PP23, so now 40 px clear). Kept at 510 for the strip title
 TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (VLC-Amp-taskbar-NNN.vlt); the helper assumes the same
@@ -1359,8 +1357,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_close", 24, 22, "close", icon_size=11)
         make_button(skin, "b_flip_up", 24, 22, "arrow_up", icon_size=10)
         make_button(skin, "b_flip_dn", 24, 22, "arrow_down", icon_size=10)
-        for nm, ic in (("fb_stop", "stop"), ("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"),
-                       ("fb_next", "next")):
+        for nm, ic in (("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"), ("fb_next", "next")):
             make_button(skin, nm, 30, 28, ic, icon_size=13)
         make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
         make_toggle(skin, "ft_pl", 44, 28, label="PL", use_led=True, label_size=9)
@@ -1591,12 +1588,11 @@ def build(skin, W, BH=BAR_DEFAULT):
                    "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, rb="righttop")
         # transport row
         ty = 195
-        for nm, x, act, tip in (("fb_stop", 12, "vlc.stop()", "Stop"), ("fb_prev", 46, "playlist.previous()", "Previous"),
-                                ("fb_slower", 80, "vlc.slower()", "Slower")):
+        for nm, x, act, tip in (("fb_prev", 12, "playlist.previous()", "Previous"), ("fb_slower", 46, "vlc.slower()", "Slower")):
             lay.button(nm, P(x), P(ty), act, tip)
-        lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
-        lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
+        lay.checkbox("ft_play", P(80), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster")
+        lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next")
         lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
         lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)

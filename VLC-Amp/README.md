@@ -43,8 +43,7 @@ The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from re
   ![Strip with EQ and playlist, panels below the bar](docs/img-thin/strip-panels.png)
 
 - **Full player** (expand button): large time, title, bitrate, sample rate,
-  file format, shuffle / loop / repeat-one, speed, seek bar, transport (stop,
-  previous, slower, play / pause, faster, next), volume, VLC's menu, minimize, quit.
+  file format, shuffle / loop / repeat-one, speed, seek bar, transport (previous, slower, play / pause, faster, next), volume, VLC's menu, minimize, quit.
 
   ![Full player with equalizer and playlist](docs/img-thin/full-eq.png)
 
@@ -257,7 +256,7 @@ to the strip, minimize, quit. A skin built with several themes also has a
 round theme button there.
 Display: large time (click to switch elapsed / time left), the track length
 under it ("of 5:16"), title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
-speed. Then the seek bar, transport (stop, previous, slower, play / pause,
+speed. Then the seek bar, transport (previous, slower, play / pause,
 faster, next), volume, PL and EQ.
 
 ### Playlist and equalizer
