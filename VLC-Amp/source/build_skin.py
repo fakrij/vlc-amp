@@ -1039,12 +1039,19 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
         db = i - 20
         c = Canvas(EQ_FW, EQ_FH)
         c.rrect(0, 0, EQ_FW, EQ_FH, 0, LCD_BG)
-        c.rrect(14, EQ_G0, 2, EQ_G1 - EQ_G0, 1, EQ_TRACK)
+        # PP19: groove and fill on whole device px, centred on the same column pair (x = P(15), the slider's
+        # centre line): the fill is P(3) wide, widened by one px when its parity differs from the groove's
+        kx = EQ_FW / P(EQ_FW)       # logical px per device px
+        gw_ = max(2, P(2))
+        fw_ = max(gw_ + 2, P(3)) if (P(3) - gw_) % 2 == 0 else max(gw_ + 1, P(3) + 1)
+        cxd = P(15)
+        c.rrect((cxd - gw_ // 2) * kx, EQ_G0, gw_ * kx, EQ_G1 - EQ_G0, 1, EQ_TRACK)
         c.rrect(9, 55.5, 4, 1, 0, CYAN_DIM)       # 0 dB ticks either side of the groove
         c.rrect(17, 55.5, 4, 1, 0, CYAN_DIM)
         ct, cb = eq_travel()
         cy = (cb - (cb - ct) * i / 40.0) / S  # knob centre
-        c.rrect(13.5, cy, 3, 96 - cy, 0, col)
+        cyd = round(cy * S)         # fill top on a whole device row
+        c.rrect((cxd - fw_ // 2) * kx, cyd / S, fw_ * kx, 96 - cyd / S, 0, col)
         label = ("%+d" % db if db else "0") + ("dB" if pre and db else "")
         c.text(15, 6, label, 9, col if db else CYAN2, font="mono", anchor="mm")
         full = c.done()
@@ -1645,9 +1652,18 @@ def build(skin, W, BH=BAR_DEFAULT):
             lb, fb, tb = eq_boxes(i == 0)
             bands.paste(EQ_TICKS[i == 0], (x0s[i] + tb[0], P(4) + tb[1]))
         skin.add("eq_bands", bands)
+        from PIL import ImageChops
+        ink = bands.convert("RGB")
+        dif = ImageChops.difference(ink, Image.new("RGB", ink.size, H(LCD_BG)[:3]))
+        dif = ImageChops.lighter(ImageChops.lighter(dif.getchannel("R"), dif.getchannel("G")), dif.getchannel("B"))
+        il, _, ir, _ = dif.point(lambda v: 255 if v > 40 else 0).getbbox()
+        px_panel = P(12) + (PW - 2 * P(12) - (ir - il)) // 2 - il
         fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
         skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
-        lay.panel_begin("eq_panel" + sfx, P((W - EQ_BW) // 2), P(34), P(EQ_BW), P(120))
+        # PP22: centre the INK (the dB scale labels stick out about 3 logical px on the left, nothing on the
+        # right) in the band box P(12) .. PW - P(12): shift the block by the measured ink extent, in device px
+        # (a fixed 3 logical px is 1 - 2 px off at 125 / 150 %, where the glyphs do not scale linearly)
+        lay.panel_begin("eq_panel" + sfx, px_panel, P(34), P(EQ_BW), P(120))
         lay.image("eq_bands", 0, 0)
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
