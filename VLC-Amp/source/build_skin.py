@@ -1506,7 +1506,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for rt, rb, v in bar_corners(d):
             c = Canvas(W, FH)
             panel_bg(c, 0, 0, W, FH, 6, rt=rt, rb=rb)
-            grip_dots(c, 4, 12)
+            grip_dots(c, 4, 13)                       # 10 rows: centred on the 22-row button band (y 9..30)
             resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
