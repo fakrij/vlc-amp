@@ -754,7 +754,7 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 
 ## 8. Design requests from Jiri, 2026-11-02 (after the two audits)
 
-Screenshots from Jiri (probably his Windows install of `main`, not this branch; scale unknown, likely 125 %):
+Screenshots from Jiri (probably their Windows install of `main`, not this branch; scale unknown, likely 125 %):
 `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/user-progress-bottom.png` (title box with the progress fill, "Glass Elevator.wav"),
 `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/user-wav-chip.png` (format chip "·.wav" with a stray tick before the dot).
 
