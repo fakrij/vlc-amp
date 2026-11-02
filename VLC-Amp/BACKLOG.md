@@ -2,7 +2,7 @@
 
 > **Hi-fi redesign fork:** open items, rules and assignments for the new design are in [BACKLOG-hifi.md](BACKLOG-hifi.md).
 
-Last updated 2026-11-02 (section 6: pixel-perfect audit, PP1-PP14; 2026-11-01: hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
+Last updated 2026-11-02 (section 8: Jiri's design requests PP23-PP28; section 7: second pass; section 6: pixel-perfect audit, PP1-PP14; 2026-11-01: hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
 
 - **DONE**: built and tested in real VLC 3.0.20 (Linux, skins2).
 - **SKIN**: doable in the skin generator alone.
@@ -751,3 +751,18 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 - **Fix hint:** `add_eq`: panel x `P((W - EQ_BW) // 2 + 3)` (centre the ink, not the box), or a matching element on the right;
   decide with Jiri (optical centring vs the box).
 - **Verify:** ink pads equal within 1 px at 4 scales and at 777 px width; click zones move with the panel.
+
+## 8. Design requests from Jiri, 2026-11-02 (after the two audits)
+
+Screenshots from Jiri (probably his Windows install of `main`, not this branch; scale unknown, likely 125 %):
+`/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/user-progress-bottom.png` (title box with the progress fill, "Glass Elevator.wav"),
+`/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/user-wav-chip.png` (format chip "·.wav" with a stray tick before the dot).
+
+| ID | P | Task | Model | Group | Status |
+|----|---|------|-------|-------|--------|
+| PP23 | P1 | Remove the Stop button everywhere (strip, full player, fullscreen controller; not the video window's close): "it doesn't make sense". Re-space the remaining transport buttons by the design rules; update MIN_W comment / docs | Sonnet, medium | G-full + G-strip | open |
+| PP24 | P1 | Remove the orange LED dot from all toggle buttons (PL, EQ, ON, SHUF, LOOP, REP1, ...): "it doesn't make sense". Active state stays visible by the button's other on-look (frame / text colour); label centred alone | Sonnet, medium | G-bmp (`make_toggle`) | open |
+| PP25 | P1 | Playlist must show a song length column. Today: `vlcamp.lua` pads titles with " (m:ss)" right-aligned (item 8; real columns need T10). Check it works on this branch (PP8 / PP13 changed width and font), why Jiri may not see it (Windows install, Lua extras, `lua-config`), show it in `preview_layout`, and make it look like a column | Opus, high | G-pan + Lua | open |
+| PP26 | P1 | Title box progress fill: the bottom edge looks wrong (fill does not meet the bottom outline the way it meets the top; see the PP9 2nd-pass note "fill covers the top half-bright row but not the bottom one at 150 %"). Make the fill sit symmetrically in the box at every scale, strip and full player | Opus, high | G-bmp (title fill frames) | open |
+| PP27 | P1 | Format chip still shows a tick before ".wav" in Jiri's screenshot (PP17 fixed it on Linux at 4 scales; check Windows-like rendering and longer / shorter extensions). Make it robust: nothing of the preceding character can ever show (e.g. an opaque cover piece over the chip's left padding drawn above the text, or another way) | Sonnet, medium | G-full (`add_full`) | open |
+| PP28 | P2 | Video window extra row: right-align the speed control with the volume group's right edge (Jiri; PP21 kept the row left) | Sonnet, medium | G-video (`extra_row`) | open |
