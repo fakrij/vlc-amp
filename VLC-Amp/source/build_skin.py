@@ -1618,17 +1618,24 @@ def build(skin, W, BH=BAR_DEFAULT):
         # band block: fixed width, kept centred when the window is resized
         names = ["PRE", "60", "170", "310", "600", "1K", "3K", "6K", "12K", "14K", "16K"]
         cxs = [36 + i * 38 + (12 if i else 0) for i in range(11)]
+        # PP6: the 10 band faders sit on ONE device-pixel pitch (round(38 * S)), centred on the span the
+        # rounded logical positions had; the preamp keeps its own position. x0s = device x of each fader's 30 px box.
+        pitch = P(38)
+        b0 = P(cxs[1] - EQ_FW // 2)
+        b0 += (P(cxs[10] - EQ_FW // 2) - b0 - 9 * pitch) // 2
+        x0s = [P(cxs[0] - EQ_FW // 2)] + [b0 + k * pitch for k in range(10)]
+        lcx = [(x + P(EQ_FW // 2)) * EQ_BW / P(EQ_BW) for x in x0s]     # fader centres, logical px for the Canvas
         c = Canvas(EQ_BW, 120)
         c.rrect(0, 0, EQ_BW, 120, 0, LCD_BG)  # opaque, same as the LCD interior, keeps small text crisp
         for lbl, yy in (("+20", 24), ("0", 60), ("-20", 96)):
             c.text(18, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
-        for i, cx in enumerate(cxs):
+        for i, cx in enumerate(lcx):
             c.text(cx, 111, names[i], 9, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
-        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 100, 0, DIVIDER)
+        c.rrect((lcx[0] + lcx[1]) / 2, 8, 1, 100, 0, DIVIDER)
         bands = c.done()
         for i, cx in enumerate(cxs):     # the 0 dB ticks of every fader (not part of the frame sheets)
             lb, fb, tb = eq_boxes(i == 0)
-            bands.paste(EQ_TICKS[i == 0], (P(cx - EQ_FW // 2) + tb[0], P(4) + tb[1]))
+            bands.paste(EQ_TICKS[i == 0], (x0s[i] + tb[0], P(4) + tb[1]))
         skin.add("eq_bands", bands)
         fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
         skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
@@ -1638,7 +1645,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for i, cx in enumerate(cxs):
             value = "equalizer.preamp" if i == 0 else "equalizer.band(%d)" % (i - 1)
             lb, fb, tb = eq_boxes(i == 0)    # the sheets are crops of the 30 x 104 design: offsets lb / fb
-            x0 = P(cx - EQ_FW // 2)
+            x0 = x0s[i]
             pre = "_pre" if i == 0 else ""
             # click zone: an invisible slider as wide as the fader column, under the others (skins2 hit-tests the
             # topmost control first, so the knob and groove keep working; a click beside the groove lands here)
