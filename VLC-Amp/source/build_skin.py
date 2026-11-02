@@ -565,14 +565,6 @@ def ring_colour(col):
     return mix(col, BG_BOT, 0.45)
 
 
-def led(c, cx, cy, on):
-    if on:
-        c.circle(cx, cy, 3.2, H(AMBER, 70))
-        c.circle(cx, cy, 2, AMBER)
-    else:
-        c.circle(cx, cy, 2, LED_OFF)
-
-
 def icon(c, name, ox, oy, size, color):
     """Draw a glyph in crisp mode with its centre snapped to the device pixel grid (H22): the centre
     (ox + size / 2, oy + size / 2) moves to the nearest half device pixel (at most 1/4 px), so the
@@ -930,7 +922,7 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
     return base
 
 
-def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_led=False,
+def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None,
                 on_color=None, icon_size=12, label_size=8, well=None):
     """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true).
     well = (outer width, outer height): the button sits in a recessed box (w x h is the button)."""
@@ -947,7 +939,7 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             ring = None
             if on and on_color:
                 ring = ring_colour(on_color)
-            elif on and (use_led or label):
+            elif on and label:
                 ring = ring_colour(CYAN)
                 col = CYAN if st != "down" else col
             elif icon_on == "pause":
@@ -957,20 +949,25 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
             if label:
-                if use_led:      # dot + gap + text, centred as one group
-                    tw_ = _truetype(FONT_BOLD, P(label_size)).getlength(label) / S
-                    x0 = (w - (4 + 5 + tw_)) / 2
-                    led(c, x0 + 2, h / 2, on)
-                    c.text(x0 + 9, h / 2 + 0.5, label, label_size, col, anchor="lm")
-                else:
-                    c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
+                il, ir = _ink_x(FONT_BOLD, label_size, label)      # centre the ink, not the advance box
+                c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, label_size, col, anchor="lm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
+def _ink_x(font_file, size, label):
+    """Ink left / right of `label` in logical px from the text origin (getlength() counts side bearings)."""
+    f = _truetype(font_file, P(size))
+    pad = P(size) * 2
+    probe = Image.new("L", (int(f.getlength(label)) + 2 * pad, 3 * pad), 0)
+    ImageDraw.Draw(probe).text((pad, 2 * pad), label, font=f, fill=255, anchor="ls")
+    il, _, ir, _ = probe.getbbox()
+    return (il - pad) / S, (ir - pad) / S
+
+
 def make_strip_button(skin, base, w, h):
     """Labelled "STRIP" button (icon + text, accent ring) that collapses the full player."""
-    # icon (10) + gap (6) + text, centred as one group (as make_toggle does for LED + text). The text's
+    # icon (10) + gap (6) + text, centred as one group (as PP4 centres groups). The text's
     # ink is measured by rendering it: getlength() counts the side bearings, which put the group 2 px
     # off-centre at 200 %.
     f9 = _truetype(FONT_BOLD, P(9))
@@ -1064,7 +1061,7 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
 
 
 def make_chip_toggle(skin, base, w, h, label):
-    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): dot + text, accent border when on."""
+    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): text only, centred by its ink; accent border and tinted face when on."""
     for on in (False, True):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
@@ -1078,10 +1075,8 @@ def make_chip_toggle(skin, base, w, h, label):
                 face = mix(face, "#000000", 0.35)
             c.rrect(0, 0, w, h, 3, edge)
             c.rrect(1, 1, w - 2, h - 2, 2, face)
-            tw_ = _truetype(FONT_MONO, P(9)).getlength(label) / S
-            x0 = (w - (4 + 5 + tw_)) / 2
-            c.circle(x0 + 2, h / 2, 2, CYAN if on else mix(LCD_BG, CYAN, 0.45))
-            c.text(x0 + 9, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
+            il, ir = _ink_x(FONT_MONO, 9, label)
+            c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done(), LCD_BG))
     return base
 
@@ -1351,8 +1346,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("b_expand", "expand"), ("b_prev", "prev"), ("b_next", "next")):
             make_button(skin, nm, BW_, BT, ic, icon_size=isz)
         make_toggle(skin, "t_play", BW_ + 4, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
-        make_toggle(skin, "t_pl", PLW, BT, label="PL", use_led=True, label_size=lsz)   # same look as the full player's
-        make_toggle(skin, "t_eq", PLW, BT, label="EQ", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_pl", PLW, BT, label="PL", label_size=lsz)   # same look as the full player's
+        make_toggle(skin, "t_eq", PLW, BT, label="EQ", label_size=lsz)
         make_toggle(skin, "t_top", BW_, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
         make_thumb(skin, "thumb_v", 10, 18)
         make_title_thumb(skin, "thumb_title", BT - 2)
@@ -1371,8 +1366,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"), ("fb_next", "next")):
             make_button(skin, nm, 30, 28, ic, icon_size=13)
         make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
-        make_toggle(skin, "ft_pl", 44, 28, label="PL", use_led=True, label_size=9)
-        make_toggle(skin, "ft_eq", 44, 28, label="EQ", use_led=True, label_size=9)
+        make_toggle(skin, "ft_pl", 44, 28, label="PL", label_size=9)
+        make_toggle(skin, "ft_eq", 44, 28, label="EQ", label_size=9)
         # video window (title bar, control panel, extra row) and fullscreen controller
         for nm, ic in (("vb_full", "expand"), ("vb_min", "minimize"), ("vb_restore", "restore"), ("vb_close", "close")):
             make_button(skin, nm, 24, 22, ic, icon_size=11)
@@ -1391,7 +1386,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lcd(c, 0, 0, 60, 22, 3)
         skin.add("x_speed_bg", solid(c.done()))
         make_thumb(skin, "thumb_s", 12, 20)
-        make_toggle(skin, "t_eqon", 44, 22, label="ON", use_led=True, label_size=9)
+        make_toggle(skin, "t_eqon", 44, 22, label="ON", label_size=9)
         make_eq_thumb(skin, "thumb_eq", 18, 14)
         make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
         for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
@@ -1418,7 +1413,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for lbl in ("add", "rem", "sort", "load", "save"):
             make_button(skin, "b_pl_" + lbl, 44, 22, label=lbl.upper(), label_size=9)
         for lbl in ("shuf", "loop", "rep1"):
-            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), use_led=True, label_size=9)
+            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), label_size=9)
         c = Canvas(62, 16)
         c.rrect(0, 0, 62, 16, 3, mix(LCD_BG, CYAN, 0.28))
         c.rrect(1, 1, 60, 14, 2, mix(LCD_BG, CYAN, 0.08))
