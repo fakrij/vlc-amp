@@ -1683,7 +1683,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         # + gutter + left inset 18. PW - P(50), not P(W - 50): in whole px the same at 100 / 150 / 200 %,
         # 1 px wider at 125 % (713: 7 clean px + the track's anti-aliased column, as on the track's right).
         # lua/intf/vlcamp.lua pl_columns uses this width (PL_MARGIN): change both together.
-        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), P(194), "lcd12",
+        # PP15: the Playtree is a whole number of rows high, or skins2 draws the last stripe cut to a sliver.
+        # Row pitch = skins2's line height of lcd12 = ceil(1.2 * font px) (15 / 18 / 22 / 29 px at 100 / 125 / 150 /
+        # 200 %, measured in VLC); the leftover (< 1 row) goes to the gap above the bottom edge of the box.
+        pl_pitch = int(math.ceil(1.2 * P(12) - 1e-9))
+        pl_h = (P(194) // pl_pitch) * pl_pitch
+        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), pl_h, "lcd12",
                      dict(x=PW - P(12 + PL_GUTTER + 8), y=P(38), points="(%d,%d),(%d,%d)" % (P(4), P(182), P(4), P(12)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),

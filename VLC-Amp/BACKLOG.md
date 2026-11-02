@@ -643,7 +643,7 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 | ID | P | Task | Model | Group | Status |
 |----|---|------|-------|-------|--------|
 | PP7 | P3 | (reopened, see the row above) full player grip dots 1 - 1.5 px above the button row's centre | Haiku, low | G-full | open |
-| PP15 | P2 | Playlist: the last row stripe is cut to a sliver at the bottom of the list box at 125 / 150 / 200 % | Sonnet, medium | G-pan | open |
+| PP15 | P2 | Playlist: the last row stripe is cut to a sliver at the bottom of the list box at 125 / 150 / 200 % | Sonnet, medium | G-pan | done (branch worktree-agent-a98bcef7be5427fb2, unmerged): playtree height = whole rows (pitch ceil(1.2*P(12)) = 15/18/22/29, floor rows in P(194)); checked in real VLC at 100/125/150/200 %, Midnight + Paper, top and scrolled: last row whole, no sliver, scroll thumb reaches the end; duration column not seen (width unchanged) |
 | PP16 | P2 | Video window: the corner resize tab covers the bottom outline and the rounded bottom-right corner | Sonnet, medium | G-video | open |
 | PP17 | P2 | Format chip (".wav"): a 1 px sliver of the previous character at the left edge at 125 %; text right of the chip centre at 150 / 200 % | Sonnet, medium | G-full | open |
 | PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | open |
