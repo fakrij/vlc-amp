@@ -6,7 +6,7 @@ sys.path.insert(0, src)
 import build_skin as b
 from PIL import Image, ImageChops
 import numpy as np
-AX={'expand':'LU','collapse':'LU','prev':'U','next':'U','play':'U','pause':'LU','stop':'LU','pin':'L','minimize':'L','close':'LU','menu':'LU','arrow_up':'L','arrow_down':'L','sun':'LU','moon':'U','speaker':'U','slower':'','faster':'','maximize':'LU','unmaximize':'','restore':'L','speaker_off':''}
+AX={'expand':'LU','collapse':'LU','prev':'U','next':'U','play':'U','pause':'LU','pin':'L','minimize':'L','close':'LU','menu':'LU','arrow_up':'L','arrow_down':'L','sun':'LU','moon':'U','speaker':'U','slower':'','faster':'','maximize':'LU','unmaximize':'','restore':'L','speaker_off':''}
 calls={}
 orig=b.icon
 def rec(c,name,ox,oy,size,color):
