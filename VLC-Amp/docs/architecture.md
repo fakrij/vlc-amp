@@ -361,6 +361,10 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
 - An `<Image>`'s size in the default layout is its bitmap's size; stretching
   only comes from `lefttop` / `rightbottom` anchors. That is why stretch pieces
   (`hslice`, `nslice`) are full width and cannot be shrunk to a 1 px column.
+- Text (`<Text>`, Playtree) uses `fonts/VLCAmpMono.ttf`: DejaVu Sans Mono with every glyph's box widened
+  to its cell (`tools/make-cell-font.py`), because skins2 drops FreeType's `bitmap_left` and would otherwise
+  draw ":" "." "r" at the left edge of their cell. Bitmap labels (Pillow) still use `DejaVuSansMono.ttf`.
+  Details and the source lines: `docs/font-notes.md`, "Glyph placement".
 - Windows extracts the `.vlt` to disk; on its case-insensitive file system
   `b_x.png` and `B_x.png` collide. Ids differing only by case are rejected by
   the build.
@@ -1011,7 +1015,7 @@ on any item, not only the playing one (`modules/lua/libs/input.c:354-441`).
 So every 2 s the script walks the playlist and sets the title of each item with
 a known `duration` (seconds, `-1` = unknown) to `<title or name>`, spaces, and
 the length (`m:ss`, `h:mm:ss` from an hour), filling the line: right-aligned
-by padding, because the playlist font (DejaVu Sans Mono) gives every character
+by padding, because the playlist font (VLC Amp Mono = DejaVu Sans Mono, see `docs/font-notes.md`) gives every character
 the same advance. The line width in characters (`pl_columns`, at start): the
 Playtree draws a flat list's text 7 px in (`ctrl_tree.cpp` `makeImage`,
 `itemImageWidth` = 5 + 2) and cuts what does not fit with "..." (`ft2_font.cpp`
@@ -1025,13 +1029,14 @@ entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
 VLC saved at its last exit). The playtree is `P(620) - P(560)` px narrower
 than the window (60 / 75 / 90 / 120 px). skins2's `drawString` shows the whole
 line only if, after every character, the pen plus "..." (two advances and the
-ink width of ".", 3 px at 12-22 px, 4 px at 24 px) is left of the limit
+box width of ".", `dot` = `ceil(px x 1233 / 2048)` = 8 / 10 / 11 / 15 px: VLC Amp Mono's
+glyph boxes span the whole cell, PP13; with plain DejaVu it was the dot's ink, 3-4 px) is left of the limit
 `playtree - 7`;
 otherwise it ends the line with "..." (`maxIndex < len`), even when the text
 itself would fit. So columns = the largest `n` with `n x adv + 2 x adv + dot <
-playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin: 76 at 100 % (77
-cut), 74 at 125 % (75 cut); predicted 73 at 150 %, 77 at 200 % (the rule was
-also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
+playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin and VLC Amp Mono (PP13, 2026-11-02): 75 at 100 % (76
+cut), 72 at 150 % (73 cut); predicted 73 at 125 %, 76 at 200 %. With plain DejaVu it was 76 / 74 / 73 / 77
+(76 and 74 measured; the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
 the Windows helper is read on Windows only. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
 the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
@@ -1053,8 +1058,8 @@ Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
 suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
-the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **76 / 74 / 73 / 77** (the rule above, recomputed for the 12 px font
-and the 60 px playtree margin; 76 and 74 were also measured in VLC, one more character was cut).
+the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **75 / 73 / 72 / 76** (the rule above with VLC Amp Mono's
+cell-wide "." box, the 12 px font and the 60 px playtree margin; 75 and 72 measured in VLC, one more character was cut).
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 
@@ -1213,3 +1218,4 @@ tools/doc-shots.sh                                    # regenerate docs/img-thin
 | The theme can set "always on top" | No attribute; not saved either |
 | Separate EQ / PL windows can share the width | They cannot; hence one window with 4 equal layouts |
 | `b_x.png` and `B_x.png` are different files | Not on Windows |
+| skins2 places glyphs like FreeType does | It drops `bitmap_left` (`ft2_font.cpp` `drawString`): a glyph's ink starts at the pen, so `:` `.` `r` lose their left bearing; the shipped font `VLCAmpMono.ttf` (PP13, `docs/font-notes.md`) works around it |

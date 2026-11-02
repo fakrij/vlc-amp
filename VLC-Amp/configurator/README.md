@@ -22,10 +22,12 @@ Pillow has no libraqm), zeroed and sorted tar / gzip metadata (reproducible `.vl
 font's licence file to the `.vlt` (`fonts/LICENSE-<name>`). Same options give the same bytes.
 
 ## Fonts
-DejaVu Sans Mono (default, generator ships its licence), JetBrains Mono, Roboto Mono (variable file, default
+DejaVu Sans Mono (default, generator ships its licence; in the `.vlt` as `fonts/VLCAmpMono.ttf`, the same glyphs
+with their boxes widened to the cell so skins2 places them right, see `docs/font-notes.md`), JetBrains Mono, Roboto Mono (variable file, default
 instance = Regular), Source Code Pro (OTF, unmodified: Reserved Font Name "Source"). Selection follows
 `docs/font-notes.md`; all are monospace, so tabular digits are guaranteed. Adding a font: put the file and
-its licence into `fonts/` and an entry into `fonts.json`.
+its licence into `fonts/` and an entry into `fonts.json`. The other fonts (and an own TTF) ship unmodified, so
+skins2 still draws their narrow glyphs (`:` `.`) at the left of the cell (docs/font-notes.md, "Glyph placement").
 
 ## Versions
 `worker.js` pins `PYODIDE_VERSION = "314.0.7"` (Python 3.14, Pillow 12.2.0) and loads Pyodide and its Pillow

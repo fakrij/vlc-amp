@@ -432,7 +432,7 @@ which is regenerated):
 | PP10 | P2 | Video window: opening the extra row (`video-x`) throws away the user's window size (820 x 839 -> 620 x 439) | Sonnet, medium | G-video | open |
 | PP11 | P3 | Video / fullscreen controls: transport row 10 px from the bottom edge (12 elsewhere); mute is a framed button in the video panel but a bare speaker in the full player and fullscreen controller | Sonnet, medium | G-video | open, decision |
 | PP12 | P3 | 16 px mute speaker: the two sound waves merge into one blurred oval at 100 % | Opus, high | G-bmp | open |
-| PP13 | P1 | Text: skins2 places some glyphs several px left of their cell ("00: 24", "Lights. wav", "Nor thbound", "- 02:30") | Opus, high | G-font | open (may end as a limit) |
+| PP13 | P1 | Text: skins2 places some glyphs several px left of their cell ("00: 24", "Lights. wav", "Nor thbound", "- 02:30") | Opus, high | G-font | **done (branch `worktree-agent-aa3c539887a091043`, unmerged)**: cause confirmed (`ft2_font.cpp:270` draws at `pos[n]`, never `bitmap_left`); fix = shipped font `fonts/VLCAmpMono.ttf` (DejaVu, glyph boxes = cell, `tools/make-cell-font.py`), `vlcamp.lua` dot rule. Verified in VLC 3.0.20, 100 / 150 %: colon gaps 9/9, 2/3, 2/3 (30/10/12 px) and 13/13, 4/4, 5/6; "." in the 14 px title 3/3, 6/5; time position steady over 8 shots; durations right-aligned, 75 / 72 columns max (76 / 73 cut). Not run: 125 / 200 %, Windows. `configurator/build_skin.py` NOT synced (run `tools/sync-configurator.py` when merging) |
 | PP14 | - | Limits seen again, not tasks: 1.25 / 1.5 px outlines (two-row lines at seams and button edges at 125 / 150 %), stair-stepped outer corners | - | - | limit |
 
 Not logged (checked and fine): corner shapes of all 14 layouts at all 4 scales (mirror-identical); one 1 px line per
@@ -582,6 +582,13 @@ bitmap pixels (`tools/bitmap-audit.py` with `BH=24`: 0).
   (`docs/upstream-issues/`), and `docs/font-notes.md` must be corrected either way.
 - **Verify:** real VLC: colon centred between digits (gaps equal within 1 px) at 10 / 12 / 14 / 30 px and at 100 / 150 %; digits still
   tabular (time does not jitter); playlist durations still right-aligned.
+- **Done 2026-11-02** (see `docs/font-notes.md` "Glyph placement" for source lines, method and measurements): the bearing is
+  dropped (`drawString` line 270 uses `top`, never `left`). `source/fonts/VLCAmpMono.ttf` = DejaVu Sans Mono where each glyph is a
+  composite of the unchanged original plus zero-area points at x = 0 and x = advance (hinting untouched; ink and advances identical
+  to DejaVu at 8-64 px in FreeType 2.13.2). Generator: `FONT_CELL` / `FONT_FILE` / the copy in `main` only; Pillow keeps
+  `DejaVuSansMono.ttf` (bitmaps byte-identical). `vlcamp.lua` `pl_columns`: dot = `ceil(px x 1233 / 2048)` (one column fewer:
+  75 / 73 / 72 / 76). Configurator stages the new font (Pyodide build checked: theme.xml and font identical to the CLI build).
+  The configurator's other fonts and own TTFs still have the bug (unmodified files).
 
 ### PP14 - Limits (not tasks)
 - 1.25 / 1.5 px outlines at 125 / 150 %: every 1 px line is one full row plus an anti-aliased row (seams `3e434a` + `2a303a`),

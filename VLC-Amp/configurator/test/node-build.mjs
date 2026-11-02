@@ -12,7 +12,7 @@ const py = await loadPyodide({ indexURL: pyDir });
 py.unpackArchive(new Uint8Array(readFileSync(wheel)), "wheel");   // node: no CDN loadPackage
 
 const opts = JSON.parse(optsJson);
-const files = ["build_skin.py", "glue.py", "fonts/DejaVuSansMono.ttf", "fonts/DejaVuSans-Bold.ttf",
+const files = ["build_skin.py", "glue.py", "fonts/DejaVuSansMono.ttf", "fonts/VLCAmpMono.ttf", "fonts/DejaVuSans-Bold.ttf",
   "fonts/LICENSE-DejaVu.txt", opts.font, opts.licence].filter(Boolean);
 py.FS.mkdirTree("/work/fonts");
 for (const f of files) py.FS.writeFile("/work/" + f, new Uint8Array(readFileSync(join(root, f))));
