@@ -476,11 +476,20 @@ def grip_y(box_y, box_h, h=GRIP_H):
     return box_y + (box_h - h) // 2
 
 
+def grip_dev(x, y, h):
+    """The resize tab in device px: (left, width, top, bottom). x = grip_x(W), y / h logical.
+    The width is odd (P(9) rounded up), so the three 1 px ribs can sit with equal gaps and equal margins;
+    the tab is centred in its 12 logical px margin (an odd leftover pixel goes to the right)."""
+    ms, me = P(x - (12 - GRIP_W) // 2), P(x - (12 - GRIP_W) // 2 + 12)
+    tw = P(GRIP_W) | 1
+    return ms + (me - ms - tw) // 2, tw, P(y), P(y + h)
+
+
 def grip_tab(skin, lay, bg, x, y, h):
     """The resize zone: the drawn tab as its own control (resizeE), so the hit area is exactly the tab.
     The section backgrounds only move the window. bg = a section bitmap (opaque at the tab), x / y / h logical px."""
-    x0, x1 = int(math.floor(x * S)), int(math.ceil((x + GRIP_W) * S))
-    y0, y1 = int(math.floor(y * S)), int(math.ceil((y + h) * S))
+    x0, tw, y0, y1 = grip_dev(x, y, h)
+    x1 = x0 + tw
     im = bg.crop((x0, y0, x1, y1))
     if im.getchannel("A").getextrema()[0] != 255:
         raise SystemExit("error: resize tab must be opaque")
@@ -490,11 +499,20 @@ def grip_tab(skin, lay, bg, x, y, h):
 
 def resize_handle(c, x, y, h):
     """Grip for the right edge: a 9 px wide tab in the button colour with three light ribs, so it reads
-    as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab."""
+    as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab.
+    Drawn in device px (grip_dev): tab edges and 1 px ribs sit on whole device columns at every scale."""
     pad = BTN["up"][0]
-    c.rrect(x, y, 9, h, 2, pad)
-    for rx in (x + 2, x + 4, x + 6):
-        c.rrect(rx, y + 3, 1, h - 6, 0, mix(pad, ICON["up"], 0.6))
+    dx, tw, dy, dy1 = grip_dev(x, y, h)
+    lx = lambda d: d * SS / c.kx - c.ox         # device px -> logical px of this canvas
+    ly = lambda d: d * SS / c.ky - c.oy
+    c.rrect(lx(dx), ly(dy), tw / (c.kx / SS), (dy1 - dy) / (c.ky / SS), 2, pad)
+    free = tw - 3
+    gap = int(round(free / 6.0))
+    rib = mix(pad, ICON["up"], 0.6)
+    top, bot = dy + P(3), dy1 - P(3)
+    for i in range(3):
+        rx = dx + (free - 2 * gap) // 2 + i * (gap + 1)
+        c.rrect(lx(rx), ly(top), 1 / (c.kx / SS), (bot - top) / (c.ky / SS), 0, rib)
 
 
 # ---------------------------------------------------------------- primitives

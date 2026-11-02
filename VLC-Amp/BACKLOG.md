@@ -424,7 +424,7 @@ which is regenerated):
 | PP2 | P1 | Full player at the minimum width: the mute speaker zone covers half of the Next button (below about 505 px) | Sonnet, medium | G-full | open |
 | PP3 | P1 | Video window: a second set of grip dots appears on the left frame when the window is taller than its default | Sonnet, medium | G-video | open |
 | PP4 | P2 | STRIP button: icon + label group 5.5 px left of centre (7 px left pad, 16 px right) | Haiku, low | G-bmp | open |
-| PP5 | P2 | Resize tab ribs unevenly spaced / split over two columns at 125 % (and other fractional scales) | Sonnet, medium | G-bmp | open |
+| PP5 | P2 | Resize tab ribs unevenly spaced / split over two columns at 125 % (and other fractional scales) | Sonnet, medium | G-bmp | done (branch worktree-agent-a06b2e9846e168a01, unmerged): ribs drawn in device px (odd tab width, equal ribs / gaps / margins); 100 % staged bitmaps byte-identical to design-tuning; real VLC crops at 125 / 150 / 200 % (strip, full, EQ, playlist) measured: ribs equal brightness, gaps and margins symmetric; drag on the tab still resizes (150 %). Not checked: video window, taskbar 36 px strip |
 | PP6 | P2 | EQ faders alternate 56 / 58 px (150 %) and 47 / 48 px (125 %) apart | Sonnet, medium | G-pan | open |
 | PP7 | P3 | Full player title-bar grip dots sit 1 px above the button row's centre | Haiku, low | G-full | open |
 | PP8 | P3 | Playlist: row stripes stop 16 px before the scroll track (6 px gutter elsewhere) | Opus, high (touches the Lua width rule) | G-pan | open, decision |
