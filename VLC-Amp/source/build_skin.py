@@ -1362,7 +1362,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_toggle(skin, "xt_ab", 44, 22, label="A-B", label_size=9)         # same look in both states (a button)
         make_button(skin, "xb_chprev", 44, 22, label="CH-", label_size=9)
         make_button(skin, "xb_chnext", 44, 22, label="CH+", label_size=9)
-        make_button(skin, "xb_snap", 48, 22, label="SNAP", label_size=9)
+        make_button(skin, "xb_snap", 44, 22, label="SNAP", label_size=9)
         make_button(skin, "xb_slower", 30, 22, "slower", icon_size=12)
         make_button(skin, "xb_faster", 30, 22, "faster", icon_size=12)
         c = Canvas(60, 22)                                                    # speed readout box (between slower / faster)
@@ -1754,13 +1754,13 @@ def build(skin, W, BH=BAR_DEFAULT):
         for i, (lbl, name, state, tp) in enumerate((("shuf", "Random", "playlist.isRandom", "Shuffle"),
                                                     ("loop", "Loop", "playlist.isLoop", "Loop playlist"),
                                                     ("rep1", "Repeat", "playlist.isRepeat", "Repeat one"))):
-            lay.checkbox("t_pl_" + lbl, P(214 + i * 56), y, state, "playlist.set%s(true)" % name,
+            lay.checkbox("t_pl_" + lbl, P(212 + i * 56), y, state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tp + ": off", tp + ": on", **k)
-        lay.button("xb_slower", P(390), y, "vlc.slower()", "Slower", **k)
-        lay.image("x_speed_bg", P(424), y, action="none", **k)
-        lay.text(P(426), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+        lay.button("xb_slower", P(388), y, "vlc.slower()", "Slower", **k)
+        lay.image("x_speed_bg", P(422), y, action="none", **k)
+        lay.text(P(424), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
                  sample="1.25x", focus=False, **k)
-        lay.button("xb_faster", P(488), y, "vlc.faster()", "Faster", **k)
+        lay.button("xb_faster", P(486), y, "vlc.faster()", "Faster", **k)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)

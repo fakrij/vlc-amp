@@ -649,7 +649,7 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 | PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | open |
 | PP19 | P3 | EQ fader fill 3 px with half-pixel edges at 100 / 150 % (soft columns), groove anti-aliased at 125 % | Sonnet, medium | G-pan | open |
 | PP20 | P3 | Strip time text 1.5 px right of the time box centre at 150 % | Haiku, low | G-strip | open |
-| PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | open |
+| PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | done (branch worktree-agent-a3bca826b8f533ced, unmerged): all four buttons 44 px (`xb_snap` bitmap 48 -> 44), both group gaps 12, speed box 4 px from slower / faster, 4 px inside groups, row's left edge kept (right end 518 -> 516). Real VLC 3.0.20 (Xvfb :185, `hasVout` -> `not isMute`), video-x at 100 / 150 %: run-length scan along the row: widths 44 x 4, 52 x 3, 30 / 60 / 30 (x1.5 at 150 %), gaps 4 4 4 12 4 4 12 4 4 (6 / 18 at 150 %); labels (A-B, CH-, CH+, SNAP) fit. Release `.vlt` not rebuilt. |
 | PP22 | P3 | EQ band block: ink 3 logical px left of the box centre (dB scale on the left, nothing on the right) | Haiku, low (decision) | G-pan | open |
 
 ### PP7 (reopened) - Full player grip dots 1 px high (Haiku, low) - P3
