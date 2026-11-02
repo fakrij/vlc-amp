@@ -2,7 +2,7 @@
 
 > **Hi-fi redesign fork:** open items, rules and assignments for the new design are in [BACKLOG-hifi.md](BACKLOG-hifi.md).
 
-Last updated 2026-11-01 (hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
+Last updated 2026-11-02 (section 6: pixel-perfect audit, PP1-PP14; 2026-11-01: hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
 
 - **DONE**: built and tested in real VLC 3.0.20 (Linux, skins2).
 - **SKIN**: doable in the skin generator alone.
@@ -381,3 +381,210 @@ Result (2026-10-31, Haiku, from docs only, nothing run): Flatpak (Flathub `org.v
 ### Flat style (history: default 2026-10-31, `--classic` = old look; both replaced by the one thin hi-fi style, section 0)
 Flat = solid fills, no bevels / glow (preview in `flat-preview/`). Strip: no separate volume slider any more - the time box is `[+/- mode switch | volume fill]` (click / drag / wheel sets the volume; `thumb_none` = no knob).
 - Panning / balance in the EQ window: NOT possible in skins2 (no pan, balance or stereo-mode variable in `libskins2_plugin.so`; no custom actions). Would need a Lua extension or a VLC audio filter plus a separate UI.
+
+---
+
+## 6. Pixel-perfect audit 2026-11-02
+
+Audit of the hi-fi skin at commit 4e61517 (branch `design-tuning`, mute icon 16 px included), done with the
+`/pixel-perfect` procedure on real VLC 3.0.20 + Xvfb (`tools/vlc-test.sh`, own instance `ppaudit`, display :141,
+root window painted magenta so the window shape is visible). Nothing was fixed.
+
+**Rendered for real:** Midnight at 100 / 125 / 150 / 200 % (24 px strip): all 14 layout x panel combinations (strip / full,
+panels below / above, none / PL / EQ / both), window corners mirror-compared (identical in every case), seam columns
+scanned; hover and pressed state of every button / toggle of the full player, EQ and playlist headers, playlist footer
+and strip at 100 %; window widened by +157 px (100 %) / +137 px (150 %) and narrowed to the 490 px minimum; taskbar
+build (36 px) at 100 / 150 %; Paper at 100 / 150 %; video window (`video-l`, resized, `video-x`) by loading a copy of
+`theme.xml` with `vlc.hasVout` replaced by `not vlc.isMute`; volume fill with `--aout afile` (the dummy output
+reports 0 %). **Approximated:** fullscreen controller (generator `preview_layout`, skins2 shows it only over a full screen
+video), muted look (bitmaps composited; `vlc.mute()` had no effect with the afile output), `video-min`.
+**Not checked:** Windows rendering, the other 8 themes and Custom, the 40 px strip, hover states at 125 - 200 %.
+
+Screenshots: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/shots/` (`m<pct>_<layout>.png` = Midnight, `p` = Paper, `tb` = taskbar, `v` = video), per-state crops
+`/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/states/`, zoomed evidence `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/`. Scripts (driver, crop + zoom, ink / mirror check, corner check):
+`/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/tools/`.
+
+Design rules used: BACKLOG-hifi.md "Design rules" (12 px margins, 1 px lines, radii 6 / 4 / 3, content centred in its band)
+plus: icon and label groups centred in their button; siblings evenly spaced; a stretchable slice's middle piece must be plain
+(skins2 tiles it, `resize="mosaic"`); what a layout switch keeps (size) must not jump.
+
+**Serialization.** Every open task edits `source/build_skin.py` and must end with `tools/sync-configurator.py`
+(`configurator/build_skin.py`), so run at most one task of the same group at a time and rebase the next one; tasks of
+different groups touch different functions and can run in parallel worktrees (merge conflicts only in `configurator/`,
+which is regenerated):
+- **G-pan** (section backgrounds / panel layout: `add_eq`, `add_pl`, `hslice` / `nslice` callers): PP1, PP6, PP8
+- **G-full** (`add_full`, `MIN_W`): PP2, PP7
+- **G-bmp** (bitmap factories / icons: `make_strip_button`, `resize_handle`, `make_title_thumb`, `_icon`): PP4, PP5, PP9, PP12
+- **G-video** (`video_layout`, `extra_row`, the video `Layout`s): PP3, PP10, PP11
+- **G-font** (`source/fonts/`, `<Font>` ids, `docs/font-notes.md`): PP13
+
+| ID | P | Task | Model | Group | Status |
+|----|---|------|-------|-------|--------|
+| PP1 | P1 | EQ header: half a grip dot repeats in the tiled middle of the EQ background when the window is wider than 620 px | Haiku, low | G-pan | open |
+| PP2 | P1 | Full player at the minimum width: the mute speaker zone covers half of the Next button (below about 505 px) | Sonnet, medium | G-full | open |
+| PP3 | P1 | Video window: a second set of grip dots appears on the left frame when the window is taller than its default | Sonnet, medium | G-video | open |
+| PP4 | P2 | STRIP button: icon + label group 5.5 px left of centre (7 px left pad, 16 px right) | Haiku, low | G-bmp | open |
+| PP5 | P2 | Resize tab ribs unevenly spaced / split over two columns at 125 % (and other fractional scales) | Sonnet, medium | G-bmp | open |
+| PP6 | P2 | EQ faders alternate 56 / 58 px (150 %) and 47 / 48 px (125 %) apart | Sonnet, medium | G-pan | open |
+| PP7 | P3 | Full player title-bar grip dots sit 1 px above the button row's centre | Haiku, low | G-full | open |
+| PP8 | P3 | Playlist: row stripes stop 16 px before the scroll track (6 px gutter elsewhere) | Opus, high (touches the Lua width rule) | G-pan | open, decision |
+| PP9 | P3 | Title progress thumb hides the half-pixel row of the box outline at 125 / 150 %: a notch in the top / bottom edge right of the playhead | Opus, high | G-bmp | open |
+| PP10 | P2 | Video window: opening the extra row (`video-x`) throws away the user's window size (820 x 839 -> 620 x 439) | Sonnet, medium | G-video | open |
+| PP11 | P3 | Video / fullscreen controls: transport row 10 px from the bottom edge (12 elsewhere); mute is a framed button in the video panel but a bare speaker in the full player and fullscreen controller | Sonnet, medium | G-video | open, decision |
+| PP12 | P3 | 16 px mute speaker: the two sound waves merge into one blurred oval at 100 % | Opus, high | G-bmp | open |
+| PP13 | P1 | Text: skins2 places some glyphs several px left of their cell ("00: 24", "Lights. wav", "Nor thbound", "- 02:30") | Opus, high | G-font | open (may end as a limit) |
+| PP14 | - | Limits seen again, not tasks: 1.25 / 1.5 px outlines (two-row lines at seams and button edges at 125 / 150 %), stair-stepped outer corners | - | - | limit |
+
+Not logged (checked and fine): corner shapes of all 14 layouts at all 4 scales (mirror-identical); one 1 px line per
+section junction; hover / pressed bitmaps cover exactly the control rect (pixel diff at 100 %); icons of the transport, header
+and strip buttons mirror-symmetric and centred (ink box centre offset 0); time and title text vertically centred within
+0.5 px at every scale; EQ band block centred at 620 and 777 px; playlist footer labels centred; no semi-transparent
+bitmap pixels (`tools/bitmap-audit.py` with `BH=24`: 0).
+
+### PP1 - EQ header: stray grip-dot column when widened (Haiku, low) - P1
+- **Where:** EQ section header, every layout, every scale, window wider than its 620 px default: x = 610, y = EQ top + 14..19
+  at 100 % (x = 915 at 150 %). Midnight and Paper.
+- **Problem:** `add_eq` cuts `eq_bg` with `hslice(..., 10, 10)` (left cap 10 logical px), but `grip_dots(c, 4, 12, 2)`
+  draws its right dot column at x = 9..11, so one column of each dot lies in the middle piece, which skins2 tiles
+  (`resize="mosaic"`); the next tile starts at x = 10 + (W - 20) and shows the half dots as a ":" left of the flip button.
+  Breaks "a slice middle must be plain". Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/eq-header-stray-dots-100-wide.png`,
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/eq-header-stray-dots-150-wide.png` (screens `m100_wide_full_pleq.png`, `m150_wide_full_pleq.png`).
+- **Fix hint:** give `eq_bg` the same left cap as the other sections (14, as `strip_bg` / `full_bg`), or better add a check
+  in `hslice` / `nslice` that the middle piece is one colour per row (column-uniform) and raise `SystemExit` otherwise,
+  so the rule cannot break again (PP3 is the same rule vertically).
+- **Verify:** build 100 / 150 %, `tools/vlc-test.sh start`, open EQ, `drag` the resize tab +150 px, crop the EQ header at
+  8x: plain panel colour between the label and the flip button. Byte-compare `stage-*`: only the `eq_bg*` slices change.
+
+### PP2 - Full player at minimum width: mute covers Next (Sonnet, medium) - P1
+- **Where:** full player transport row, window width 490 .. about 505 px (any scale), y 195..222 (100 %).
+- **Problem:** the mute zone sits at `F(282)` (W - 282, 22 px wide) and Next ends at x = 221; at W = 490 the mute zone starts at
+  208 and is drawn over the right half of Next (the Next button is cut, the speaker sits on its face). `MIN_W` (490) was
+  chosen for the strip only. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/full-min-width-next-mute-overlap-100.png` (screen
+  `m100_min_full_pleq.png`).
+- **Fix hint:** either raise `MIN_W` so that W - 282 >= 222 + 6 (W >= 510; then update the places that quote 490: README,
+  `docs/architecture.md`, BACKLOG-hifi.md, section 0 above; the helper reads the shape, not the number), or keep 490 and
+  give the full player a narrower volume group below a threshold (not possible per width in skins2: one layout, so it would
+  mean a shorter fixed volume groove, `vol100` 100 -> 80 px, for every width). Decide with Jiri; the first is the small change.
+- **Verify:** `drag` the full player's tab to the minimum, crop the transport row at 6x at 100 and 150 %: Next fully drawn, at
+  least 6 px between Next and the speaker; click Next and mute at that width.
+
+### PP3 - Video window: repeated grip dots on the left frame (Sonnet, medium) - P1
+- **Where:** video window (`video-l`, `video-x`), any size taller than the default (also maximized), left frame at
+  y = 14 + n * (VH - 28) logical px; seen at 100 %, 820 x 839 window: second dots at y = 440.
+- **Problem:** `video_layout` cuts the whole background with `nslice(..., VB + 2)` (14 px caps), but `grip_dots(c, 4, 12)` in the
+  title bar spans y = 14..23, i.e. the top of the middle-left piece, which skins2 tiles vertically; every repeat shows the dots
+  again. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/video-window-repeated-grip-100.png` (screens `v100_video.png`, `v100_video_big.png`).
+- **Fix hint:** draw the title bar (dots included) as its own non-stretching piece (an `hslice` 36 px high at the top, like the
+  main window's bars) and keep the 9-slice for the frame only; or move the dots into the 14 px corner (they do not fit
+  centred in a 36 px bar). Same rule check as PP1.
+- **Verify:** load a copy of the stage `theme.xml` with `vlc.hasVout` replaced by `not vlc.isMute` (how this audit did it), drag
+  the corner tab +200 x +400, crop the left frame: dots only in the title bar. Check `video-x` and 150 %.
+
+### PP4 - STRIP button content off-centre (Haiku, low) - P2
+- **Where:** full player title bar, STRIP button (x 16..83, y 9..30 at 100 %), all states, all scales, all themes.
+- **Problem:** `make_strip_button` places the icon at x = 7 and the text at x = 23 with a fixed offset; the ink group spans 23..66
+  (logical 7..50 inside the 68 px button): 7 px left, 16 px right, centre 5.5 px left of the button centre. Every other labelled
+  button centres its group (`make_toggle` with `use_led`). Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/strip-button-label-off-centre-100.png`.
+- **Fix hint:** measure the label with `_truetype(FONT_BOLD, P(9)).getlength("STRIP") / S` and centre icon (10) + gap (6) + text as
+  one group, as `make_toggle` does for LED + text.
+- **Verify:** `ink.py`-style check (or crop at 10x): left and right padding equal within 1 px at 100 / 125 / 150 / 200 %;
+  only `b_strip_*` bitmaps change.
+
+### PP5 - Resize tab ribs at fractional scales (Sonnet, medium) - P2
+- **Where:** the resize tab of strip, full player, EQ, playlist and video window at 125 % (and 150 %): e.g. full player x 761..772.
+- **Problem:** `resize_handle` draws three 1 px ribs at x + 2 / 4 / 6 logical; at 125 % that is 2.5 / 5 / 7.5 device px, so one rib
+  is crisp, one is split over two half-bright columns and the gaps are 3 and 2 px; the tab edges get anti-aliased columns too.
+  At 100 % the ribs are crisp and even. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/resize-tab-ribs-uneven-125.png` (row y = 100 of
+  `m125_full_dn_pleq.png`: 52, 57, 78, **139**, 57, **119, 98**, 78, **139**, 57).
+- **Fix hint:** draw the tab in device pixels: width `P(9)`, ribs 1 device px wide at evenly spaced device columns centred in the
+  tab (same idea as the crisp icons, H22). `grip_tab` crops the same pixels, so the hit zone follows.
+- **Verify:** crops at 125 / 150 / 200 %: three ribs of equal brightness, equal gaps, symmetric margins; 100 % byte-identical.
+
+### PP6 - EQ fader spacing alternates at 125 / 150 % (Sonnet, medium) - P2
+- **Where:** EQ band block, 125 % and 150 %, every layout and theme.
+- **Problem:** fader positions are `P(cx - 15)` with cx = 48 + 38 i; 38 x 1.5 = 57 rounds alternately, giving spacings
+  58, 56, 58, 56, ... (150 %) and 47, 48, 47, ... (125 %), measured on the groove centres; dB labels and band names follow.
+  Siblings must be evenly spaced. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/eq-fader-spacing-alternates-150.png`.
+- **Fix hint:** compute the device-pixel pitch once (`pitch = round(38 * S)`) and place fader i at `x0 + i * pitch` in `add_eq`
+  and in the `eq_bands` drawing (labels and 0 dB ticks), keeping the block centred.
+- **Verify:** groove-centre scan (row through the fills) gives one constant pitch at every scale; clicks on each fader still hit
+  (`tools/vlc-test.sh click`); 100 % byte-identical.
+
+### PP7 - Full player grip dots 1 px high (Haiku, low) - P3
+- **Where:** full player title bar, left grip (x 5..10), all scales.
+- **Problem:** `grip_dots(c, 4, 12)` puts the dots at rows 14..23 (centre 18.5); the STRIP / header buttons are rows 9..30
+  (centre 19.5). In the strip and the panel headers the dots are centred. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/full-grip-dots-1px-high-100.png`.
+- **Fix hint:** `grip_dots(c, 4, 13)` in `add_full` (and the same check for `video_layout`'s title bar, which centres on 18).
+- **Verify:** dot rows 15..24 at 100 %; crop at 10x.
+
+### PP8 - Playlist stripes vs scroll track gap (Opus, high; decision) - P3
+- **Where:** playlist list box, every scale: stripes x 18..577, scroll track x 594..601 at 100 %.
+- **Problem:** the left gutter is 6 px (`PL_GUTTER`), the scroll track sits 6 px from the right edge, but the rows end 16 px before
+  the track, so the list looks pushed left. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/playlist-stripe-scroll-gap-100.png`.
+- **Fix hint:** Playtree width `P(W - 60)` -> `P(W - 50)` (6 px gap to the track). **The Lua duration padding depends on this width**
+  (`lua/intf/vlcamp.lua` `pl_columns`, rule measured in VLC, 76 / 74 / 73 / 77 columns, docs/architecture.md "Playlist durations"):
+  the rule must be re-measured and the docs updated, so it needs Jiri's OK first.
+- **Verify:** stripes end 6 px before the track at every scale; durations right-aligned again at 100 / 125 / 150 / 200 % (harness +
+  Lua, as item 8).
+
+### PP9 - Title thumb notch at fractional scales (Opus, high) - P3
+- **Where:** strip title box and full player title box, 125 / 150 %, on the 15 px (150 %) right of the playhead.
+- **Problem:** the box outline is 1.5 device px (one full row + one half-bright row). Fills start `inset()` = 1 px in and cover the
+  half row (by design), but the thumb's right half (box colour) covers it too, so the outline is two rows thick everywhere except a
+  1-row notch 15 px long right of the playhead. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/title-thumb-outline-notch-150.png`.
+- **Fix hint:** make the thumb's right half one row shorter at top and bottom when `P(1) != int(S)` (so the half-bright outline row
+  stays visible), or give the thumb transparent top / bottom rows (transparent pixels are not drawn by skins2 but still take
+  clicks: check the hit area stays). Visual judgement needed against the fill side.
+- **Verify:** 150 % crop at 12x: top and bottom edges of the box uniform across the playhead at 0 / 50 / 93 %; 100 / 200 % unchanged.
+
+### PP10 - Video extra row resets the window size (Sonnet, medium) - P2
+- **Where:** video window, arrow button (`fb_more` / `fb_less`), any scale.
+- **Problem:** resized to 820 x 839, a click on the arrow showed `video-x` at 620 x 439 (screens `v100_video_big.png` ->
+  `v100_video_x.png`). skins2 carries the size only between tightly coupled layouts (same original size **and** min / max limits,
+  `GenericLayout::isTightlyCoupledWith`); `video-l` has `minh = VT + PH + 90`, `video-x` `VT + PH + RH + 90`. The docs say the
+  size is carried. Evidence: the two screenshots in `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/shots/`.
+- **Fix hint:** give both layouts the same `minh` (the larger one) in `build()`; check the source of
+  `isTightlyCoupledWith` (3.0.x `modules/gui/skins2/src/generic_layout.cpp`) first.
+- **Verify:** resize the video window, toggle the row both ways: size kept; maximized size kept (helper `FitMaximizedVideo`).
+
+### PP11 - Video / fullscreen panel consistency (Sonnet, medium; decision) - P3
+- **Where:** video control panel and fullscreen controller, all scales.
+- **Problem:** (a) the transport row ends 10 px above the window's bottom edge (`ty = pb + 30`, 28 px buttons, `PH` = 68), the
+  sides keep 12 (margin rule); in `video-x` the row and the extra row are only 4 px apart. (b) The mute control is a framed
+  30 x 28 button (`ft_mute`) in the video panel but the bare speaker (`c_mute`) in the full player and the fullscreen
+  controller. Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/video-panel-bottom-margin-100.png`, `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/mute-style-video-vs-fsc-100.png`.
+- **Fix hint:** (a) `PH` 70 or the seek bar 2 px higher so the margins are 12; (b) pick one mute style (Jiri) and use it in all
+  three places.
+- **Verify:** video window crops (forced visible as in PP3) and `preview_layout` for the controller.
+
+### PP12 - 16 px mute speaker waves merge (Opus, high) - P3
+- **Where:** full player mute (`c_mute_*`), 100 % (and 125 %), all themes; commit 4e61517 made it 16 px.
+- **Problem:** the two arcs of the `speaker` glyph are about 1 device px apart at 16 px, so at 100 % they render as one blurred
+  oval with dark holes, unlike the clean 12 / 13 px icons; the ink is 14 x 10 and 1 px right of the zone centre. Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/mute-speaker-16px-waves-100.png`.
+- **Fix hint:** in `_icon` (`name == "speaker"` / `speaker_off`), space the arcs by whole device pixels at small sizes (or draw one
+  arc below 18 px), and centre the ink, not the 16 px box.
+- **Verify:** 16x crops at 100 / 125 / 150 %: two separate arcs; `tools/icon-symmetry.py` still 0 up-down.
+
+### PP13 - Glyphs placed left of their cell by skins2 (Opus, high) - P1
+- **Where:** every `<Text>` and the Playtree (all fonts lcd10 / 12 / 14 / 30), all scales, all themes: big time "00: 24", "of
+  03: 21", strip time "01: 51", countdown "- 02:30", "Lights. wav", ". wav" chip, playlist "Nor thbound. wav".
+- **Problem:** measured on the 30 px time at 100 %: digits keep their 18 px pitch, but the colon's ink starts 10 px left of
+  where FreeType / Pillow put it (3 px after the "0", 14 px before the "2"; Pillow: 9 / 9), and the digits after it move 2 px left.
+  Narrow glyphs with a large left bearing (`:`, `.`, `r`, `-`) leave a hole after them. Pillow-rendered labels (bitmaps) are
+  fine. `docs/font-notes.md` says the gap is the monospace cell; the measurement says it is the glyph position. Likely cause:
+  skins2 `ft2_font.cpp` draws each glyph bitmap at the pen position without `bitmap_left` (and hints the advance). Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/skins2-glyph-bearing-time-100.png`, `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit1/evidence/skins2-glyph-bearing-playlist-100.png`.
+- **Fix hint:** first confirm in the 3.0.x source (`modules/gui/skins2/src/ft2_font.cpp`, `drawString`). If the bearing is dropped,
+  a font-side workaround is possible: ship a modified DejaVu Sans Mono (renamed, as its licence requires for modified versions)
+  in which every glyph has a zero-area point at x = 0 (FreeType's control box then starts at the cell edge, so the bitmap carries
+  the bearing). Needs fontTools (not installed in the venv). If that fails it becomes a limit + an upstream draft
+  (`docs/upstream-issues/`), and `docs/font-notes.md` must be corrected either way.
+- **Verify:** real VLC: colon centred between digits (gaps equal within 1 px) at 10 / 12 / 14 / 30 px and at 100 / 150 %; digits still
+  tabular (time does not jitter); playlist durations still right-aligned.
+
+### PP14 - Limits (not tasks)
+- 1.25 / 1.5 px outlines at 125 / 150 %: every 1 px line is one full row plus an anti-aliased row (seams `3e434a` + `2a303a`),
+  button outlines look heavier on two sides (BACKLOG-hifi.md "Known limits"). Snapping all lines to whole device pixels would change
+  every bitmap at fractional scales; not proposed.
+- Outer window corners are stair-stepped (binary window shape, H18).
