@@ -108,10 +108,15 @@ the release skins have `th0` only). Shown = on.
   resize tab, 36 px title bar (24 x 22 buttons), the control panel below the
   video with the full player's 10 px seek bar (`seek` frames, 12 x 20 knob) 12
   px under the video, so the knob keeps a margin, then the 30 x 28 transport
-  row. skins2 hit-tests a slider background by its rectangle
+  row, 12 px above the bottom edge like the sides (panel 70 px high; in
+  `video-x` the extra row is 8 px under the transport row and also 12 px above
+  the edge). Mute is the bare speaker (`c_mute_*`, 22 x 28 zone), as in the full
+  player and the fullscreen controller. skins2 hit-tests a slider background by its rectangle
   (`CtrlSliderBg::mouseOver`), so the thick bar is easy to grab. The arrow button
   switches with `video.setLayout(...)`. Both layouts have the same original
-  size, so skins2 carries the current (also maximized) size across, as with the
+  size and the same minimum / maximum size (`video-l` uses the larger minimum
+  height, `VMINH`; with only the original size equal, the arrow reset the window
+  to the default size), so skins2 carries the current (also maximized) size across, as with the
   main window's layouts; the row takes its height from the Video control (a
   control cannot change size inside a layout).
 - A-B button: a skin button runs only skins2's actions, so it is a checkbox
