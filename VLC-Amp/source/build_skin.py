@@ -1557,7 +1557,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        lay.text(P(367), P(92), P(24), "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the box is exactly 4 device cells (the advance rule of vlcamp.lua), centred on the chip: no part of the
+        # 5th-last character shows, and the text sits in the middle at every scale
+        fw = 4 * int(P(10) * 0.6021 + 0.5)
+        lay.text(P(358) + (P(41) - fw) // 2, P(92), fw, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
