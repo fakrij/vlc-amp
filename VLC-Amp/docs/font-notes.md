@@ -186,7 +186,7 @@ xMin that differs from their points, and FreeType positions by `xMin - lsb`.
   advance 7): FreeType's v40 interpreter does not round component x offsets, so the point cannot sit
   on the pixel grid. The extra column is empty; it widens a string's bitmap by 1 px and skins2's
   "..." test by 1 px (the playlist fits one character less: `vlcamp.lua` `pl_columns` uses this box,
-  75 / 73 / 72 / 76 columns at 100 / 125 / 150 / 200 %). In exchange a string's width no longer depends
+  75 / 73 / 72 / 76 columns at 100 / 125 / 150 / 200 %; 77 / 75 / 74 / 77 since PP8 widened the playtree). In exchange a string's width no longer depends
   on its last glyph, so centred and right-aligned times do not move by 1 px when the last digit changes.
 - Left alone: glyphs whose ink already reaches past both cell edges, and ink outside the cell (`Ĳ`
   `ĳ` `Ł` overhang 1 px left: skins2 still shifts them right by that).
