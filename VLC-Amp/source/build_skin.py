@@ -1789,11 +1789,13 @@ def build(skin, W, BH=BAR_DEFAULT):
                                                     ("rep1", "Repeat", "playlist.isRepeat", "Repeat one"))):
             lay.checkbox("t_pl_" + lbl, P(212 + i * 56), y, state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tp + ": off", tp + ": on", **k)
-        lay.button("xb_slower", P(388), y, "vlc.slower()", "Slower", **k)
-        lay.image("x_speed_bg", P(422), y, action="none", **k)
-        lay.text(P(424), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
-                 sample="1.25x", focus=False, **k)
-        lay.button("xb_faster", P(486), y, "vlc.faster()", "Faster", **k)
+        # speed group (128 px wide), anchored right like the volume group: its right edge is VW - 12
+        r = dict(lt="rightbottom", rb="rightbottom")
+        lay.button("xb_slower", P(VW - 140), y, "vlc.slower()", "Slower", **r)
+        lay.image("x_speed_bg", P(VW - 106), y, action="none", **r)
+        lay.text(P(VW - 104), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+                 sample="1.25x", focus=False, **r)
+        lay.button("xb_faster", P(VW - 42), y, "vlc.faster()", "Faster", **r)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)
