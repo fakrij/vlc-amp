@@ -1039,12 +1039,19 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
         db = i - 20
         c = Canvas(EQ_FW, EQ_FH)
         c.rrect(0, 0, EQ_FW, EQ_FH, 0, LCD_BG)
-        c.rrect(14, EQ_G0, 2, EQ_G1 - EQ_G0, 1, EQ_TRACK)
+        # PP19: groove and fill on whole device px, centred on the same column pair (x = P(15), the slider's
+        # centre line): the fill is P(3) wide, widened by one px when its parity differs from the groove's
+        kx = EQ_FW / P(EQ_FW)       # logical px per device px
+        gw_ = max(2, P(2))
+        fw_ = max(gw_ + 2, P(3)) if (P(3) - gw_) % 2 == 0 else max(gw_ + 1, P(3) + 1)
+        cxd = P(15)
+        c.rrect((cxd - gw_ // 2) * kx, EQ_G0, gw_ * kx, EQ_G1 - EQ_G0, 1, EQ_TRACK)
         c.rrect(9, 55.5, 4, 1, 0, CYAN_DIM)       # 0 dB ticks either side of the groove
         c.rrect(17, 55.5, 4, 1, 0, CYAN_DIM)
         ct, cb = eq_travel()
         cy = (cb - (cb - ct) * i / 40.0) / S  # knob centre
-        c.rrect(13.5, cy, 3, 96 - cy, 0, col)
+        cyd = round(cy * S)         # fill top on a whole device row
+        c.rrect((cxd - fw_ // 2) * kx, cyd / S, fw_ * kx, 96 - cyd / S, 0, col)
         label = ("%+d" % db if db else "0") + ("dB" if pre and db else "")
         c.text(15, 6, label, 9, col if db else CYAN2, font="mono", anchor="mm")
         full = c.done()

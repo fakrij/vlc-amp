@@ -647,7 +647,7 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 | PP16 | P2 | Video window: the corner resize tab covers the bottom outline and the rounded bottom-right corner | Sonnet, medium | G-video | open |
 | PP17 | P2 | Format chip (".wav"): a 1 px sliver of the previous character at the left edge at 125 %; text right of the chip centre at 150 / 200 % | Sonnet, medium | G-full | open |
 | PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | open |
-| PP19 | P3 | EQ fader fill 3 px with half-pixel edges at 100 / 150 % (soft columns), groove anti-aliased at 125 % | Sonnet, medium | G-pan | open |
+| PP19 | P3 | EQ fader fill 3 px with half-pixel edges at 100 / 150 % (soft columns), groove anti-aliased at 125 % | Sonnet, medium | G-pan | done (branch worktree-agent-a59a049c1f5a63ecb, unmerged): `make_eq_frames` draws groove and fill on whole device px, both centred on x = P(15); fill = P(3) widened to the groove's parity (4 / 4 / 5 / 6 px over groove 2 / 2 / 3 / 4 at 100 / 125 / 150 / 200 %), fill top on a whole row. Verified in real VLC: rows through groove and fill show only the 2 colours at 4 scales, same centre; 12x crops `pp19-after-*.png` in scratchpad fix2. Release `.vlt` not rebuilt. |
 | PP20 | P3 | Strip time text 1.5 px right of the time box centre at 150 % | Haiku, low | G-strip | open |
 | PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | open |
 | PP22 | P3 | EQ band block: ink 3 logical px left of the box centre (dB scale on the left, nothing on the right) | Haiku, low (decision) | G-pan | open |
