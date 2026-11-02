@@ -870,12 +870,22 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
 
 def make_strip_button(skin, base, w, h):
     """Labelled "STRIP" button (icon + text, accent ring) that collapses the full player."""
+    # icon (10) + gap (6) + text, centred as one group (as make_toggle does for LED + text). The text's
+    # ink is measured by rendering it: getlength() counts the side bearings, which put the group 2 px
+    # off-centre at 200 %.
+    f9 = _truetype(FONT_BOLD, P(9))
+    pad = P(9) * 2
+    probe = Image.new("L", (int(f9.getlength("STRIP")) + 2 * pad, 3 * pad), 0)
+    ImageDraw.Draw(probe).text((pad, 2 * pad), "STRIP", font=f9, fill=255, anchor="ls")
+    il, _, ir, _ = probe.getbbox()
+    il, ir = (il - pad) / S, (ir - pad) / S          # ink left / right, logical, from the text origin
+    x0 = (w - (16 + ir - il)) / 2                    # icon left
     for st in ("up", "over", "down"):
         c = Canvas(w, h)
         button_face(c, w, h, st, ring_colour(CYAN))
         col = CYAN if st != "down" else ICON[st]
-        icon(c, "collapse", 7, (h - 10) / 2, 10, col)
-        c.text(23, h / 2 + 0.5, "STRIP", 9, col, anchor="lm")
+        icon(c, "collapse", x0, (h - 10) / 2, 10, col)
+        c.text(x0 + 16 - il, h / 2 + 0.5, "STRIP", 9, col, anchor="lm")
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
