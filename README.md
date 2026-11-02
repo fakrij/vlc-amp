@@ -1,8 +1,12 @@
 # VLC Amp
 
-**A VLC 3 skin inspired by the Winamp skin MMD3, with a title bar mode.** The player collapses
+**A VLC 3 skin inspired by the Winamp and its beloved MMD3 skin, with a title bar mode.** The player collapses
 into a slim 24 px strip that fits into a window's title bar (or the Windows taskbar), and expands
-into a full hi-fi player with equalizer and playlist. Windows and Linux.
+into a full player with equalizer and playlist. For Windows and Linux.
+
+^^^^with the app yo can
+^^^^light dark mode
+^^^^configurator
 
 ![The strip](VLC-Amp/docs/img-thin/strip.png)
 
