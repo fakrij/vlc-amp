@@ -1643,9 +1643,18 @@ def build(skin, W, BH=BAR_DEFAULT):
             lb, fb, tb = eq_boxes(i == 0)
             bands.paste(EQ_TICKS[i == 0], (x0s[i] + tb[0], P(4) + tb[1]))
         skin.add("eq_bands", bands)
+        from PIL import ImageChops
+        ink = bands.convert("RGB")
+        dif = ImageChops.difference(ink, Image.new("RGB", ink.size, H(LCD_BG)[:3]))
+        dif = ImageChops.lighter(ImageChops.lighter(dif.getchannel("R"), dif.getchannel("G")), dif.getchannel("B"))
+        il, _, ir, _ = dif.point(lambda v: 255 if v > 40 else 0).getbbox()
+        px_panel = P(12) + (PW - 2 * P(12) - (ir - il)) // 2 - il
         fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
         skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
-        lay.panel_begin("eq_panel" + sfx, P((W - EQ_BW) // 2), P(34), P(EQ_BW), P(120))
+        # PP22: centre the INK (the dB scale labels stick out about 3 logical px on the left, nothing on the
+        # right) in the band box P(12) .. PW - P(12): shift the block by the measured ink extent, in device px
+        # (a fixed 3 logical px is 1 - 2 px off at 125 / 150 %, where the glyphs do not scale linearly)
+        lay.panel_begin("eq_panel" + sfx, px_panel, P(34), P(EQ_BW), P(120))
         lay.image("eq_bands", 0, 0)
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
