@@ -489,6 +489,12 @@ bitmap pixels (`tools/bitmap-audit.py` with `BH=24`: 0).
   one group, as `make_toggle` does for LED + text.
 - **Verify:** `ink.py`-style check (or crop at 10x): left and right padding equal within 1 px at 100 / 125 / 150 / 200 %;
   only `b_strip_*` bitmaps change.
+- **Status: done (branch worktree-agent-aabb88f8f98f5b19c, unmerged).** `make_strip_button` centres icon (10) + gap (6) + text
+  as one group; the text's ink is measured by rendering it (`getlength` counts side bearings and left the group 2 px off at 200 %).
+  Ink left / right padding of `t0_b_strip_*` (atlas crop, ring excluded), before -> after: 100 %: 7 / 17 -> 12 / 12;
+  125 %: 9 / 20 -> 15 / 14; 150 %: 11 / 21 -> 17 / 16; 200 %: 15 / 31 -> 24 / 23 (all within 1 px). Staged output
+  of Midnight-only builds at 100 / 125 / 150 / 200 %: only `atlas_t*.png` pixels inside the `b_strip_*` rects differ, `theme.xml` identical.
+  10x crop checked. Not run in a live VLC session.
 
 ### PP5 - Resize tab ribs at fractional scales (Sonnet, medium) - P2
 - **Where:** the resize tab of strip, full player, EQ, playlist and video window at 125 % (and 150 %): e.g. full player x 761..772.
