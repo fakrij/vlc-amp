@@ -331,7 +331,7 @@ repair_video_window() {
     awk -v pct="$1" '
     function rnd(v,   f) { f = int(v); if (v - f > 0.5 || (v - f == 0.5 && f % 2 == 1)) f++; return f }
     /^skins2-config=./ {
-        w = rnd(620 * pct / 100); h = rnd(439 * pct / 100)   # 620 x 439 = video-l of the skin, rounded half to even like the generator
+        w = rnd(620 * pct / 100); h = rnd(441 * pct / 100)   # 620 x 441 = video-l of the skin, rounded half to even like the generator
         if (index($0, "[\"video\" ") == 0) $0 = $0 "[\"video\" \"video-l\" 600 300 " w " " h " 1]"
         while (match($0, /\["video" "video-min" -?[0-9]+ -?[0-9]+ [0-9]+ [0-9]+ [01]\]/)) {
             e = substr($0, RSTART, RLENGTH); split(e, f, " ")
