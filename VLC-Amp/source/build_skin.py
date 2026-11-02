@@ -1627,10 +1627,13 @@ def build(skin, W, BH=BAR_DEFAULT):
         # free-standing window: 1 px EDGE outline on all four sides
         c.rrect(0, 0, VW, VH, 6, EDGE)
         c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        grip_dots(c, 4, 12)                               # title bar grip, left
         resize_handle(c, grip_x(VW), VH - 13, 12)         # resize grip: the tab in the bottom-right corner slice
+        # the frame is a 9-slice (its middle-left / middle-right pieces tile vertically), so nothing
+        # but the plain frame may sit in them: the title bar, with its grip dots, is its own piece on top
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
                actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+        grip_dots(c, 4, 11)                               # centred on the 22 px buttons (rows 7..28)
+        hslice(skin, lay, "video_title", c.done(hard_edges=True).crop((0, 0, P(VW), P(VT))), 0, 0, 14, 14)
         rt = dict(lt="righttop", rb="righttop")
         # the name of what plays, across the title bar (clicks go through to the bar: it moves the window)
         lay.text(P(24), P(11), P(VW - 24 - 132), "lcd12", "$N", CYAN_TXT, rb="righttop", scrolling="none",
@@ -1714,7 +1717,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         c = Canvas(MW, VT)
         c.rrect(0, 0, MW, VT, 6, EDGE)
         c.rrect(1, 1, MW - 2, VT - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        grip_dots(c, 4, 12)
+        grip_dots(c, 4, 11)                               # centred on the 22 px buttons
         skin.add("video_min_bg", c.done(hard_edges=True))
         mlay.image("video_min_bg", 0, 0, action="move")
         mlay.button("vb_restore", P(MW - 64), P(7), "video.setLayout(video-l)", "Show the video")
