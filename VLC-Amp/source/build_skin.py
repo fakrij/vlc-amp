@@ -1768,7 +1768,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         # free-standing window: 1 px EDGE outline on all four sides
         c.rrect(0, 0, VW, VH, 6, EDGE)
         c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        resize_handle(c, grip_x(VW), VH - 13, 12)         # resize grip: the tab in the bottom-right corner slice
+        resize_handle(c, grip_x(VW) - 2, VH - 13, 9)     # resize grip: tab inside the corner slice, 3 px off the right and bottom outline (PP16)
         # the frame is a 9-slice (its middle-left / middle-right pieces tile vertically), so nothing
         # but the plain frame may sit in them: the title bar, with its grip dots, is its own piece on top
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
