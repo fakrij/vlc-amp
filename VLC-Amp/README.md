@@ -324,15 +324,20 @@ do; other distributions are not checked).
 - Durations: the skin's playlist can show only one text column (the title),
   so the script adds the length to each item's title in VLC's memory (files
   are not touched). The playlist font has equal-width characters, so the
-  title is padded with spaces to put the lengths in one column at the right
-  edge; a title that is too long is cut with "…" so its length stays visible.
+  title is padded with spaces to put the lengths in one right-aligned column
+  at the right edge; a title that is too long is cut with "…" at the same
+  place in every row, so its length stays visible.
   On Windows the column follows the player's width while you resize it (the
   helper tells the script the width; within about a second). Without the
   helper, and on Linux, the width is the one VLC saved at its last exit: after
   resizing, the column follows at the next start, and a much narrower player
   cuts the lengths off until then. The playing item keeps its real title, so the
   strip, the taskbar card and the media controls show it plain; it gets its
-  length back when another track plays. Lengths appear once VLC has read a
+  length back when another track plays (with only one track in the playlist
+  you therefore see no length: the full player shows it). Keep the skin's file
+  name (`VLC-Amp-125.vlt`, a copy such as `VLC-Amp-125 (1).vlt` also works):
+  the script reads the scale from it. Copying only a `.vlt` (or a configurator
+  download) does not install the script: run Setup once. Lengths appear once VLC has read a
   file (a moment after adding it); streams have none. The SORT button still
   sorts by name. A playlist saved with SAVE keeps the lengths in its titles
   (they are not doubled when it is loaded again). Options, in `vlcrc` as
@@ -706,7 +711,9 @@ by a taskbar click: steps 9-15). Debug log on (`$DebugLog = $true`), helper rest
 These come from VLC's skin engine (skins2); details in
 [docs/architecture.md](docs/architecture.md) and [BACKLOG.md](BACKLOG.md):
 
-- The playlist has a fixed height and shows one column (no duration column).
+- The playlist has a fixed height and draws one text column: the song lengths
+  are added to that text by the [Lua extras](#lua-extras) (no sortable
+  columns, no length on the playing item).
 - No A-B loop, EQ presets or "next folder" *buttons* (skins2 has no such
   actions): they are keyboard shortcuts and tray menu entries, see
   [Lua extras](#lua-extras).

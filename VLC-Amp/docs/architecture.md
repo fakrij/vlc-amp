@@ -1030,7 +1030,9 @@ playtree is `PW - P(50)` wide (hi-fi skin, default window `PW` = `P(620)` px; th
 `P(12)` = `round(12 x scale)` px (Python rounding, half to even), and the
 advance `round(px x 0.6021)` = 7 / 9 / 11 / 14 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
-comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
+comes from the last `-NNN` (50..400) in the file name in `skins2-last` (so a renamed copy such as
+`VLC-Amp-125 (1).vlt`, a browser's second download from the configurator, still gives 1.25; until PP25 only a name
+ending in `-NNN.vlt` counted, and such a copy at 125 % got the 100 % column count: every length cut to `4:..`), the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
 VLC saved at its last exit). The playtree is `P(50)` px narrower
 than the window (50 / 62 / 75 / 100 px; it stretches with the window). skins2's `drawString` shows the whole
@@ -1046,8 +1048,10 @@ window widened to 777 px at 100 % (100 cut). Before PP8 (playtree `P(W - 60)`) i
 DejaVu 76 / 74 / 73 / 77 (the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
 the Windows helper is read on Windows only. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
-the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
-spaces. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
+the skin (a skin given on the command line). Since PP25 the lengths sit in one field as wide as the widest length in
+the playlist (at least 5 characters, `mm:ss`; 7 with an hour-long item), two spaces after the title column, so a
+title longer than its column is cut with "…" at the same column in every row and the length itself is never cut
+(before, the cut point moved with each length's width). Items without a known length are not touched. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
 `columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
 text (VLC re-read the tags, the user renamed it) is decorated afresh. The
@@ -1067,6 +1071,38 @@ strip, Next moves the plain title along, SORT sorts by name, no doubled
 suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
 the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **77 / 75 / 74 / 77** (the rule above with VLC Amp Mono's
 cell-wide "." box, the 12 px font and the `P(50)` playtree margin; all four measured in VLC, one more character was cut).
+
+**Why the playing item has no length (PP25, reconsidered).** skins2's own title text (`$N`, strip, full player,
+video window) is read once per track: `VlcProc::update_current_input` runs only when a new input appears
+(`vlcproc.cpp` `on_intf_event_changed`), so a padded title set later would not show there. But the title meta is
+also what the web interface (`status.json`, the helper's taskbar card), MPRIS (`modules/control/dbus`, the Linux
+media panel) and SMTC (the Windows media flyout) show for the current item, live on every meta change: a padded
+`Title       3:42` would appear there. So the playing row stays plain (it is drawn in the play colour; the full
+player shows `of 4:12`). The track-change race (the next item still padded when skins2 reads `$N`) was won in
+6 of 6 Next presses in VLC 3.0.20 (restore within one 100 ms poll).
+
+**Where the lengths come from.** VLC preparses every item added to the playlist (`playlist_NodeAddInput` ->
+`playlist_Preparse`, `src/playlist/item.c:735-752`) when `auto-preparse` is on (the default, `libvlc-module.c:2109`)
+and the item does not have both an artist and an album yet; local files only (`vlc_MetadataRequest` flags 0, 5 s
+`preparse-timeout`). Folders and `.m3u` files expand into children that are preparsed the same way. So local files
+get a length a moment after they are added, on Windows and Linux alike; streams, missing files, and items that came
+with artist + album (some saved playlists) get one only once played. Lua 3.0 cannot request a preparse
+(`modules/lua/libs/input.c` has only `is_preparsed`). The right end of the column stays about 3 cells before the
+row end: skins2 shows a line whole only if "..." (2 advances + the "." box) fits after every character
+(`ft2_font.cpp:216-235`).
+
+**Why the column may not show (PP25).** In the order found likely for a user on Windows: (1) the playlist holds
+only the playing track (one file opened from Explorer): that row stays plain, so no length is seen at all;
+(2) the skin file was renamed by a browser or Explorer (`VLC-Amp-125 (1).vlt`) and the script took it for 100 %:
+every length cut to `4:..` (fixed in PP25); (3) the Lua extras are not installed: only Setup / `linux/setup.sh`
+install them (copying a `.vlt` or a configurator download alone does not), and both skip them when `vlcrc` already
+names another `lua-intf` (Windows Setup now says so in its Done message, Linux warns); (4) `auto-preparse=0` or
+streams: no lengths until played; (5) a narrower player than the one VLC saved at its last exit, without the
+Windows helper: lines cut with "..." until the next start. A skin built with a proportional font (configurator
+upload) cannot line up. Separate skins2 bug seen while testing (VLC 3.0.20, not a duration problem): after a folder
+or an `.m3u` given at start expands into its children, the list draws no rows at all until it is scrolled or the
+window resized (`ctrl_tree.cpp`: `m_firstPos` is left at the end of the tree and only a slider change, a resize or
+SORT recomputes it; the PL button does not). Not fixable from Lua or the skin.
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 

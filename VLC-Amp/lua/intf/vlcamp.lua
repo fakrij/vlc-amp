@@ -340,9 +340,13 @@ end
 -- playlist's "item-change" event, which a meta change raises. So the title of
 -- every item with a known length gets it at the right edge: the playlist font
 -- is monospaced, so the title is padded with spaces (or cut with "...") to the
--- number of characters that fit (pl_columns). The playing item keeps its real
--- title: the strip, the web interface (taskbar card), MPRIS and SMTC all show
--- the current title. The length goes after the title (not before it), so the
+-- number of characters that fit (pl_columns), with the lengths in one
+-- right-aligned field (decorate). Items with no known length (streams, missing
+-- files, not read yet) are left alone. The playing item keeps its real title:
+-- skins2's own text ($N) reads it only when a track starts, but the web
+-- interface (taskbar card), MPRIS and SMTC (the system media panels) show the
+-- current item's title live, padded with spaces it would look broken there.
+-- The length goes after the title (not before it), so the
 -- playlist's SORT button, which sorts by title, still sorts by name.
 -- --lua-config "vlcamp={durations='suffix'}" gives "Title (3:42)" instead,
 -- 'off' none; columns=N overrides the computed width.
@@ -361,18 +365,30 @@ local function py_round(x)
     return f
 end
 
+-- Scale of the skin from its file name: the last "-NNN" (50..400) in it, so "VLC-Amp-125.vlt",
+-- "VLC-Amp-taskbar-125.vlt", and also a renamed copy such as "VLC-Amp-125 (1).vlt" (a browser's second
+-- download from the configurator) or "VLC-Amp-125 - Copy.vlt" give 1.25. None: 1 (a guess; the lengths
+-- may then be cut with "..." by a scaled skin, see docs/architecture.md "Playlist durations").
+local function skin_scale(last)
+    local name = (last or ""):match("([^/\\]*)$") or ""
+    local s
+    for d in name:gmatch("%-(%d+)") do
+        local v = tonumber(d)
+        if v and v >= 50 and v <= 400 then s = v / 100 end
+    end
+    return s or 1
+end
+
 -- Characters that fit in a playlist line. skins2 (ctrl_tree.cpp makeImage) draws a flat playtree's
 -- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
 -- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses VLC Amp Mono (DejaVu Sans Mono) at
 -- P(12) = round(12 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
 -- the playtree PW - P(50) wide (rows end 6 px before the scroll track, PP8). Scale from the skin's file name
--- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
+-- (VLC-Amp-150.vlt, skin_scale), window width from skins2-config (the width VLC saved at its last exit).
+-- source/build_skin.py preview_layout draws the preview's playlist with the same rule: change both together.
 -- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
 local function pl_columns(w)
-    local s = 1
-    local last = vlc.config.get("skins2-last") or ""
-    local pct = last:match("%-(%d+)%.vlt$")
-    if pct then s = tonumber(pct) / 100 end
+    local s = skin_scale(vlc.config.get("skins2-last"))
     if not w then
         w = py_round(PL_SKIN_W * s)
         local cfg = vlc.config.get("skins2-config") or ""
@@ -424,12 +440,16 @@ local function strip_len(title)
     return title
 end
 
--- "Title          3:42" filling pl.cols characters (a title that is too long is cut with an
--- ellipsis, so the length stays visible); in "suffix" mode "Title (3:42)"
+-- Two columns in one line of pl.cols characters: the title, then the length right-aligned in a field
+-- of pl.field characters (the widest length in the playlist, at least "mm:ss"), PL_GAP spaces apart.
+-- A title longer than its column is cut with an ellipsis, so every cut title ends at the same column
+-- and the length is never cut. In "suffix" mode "Title (3:42)".
+local PL_GAP, PL_FIELD_MIN = 2, 5
 local function decorate(title, sec)
     local len = fmt_len(sec)
     if pl.mode == "suffix" then return title .. " (" .. len .. ")" end
-    local room = pl.cols - u_len(len) - 2             -- at least two spaces before the length
+    local field = math.max(pl.field or PL_FIELD_MIN, u_len(len))
+    local room = pl.cols - field - PL_GAP              -- the title column
     if u_len(title) > room then title = u_sub(title, room - 1) .. "\226\128\166" end   -- U+2026
     return title .. string.rep(" ", pl.cols - u_len(title) - u_len(len)) .. len
 end
@@ -443,32 +463,41 @@ local function pl_restore(id, item)
 end
 
 local function pl_pass(cur)
-    local seen = {}
+    local leaves = {}                          -- items with a known length, in playlist order
     local function walk(node, depth)
         if depth > 32 then return end
         if node.children then
             for _, c in ipairs(node.children) do walk(c, depth + 1) end
         elseif node.id and node.item and node.duration and node.duration > 0 then
-            seen[node.id] = true
-            local e = pl.items[node.id]
-            if node.id == cur then
-                if e then pl_restore(node.id, node.item) end
-            elseif not e or node.name ~= e.shown or e.cols ~= pl.cols then
-                local orig, base
-                if e and node.name == e.shown then        -- only the width changed: from the remembered title
-                    orig, base = e.orig, e.base
-                else                                      -- new item, or its title changed since
-                    local metas = node.item:metas() or {}
-                    orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
-                end
-                local shown = decorate(base, node.duration)
-                if node.name ~= shown then node.item:set_meta("title", shown) end
-                pl.items[node.id] = { orig = orig, base = base, shown = shown, cols = pl.cols }
-            end
+            leaves[#leaves + 1] = node
         end
     end
     local root = vlc.playlist.get("playlist")
     if root then walk(root, 0) end
+    -- the length column is as wide as the widest length (the playing item's too: it is decorated later)
+    local field = PL_FIELD_MIN
+    for _, node in ipairs(leaves) do field = math.max(field, u_len(fmt_len(node.duration))) end
+    pl.field = field
+    local layout = pl.cols .. ":" .. field     -- a change re-pads every title
+    local seen = {}
+    for _, node in ipairs(leaves) do
+        seen[node.id] = true
+        local e = pl.items[node.id]
+        if node.id == cur then
+            if e then pl_restore(node.id, node.item) end
+        elseif not e or node.name ~= e.shown or e.layout ~= layout then
+            local orig, base
+            if e and node.name == e.shown then        -- only the width changed: from the remembered title
+                orig, base = e.orig, e.base
+            else                                      -- new item, or its title changed since
+                local metas = node.item:metas() or {}
+                orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
+            end
+            local shown = decorate(base, node.duration)
+            if node.name ~= shown then node.item:set_meta("title", shown) end
+            pl.items[node.id] = { orig = orig, base = base, shown = shown, layout = layout }
+        end
+    end
     for id in pairs(pl.items) do if not seen[id] then pl.items[id] = nil end end   -- removed items
 end
 
