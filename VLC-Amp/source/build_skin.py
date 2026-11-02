@@ -1206,11 +1206,18 @@ def make_progress_frames(skin, bid, w, h, n, color):
     return bid
 
 
+def thumb_rim(b):
+    """Knob outline: light on dark themes, dark on light ones (a light rim vanishes on a light box / groove)."""
+    if _luminance(LCD_BG) < 0.5:
+        return mix(b, "#ffffff", 0.5)
+    return mix(b, "#000000", 0.6)
+
+
 def make_thumb(skin, bid, w, h, bg=None):
     """Metallic slider knob (bright top half, darker lower half) with an accent notch."""
     for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         mid = h // 2
         c.grad(1, 1, w - 2, mid - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, mid, w - 2, h - 1 - mid, 1, mix(t, b, 0.8), b)
@@ -1225,7 +1232,7 @@ def make_eq_thumb(skin, bid, w, h):
     for st, col in (("up", CYAN), ("over", LCD_HI)):
         c = Canvas(w, h)
         t, b = THUMB_UP if st == "up" else THUMB_OVER
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         c.grad(1, 1, w - 2, h // 2 - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, h // 2, w - 2, h - 1 - h // 2, 1, mix(t, b, 0.8), b)
         c.rrect(1, 1, w - 2, 1, 0, (255, 255, 255, 120))
