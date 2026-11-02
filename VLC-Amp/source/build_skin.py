@@ -1491,8 +1491,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
                    "thumb_none", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
                    nbvert=FILL_FRAMES, **tr)
+        # text inset from both box edges by P(TIME_ZONE) (was: right edge at the box edge, 0.5 px off centre at
+        # 150 %); the +1 keeps the 100 / 125 % width of 70 / 88 px (measured centred in VLC at all four scales)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
+            lay.text(tx + P(TIME_ZONE), P(ty), P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
         panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
