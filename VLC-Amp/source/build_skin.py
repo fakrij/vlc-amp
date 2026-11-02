@@ -1071,9 +1071,19 @@ def make_mode_toggle(skin, base, w, h):
 def make_title_thumb(skin, bid, h):
     """Thumb of a title box: left half = fill colour, right half = box colour, accent line at the
     centre (the thumb's centre sits on the playing position). It covers the gap between the fill
-    frame (4 % steps, rounded down) and the exact position, so progress moves pixel by pixel."""
+    frame (4 % steps, rounded down) and the exact position, so progress moves pixel by pixel.
+    The right half copies a middle column of the unlit box (lcd(), h + 2 high, the thumb sits inset()
+    below its top): at 125 / 150 % the 1 px outline covers 1.5 / 1.25 device px, and a plain box-colour
+    half hid the partly bright outline row the slider overlaps (a 1-row notch in the top / bottom edge
+    right of the playhead). At 100 / 200 % that column is plain LCD_BG. The thumb stays fully opaque,
+    so its click area does not change."""
+    box = Canvas(20, h + 2)
+    lcd(box, 0, 0, 20, h + 2, 3)
+    cx = box.pw // 2
+    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + P(h)))
     for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
         im = Image.new("RGBA", (P(2 * TITLE_S), P(h)), H(LCD_BG))
+        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), P(h)), Image.NEAREST), (P(TITLE_S), 0))
         d = ImageDraw.Draw(im)
         d.rectangle([0, 0, P(TITLE_S) - 1, P(h) - 1], fill=H(TITLE_FILL))
         d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, P(h) - 1], fill=H(col))
