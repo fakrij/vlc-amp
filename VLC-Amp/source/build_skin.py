@@ -1570,11 +1570,20 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        # the box is exactly 4 device cells (the advance rule of vlcamp.lua), centred on the chip: no part of the
-        # 5th-last character shows, and the text sits in the middle at every scale
-        fw = 4 * int(P(10) * 0.6021 + 0.5)
-        lay.text(P(358) + (P(41) - fw) // 2, P(92), fw, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the 4 cells of the extension are centred on the chip. The text box reaches one cell further left, so
+        # whatever the font renderer does with the 5th-last character (a tick of its right arm, a whole glyph,
+        # any FreeType version) lands in that cell, and an opaque piece of the chip (its left padding, cut
+        # from the chip bitmap itself) is drawn over it, above the text: layout controls draw in file order
+        # (GenericLayout::addControl keeps same-layer controls in insertion order). PP17 sized the box to
+        # exactly 4 cells, PP27 made it independent of the renderer.
+        cell = int(P(10) * 0.6021 + 0.5)           # the advance rule of vlcamp.lua
+        fw = 4 * cell
+        pad = (P(41) - fw) // 2                    # chip left edge .. first cell
+        chip = skin.bitmaps[skin.prefix + "chip_fmt"]
+        skin.add("chip_fmt_pad", chip.crop((0, 0, pad, chip.height)))
+        lay.text(P(358) + pad - cell, P(92), fw + cell, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
+        lay.image("chip_fmt_pad", P(358), P(90), action="move")
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
         lay.checkbox("l_loop", P(274), P(122), "playlist.isLoop", "playlist.setLoop(true)",
