@@ -420,7 +420,7 @@ which is regenerated):
 
 | ID | P | Task | Model | Group | Status |
 |----|---|------|-------|-------|--------|
-| PP1 | P1 | EQ header: half a grip dot repeats in the tiled middle of the EQ background when the window is wider than 620 px | Haiku, low | G-pan | open |
+| PP1 | P1 | EQ header: half a grip dot repeats in the tiled middle of the EQ background when the window is wider than 620 px | Haiku, low | G-pan | done (branch worktree-agent-ad27b063c09dbf0c3, unmerged): eq_bg caps 14 / 12; real VLC at 100 % (+150 px) header has no stray pixels (unfixed baseline: 10 px at x 610-611); 150 % (+150 logical) clean; build check passes at 100 / 125 / 150 / 200 %; atlas_t0 repacks, all other staged bitmaps identical. Whitelisted (check off, not fixed): strip_bg, full_bg (resize tab column), pl_bg (vertical), video_bg (PP3) |
 | PP2 | P1 | Full player at the minimum width: the mute speaker zone covers half of the Next button (below about 505 px) | Sonnet, medium | G-full | open |
 | PP3 | P1 | Video window: a second set of grip dots appears on the left frame when the window is taller than its default | Sonnet, medium | G-video | open |
 | PP4 | P2 | STRIP button: icon + label group 5.5 px left of centre (7 px left pad, 16 px right) | Haiku, low | G-bmp | open |

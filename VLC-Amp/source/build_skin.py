@@ -780,25 +780,58 @@ def add_shared(skin, name, im):
         n += 1
 
 
-def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None, tag=""):
+def _rows_uniform(im):
+    """First row of im whose pixels are not all one colour, or None."""
+    w, h = im.size
+    for y in range(h):
+        if len(set(im.crop((0, y, w, y + 1)).get_flattened_data() if hasattr(im, "get_flattened_data") else im.crop((0, y, w, y + 1)).getdata())) > 1:
+            return y
+    return None
+
+
+def _check_middle(name, mid, horizontal=None, vertical=None):
+    """Mosaic / tile rule: a piece tiled along x must be one colour per row (no change along x), a piece tiled
+    along y must be one colour per column. Otherwise the copies show a seam (PP1: half a grip dot)."""
+    if horizontal:
+        y = _rows_uniform(mid)
+        if y is not None:
+            raise SystemExit("error: %s middle piece changes along x in row %d (tiled horizontally: seam)" % (name, y))
+    if vertical:
+        x = _rows_uniform(mid.transpose(Image.TRANSPOSE))
+        if x is not None:
+            raise SystemExit("error: %s middle piece changes along y in column %d (tiled vertically: seam)" % (name, x))
+
+
+def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None, tag="",
+           check=True):
     """Cut a horizontally stretchable element into left cap / mosaic middle / right cap.
-    tag names the caps only (corner variants share the middle piece)."""
+    tag names the caps only (corner variants share the middle piece). check: the middle must be plain (see
+    _check_middle); False only for an exception that is listed in the brief."""
     w, h = im.size
     l, r = P(capl), P(capr)
     skin.add(name + tag + "_l", im.crop((0, 0, l, h)))
     mid = add_shared(skin, name + "_m", im.crop((l, 0, w - r, h)))
+    if check:
+        _check_middle(name, im.crop((l, 0, w - r, h)), horizontal=True)
     skin.add(name + tag + "_r", im.crop((w - r, 0, w, h)))
     lay.image(name + tag + "_l", x, y, action=action, action2=action2)
     lay.image(mid, x + l, y, rb="righttop", action=action, action2=action2)
     lay.image(name + tag + "_r", x + w - r, y, lt="righttop", rb="righttop", action=right_action or action)
 
 
-def nslice(skin, lay, name, im, x, y, cap, actions=None, tag=""):
-    """Nine-slice for elements stretching in both directions."""
+def nslice(skin, lay, name, im, x, y, cap, actions=None, tag="", check=True):
+    """Nine-slice for elements stretching in both directions. check: as in hslice."""
     w, h = im.size
     c = P(cap)
     xs = [(0, c, "l"), (c, w - c, "m"), (w - c, w, "r")]
     ys = [(0, c, "t"), (c, h - c, "m"), (h - c, h, "b")]
+    if check:
+        for y0, y1, vy in ys:
+            for x0, x1, vx in xs:
+                if "m" in (vy, vx):
+                    # x-middles tile horizontally, y-middles vertically, the centre both ways
+                    _check_middle("%s_%s%s" % (name, vy, vx), im.crop((x0, y0, x1, y1)),
+                                  horizontal=(vx == "m"), vertical=(vy == "m"))
     anchor_x = {"l": ("lefttop", "lefttop"), "m": ("lefttop", "righttop"), "r": ("righttop", "righttop")}
     actions = actions or {}
     for y0, y1, vy in ys:
@@ -1333,7 +1366,8 @@ def build(skin, W, BH=BAR_DEFAULT):
             resize_handle(c, grip_x(W), 3, BH - 6)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
-            hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+            # check off: the resize tab's left pad sits at x = W - 11, one column inside the middle (as full_bg, reported)
+            hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb), check=False)
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), 3, BH - 6)
         x = 16
@@ -1388,7 +1422,8 @@ def build(skin, W, BH=BAR_DEFAULT):
             resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
-            hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+            # check off: the resize tab (grip_x(W)) starts one column inside the middle, not fixed here (reported)
+            hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb), check=False)
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), grip_y(44, 108), GRIP_H)
         nxt = (cur["theme"] + 1) % len(THEMES)
@@ -1477,7 +1512,10 @@ def build(skin, W, BH=BAR_DEFAULT):
             resize_handle(c, grip_x(W), grip_y(33, 122), GRIP_H)     # centred on the band box (y 33..155)
             bg = c.done(hard_edges=True)
             lay.vis = vis_and(base_vis, v)
-            hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 10, tag=cap_tag(rt, rb))
+            # caps 14 / 12: grip_dots at x 4..11 lie in the left cap (PP1 half dot); the resize tab starts at
+            # grip_x(W) = W - 11, so the right cap must hold its left column too. 12 (not 11): P() rounds, and
+            # at 150 % P(11) = 16 px leaves the column in the middle (checked at 100, 125, 150, 200 %)
+            hslice(skin, lay, "eq_bg", bg, 0, 0, 14, 12, tag=cap_tag(rt, rb))
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 122), GRIP_H)
         label_on(skin, "lbl_eq", bg, 18, 9, 110, 14, "EQUALIZER", 10)
@@ -1535,7 +1573,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_dots(c, 4, 12, 2)
         resize_handle(c, grip_x(W), grip_y(33, 204), GRIP_H)     # centred on the list box (y 33..237)
         bg = c.done(hard_edges=True)
-        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, tag=cap_tag(rt, rb))
+        # check off: the left column carries grip dots and is tiled vertically (not PP1; reported, no PP item yet)
+        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, tag=cap_tag(rt, rb), check=False)
         grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 204), GRIP_H)
         label_on(skin, "lbl_pl", bg, 18, 9, 110, 14, "PLAYLIST", 10)
         lay.image("lbl_pl", P(18), P(9), action="move")
@@ -1630,7 +1669,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_dots(c, 4, 12)                               # title bar grip, left
         resize_handle(c, grip_x(VW), VH - 13, 12)         # resize grip: the tab in the bottom-right corner slice
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
-               actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+               actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"},
+               check=False)  # PP3: grip dots in the left frame are tiled vertically (fix belongs to PP3)
         rt = dict(lt="righttop", rb="righttop")
         # the name of what plays, across the title bar (clicks go through to the bar: it moves the window)
         lay.text(P(24), P(11), P(VW - 24 - 132), "lcd12", "$N", CYAN_TXT, rb="righttop", scrolling="none",
