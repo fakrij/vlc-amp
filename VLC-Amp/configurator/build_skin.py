@@ -565,14 +565,6 @@ def ring_colour(col):
     return mix(col, BG_BOT, 0.45)
 
 
-def led(c, cx, cy, on):
-    if on:
-        c.circle(cx, cy, 3.2, H(AMBER, 70))
-        c.circle(cx, cy, 2, AMBER)
-    else:
-        c.circle(cx, cy, 2, LED_OFF)
-
-
 def icon(c, name, ox, oy, size, color):
     """Draw a glyph in crisp mode with its centre snapped to the device pixel grid (H22): the centre
     (ox + size / 2, oy + size / 2) moves to the nearest half device pixel (at most 1/4 px), so the
@@ -657,8 +649,6 @@ def _icon(c, name, ox, oy, size, color):
     elif name == "prev":
         c.poly(T([(2, 2), (3.6, 2), (3.6, 10), (2, 10)]), color)
         c.poly(T([(10, 2), (4.4, 6), (10, 10)]), color)
-    elif name == "stop":   # hollow square
-        c.lines(T([(2.5, 2.5), (9.5, 2.5), (9.5, 9.5), (2.5, 9.5), (2.5, 2.5)]), color, 1.4 * f)
     elif name == "next":
         c.poly(T([(2, 2), (7.6, 6), (2, 10)]), color)
         c.poly(T([(8.4, 2), (10, 2), (10, 10), (8.4, 10)]), color)
@@ -932,7 +922,7 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
     return base
 
 
-def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_led=False,
+def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None,
                 on_color=None, icon_size=12, label_size=8, well=None):
     """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true).
     well = (outer width, outer height): the button sits in a recessed box (w x h is the button)."""
@@ -949,7 +939,7 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             ring = None
             if on and on_color:
                 ring = ring_colour(on_color)
-            elif on and (use_led or label):
+            elif on and label:
                 ring = ring_colour(CYAN)
                 col = CYAN if st != "down" else col
             elif icon_on == "pause":
@@ -959,20 +949,25 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
             if label:
-                if use_led:      # dot + gap + text, centred as one group
-                    tw_ = _truetype(FONT_BOLD, P(label_size)).getlength(label) / S
-                    x0 = (w - (4 + 5 + tw_)) / 2
-                    led(c, x0 + 2, h / 2, on)
-                    c.text(x0 + 9, h / 2 + 0.5, label, label_size, col, anchor="lm")
-                else:
-                    c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
+                il, ir = _ink_x(FONT_BOLD, label_size, label)      # centre the ink, not the advance box
+                c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, label_size, col, anchor="lm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
+def _ink_x(font_file, size, label):
+    """Ink left / right of `label` in logical px from the text origin (getlength() counts side bearings)."""
+    f = _truetype(font_file, P(size))
+    pad = P(size) * 2
+    probe = Image.new("L", (int(f.getlength(label)) + 2 * pad, 3 * pad), 0)
+    ImageDraw.Draw(probe).text((pad, 2 * pad), label, font=f, fill=255, anchor="ls")
+    il, _, ir, _ = probe.getbbox()
+    return (il - pad) / S, (ir - pad) / S
+
+
 def make_strip_button(skin, base, w, h):
     """Labelled "STRIP" button (icon + text, accent ring) that collapses the full player."""
-    # icon (10) + gap (6) + text, centred as one group (as make_toggle does for LED + text). The text's
+    # icon (10) + gap (6) + text, centred as one group (as PP4 centres groups). The text's
     # ink is measured by rendering it: getlength() counts the side bearings, which put the group 2 px
     # off-centre at 200 %.
     f9 = _truetype(FONT_BOLD, P(9))
@@ -1066,7 +1061,7 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
 
 
 def make_chip_toggle(skin, base, w, h, label):
-    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): dot + text, accent border when on."""
+    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): text only, centred by its ink; accent border and tinted face when on."""
     for on in (False, True):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
@@ -1080,10 +1075,8 @@ def make_chip_toggle(skin, base, w, h, label):
                 face = mix(face, "#000000", 0.35)
             c.rrect(0, 0, w, h, 3, edge)
             c.rrect(1, 1, w - 2, h - 2, 2, face)
-            tw_ = _truetype(FONT_MONO, P(9)).getlength(label) / S
-            x0 = (w - (4 + 5 + tw_)) / 2
-            c.circle(x0 + 2, h / 2, 2, CYAN if on else mix(LCD_BG, CYAN, 0.45))
-            c.text(x0 + 9, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
+            il, ir = _ink_x(FONT_MONO, 9, label)
+            c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done(), LCD_BG))
     return base
 
@@ -1134,24 +1127,25 @@ def make_title_thumb(skin, bid, h):
     below its top): at 125 / 150 % the 1 px outline covers 1.5 / 1.25 device px, and a plain box-colour
     half hid the partly bright outline row the slider overlaps (a 1-row notch in the top / bottom edge
     right of the playhead). At 100 / 200 % that column is plain LCD_BG. The thumb stays fully opaque,
-    so its click area does not change."""
+    so its click area does not change. Height inner(h), the same as the fill frames (PP26)."""
     box = Canvas(20, h + 2)
     lcd(box, 0, 0, 20, h + 2, 3)
-    cx = box.pw // 2
-    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + P(h)))
+    cx, ph = box.pw // 2, inner(h)
+    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + ph))
     for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
-        im = Image.new("RGBA", (P(2 * TITLE_S), P(h)), H(LCD_BG))
-        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), P(h)), Image.NEAREST), (P(TITLE_S), 0))
+        im = Image.new("RGBA", (P(2 * TITLE_S), ph), H(LCD_BG))
+        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), ph), Image.NEAREST), (P(TITLE_S), 0))
         d = ImageDraw.Draw(im)
-        d.rectangle([0, 0, P(TITLE_S) - 1, P(h) - 1], fill=H(TITLE_FILL))
-        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, P(h) - 1], fill=H(col))
+        d.rectangle([0, 0, P(TITLE_S) - 1, ph - 1], fill=H(TITLE_FILL))
+        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, ph - 1], fill=H(col))
         skin.add("%s_%s" % (bid, st), im)
 
 
 def make_title_frames(skin, bid, w, h, n, color):
     """Title box fill frames. The play position runs from TITLE_S to w - TITLE_S (the thumb is
-    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position."""
-    pw, ph, ps = P(w), P(h), P(TITLE_S)
+    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position.
+    Height inner(h): the fill covers the box's top and bottom half-bright outline rows alike (PP26)."""
+    pw, ph, ps = P(w), inner(h), P(TITLE_S)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(n):      # frame 0 too: it is shown while the position is inside the first step (about 0-2 %),
@@ -1184,6 +1178,15 @@ def inset():
     return max(1, int(S))
 
 
+def inner(v):
+    """Device size of a fill that sits inset() inside a display box whose inside is v design px (the box is
+    v + 2 with its 1 px outline): the box's P(v + 2) minus inset() on both sides. P(v) is one row short at
+    125 / 150 % when P(v + 2) - P(v) = 3 (the 28 px full-player title box at 125 %: 35 rows, P(26) = 32;
+    the 18 px strip boxes at 150 %: 27 rows, P(16) = 24): the fill then covered the top half-bright outline
+    row but not the bottom one (PP26). Equal to P(v) at 100 / 200 %."""
+    return P(v + 2) - 2 * inset()
+
+
 def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
     """The progress slider(s) of one title box at (x, y) (device px), inner size fw x fh (design px)."""
     tip = "$T / $D  (click to jump, wheel = 5 %)"
@@ -1195,15 +1198,16 @@ def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
                    bid + "_ulthumb", "time", tip, bg=bid + "_ul", nbvert=TITLE_UL_FRAMES, rb="righttop")
         return
     make_title_frames(skin, bid + "_fill", fw, fh, TITLE_FRAMES, TITLE_FILL)
-    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), P(fh) // 2, P(fw) - P(TITLE_S) - 1, P(fh) // 2),
+    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), inner(fh) // 2, P(fw) - P(TITLE_S) - 1, inner(fh) // 2),
                thumb, "time", tip, bg=bid + "_fill", nbvert=TITLE_FRAMES, rb="righttop")
 
 
 def make_progress_frames(skin, bid, w, h, n, color):
     """Slider background drawn inside an LCD: frame i is filled to i/(n-1) from the left,
     the rest is fully transparent (the LCD shows through). Hard edges: X11 skins2 draws
-    without alpha blending."""
-    pw, ph = P(w), P(h)
+    without alpha blending. Sits inset() inside a box h + 2 high: height inner(h), so the fill covers the
+    top and bottom half-bright outline rows alike at 125 / 150 % (PP26, same as the title fill)."""
+    pw, ph = P(w), inner(h)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(1, n):
@@ -1272,7 +1276,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, 
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 510   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490; 510 since PP2: mute clear of Next)
+MIN_W = 510   # narrowest strip: expand / prev / play / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490). Full player: prev .. next end at 188, the mute zone starts at width - 282 (PP2 raised 490 to 510; the Stop button is gone, PP23, so now 40 px clear). Kept at 510 for the strip title
 TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (VLC-Amp-taskbar-NNN.vlt); the helper assumes the same
@@ -1342,8 +1346,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("b_expand", "expand"), ("b_prev", "prev"), ("b_next", "next")):
             make_button(skin, nm, BW_, BT, ic, icon_size=isz)
         make_toggle(skin, "t_play", BW_ + 4, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
-        make_toggle(skin, "t_pl", PLW, BT, label="PL", use_led=True, label_size=lsz)   # same look as the full player's
-        make_toggle(skin, "t_eq", PLW, BT, label="EQ", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_pl", PLW, BT, label="PL", label_size=lsz)   # same look as the full player's
+        make_toggle(skin, "t_eq", PLW, BT, label="EQ", label_size=lsz)
         make_toggle(skin, "t_top", BW_, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
         make_thumb(skin, "thumb_v", 10, 18)
         make_title_thumb(skin, "thumb_title", BT - 2)
@@ -1359,12 +1363,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_close", 24, 22, "close", icon_size=11)
         make_button(skin, "b_flip_up", 24, 22, "arrow_up", icon_size=10)
         make_button(skin, "b_flip_dn", 24, 22, "arrow_down", icon_size=10)
-        for nm, ic in (("fb_stop", "stop"), ("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"),
-                       ("fb_next", "next")):
+        for nm, ic in (("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"), ("fb_next", "next")):
             make_button(skin, nm, 30, 28, ic, icon_size=13)
         make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
-        make_toggle(skin, "ft_pl", 44, 28, label="PL", use_led=True, label_size=9)
-        make_toggle(skin, "ft_eq", 44, 28, label="EQ", use_led=True, label_size=9)
+        make_toggle(skin, "ft_pl", 44, 28, label="PL", label_size=9)
+        make_toggle(skin, "ft_eq", 44, 28, label="EQ", label_size=9)
         # video window (title bar, control panel, extra row) and fullscreen controller
         for nm, ic in (("vb_full", "expand"), ("vb_min", "minimize"), ("vb_restore", "restore"), ("vb_close", "close")):
             make_button(skin, nm, 24, 22, ic, icon_size=11)
@@ -1383,7 +1386,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lcd(c, 0, 0, 60, 22, 3)
         skin.add("x_speed_bg", solid(c.done()))
         make_thumb(skin, "thumb_s", 12, 20)
-        make_toggle(skin, "t_eqon", 44, 22, label="ON", use_led=True, label_size=9)
+        make_toggle(skin, "t_eqon", 44, 22, label="ON", label_size=9)
         make_eq_thumb(skin, "thumb_eq", 18, 14)
         make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
         for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
@@ -1410,7 +1413,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for lbl in ("add", "rem", "sort", "load", "save"):
             make_button(skin, "b_pl_" + lbl, 44, 22, label=lbl.upper(), label_size=9)
         for lbl in ("shuf", "loop", "rep1"):
-            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), use_led=True, label_size=9)
+            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), label_size=9)
         c = Canvas(62, 16)
         c.rrect(0, 0, 62, 16, 3, mix(LCD_BG, CYAN, 0.28))
         c.rrect(1, 1, 60, 14, 2, mix(LCD_BG, CYAN, 0.08))
@@ -1573,11 +1576,20 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        # the box is exactly 4 device cells (the advance rule of vlcamp.lua), centred on the chip: no part of the
-        # 5th-last character shows, and the text sits in the middle at every scale
-        fw = 4 * int(P(10) * 0.6021 + 0.5)
-        lay.text(P(358) + (P(41) - fw) // 2, P(92), fw, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the 4 cells of the extension are centred on the chip. The text box reaches one cell further left, so
+        # whatever the font renderer does with the 5th-last character (a tick of its right arm, a whole glyph,
+        # any FreeType version) lands in that cell, and an opaque piece of the chip (its left padding, cut
+        # from the chip bitmap itself) is drawn over it, above the text: layout controls draw in file order
+        # (GenericLayout::addControl keeps same-layer controls in insertion order). PP17 sized the box to
+        # exactly 4 cells, PP27 made it independent of the renderer.
+        cell = int(P(10) * 0.6021 + 0.5)           # the advance rule of vlcamp.lua
+        fw = 4 * cell
+        pad = (P(41) - fw) // 2                    # chip left edge .. first cell
+        chip = skin.bitmaps[skin.prefix + "chip_fmt"]
+        skin.add("chip_fmt_pad", chip.crop((0, 0, pad, chip.height)))
+        lay.text(P(358) + pad - cell, P(92), fw + cell, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
+        lay.image("chip_fmt_pad", P(358), P(90), action="move")
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
         lay.checkbox("l_loop", P(274), P(122), "playlist.isLoop", "playlist.setLoop(true)",
@@ -1591,12 +1603,11 @@ def build(skin, W, BH=BAR_DEFAULT):
                    "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, rb="righttop")
         # transport row
         ty = 195
-        for nm, x, act, tip in (("fb_stop", 12, "vlc.stop()", "Stop"), ("fb_prev", 46, "playlist.previous()", "Previous"),
-                                ("fb_slower", 80, "vlc.slower()", "Slower")):
+        for nm, x, act, tip in (("fb_prev", 12, "playlist.previous()", "Previous"), ("fb_slower", 46, "vlc.slower()", "Slower")):
             lay.button(nm, P(x), P(ty), act, tip)
-        lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
-        lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
+        lay.checkbox("ft_play", P(80), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster")
+        lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next")
         lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
         lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
@@ -1789,11 +1800,13 @@ def build(skin, W, BH=BAR_DEFAULT):
                                                     ("rep1", "Repeat", "playlist.isRepeat", "Repeat one"))):
             lay.checkbox("t_pl_" + lbl, P(212 + i * 56), y, state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tp + ": off", tp + ": on", **k)
-        lay.button("xb_slower", P(388), y, "vlc.slower()", "Slower", **k)
-        lay.image("x_speed_bg", P(422), y, action="none", **k)
-        lay.text(P(424), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
-                 sample="1.25x", focus=False, **k)
-        lay.button("xb_faster", P(486), y, "vlc.faster()", "Faster", **k)
+        # speed group (128 px wide), anchored right like the volume group: its right edge is VW - 12
+        r = dict(lt="rightbottom", rb="rightbottom")
+        lay.button("xb_slower", P(VW - 140), y, "vlc.slower()", "Slower", **r)
+        lay.image("x_speed_bg", P(VW - 106), y, action="none", **r)
+        lay.text(P(VW - 104), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+                 sample="1.25x", focus=False, **r)
+        lay.button("xb_faster", P(VW - 42), y, "vlc.faster()", "Faster", **r)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)
@@ -2166,20 +2179,44 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 dd.text((ox + (l + r) // 2, oy + (t + b) // 2), "video placeholder", font=_truetype(FONT_MONO, P(10)),
                         fill=(110, 110, 110, 255), anchor="mm")
             elif n.kind == "Playtree":
+                # As skins2 draws it (ctrl_tree.cpp makeImage) with lua/intf/vlcamp.lua's lengths: rows of
+                # ceil(1.2 x font px), stripes bg1 / bg2 from the first row, text 7 px in, bottom-aligned in
+                # the row (baseline = row bottom - descent); every item but the playing one gets its length
+                # in one right-aligned column (vlcamp.lua pl_columns / decorate: same rule, change both).
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
-                f = _truetype(FONT_MONO, font_px[n.font])
+                px = font_px[n.font]
+                f = _truetype(FONT_MONO, px)
                 dd = ImageDraw.Draw(out)
-                lh = int(font_px[n.font] * 1.35)
-                songs = ["Harbour Lights", "Paper Satellites", "Slow Burn Across the River (Extended Mix)",
-                         "Static Bloom", "Glass Elevator", "Northbound", "Low Tide Radio", "Afterimage",
-                         "Late Train to Brno", "Copper Wire", "Quiet Hours", "Field Recording No. 3"]
-                for i, s in enumerate(songs):
+                lh = int(math.ceil(1.2 * px - 1e-9))
+                for i in range(-(-(b - t) // lh)):
+                    yy = oy + t + i * lh
+                    dd.rectangle([ox + l, yy, ox + r - 1, min(yy + lh, oy + b) - 1],
+                                 fill=H(n.colors["bg2" if i % 2 else "bg1"]))
+                songs = [("Harbour Lights", 222), ("Paper Satellites", 245),
+                         ("Slow Burn Across the River (Extended Mix)", 451), ("Static Bloom", 197),
+                         ("Glass Elevator", 252), ("Northbound", 190),
+                         ("Low Tide Radio - Live at the Harbour Hall, Night Two (Remastered Deluxe Edition)", 728),
+                         ("Afterimage", 203), ("Late Train to Brno", 274), ("Copper Wire", 166),
+                         ("Quiet Hours", 312), ("Field Recording No. 3", 95)]
+                playing = 2
+                adv, dot = int(round(px * 0.6021)), int(math.ceil(px * 1233 / 2048))
+                cols = max(20, (r - l - 7 - 2 * adv - dot - 1) // adv)      # vlcamp.lua pl_columns
+
+                def mss(sec):
+                    return "%d:%02d:%02d" % (sec // 3600, sec // 60 % 60, sec % 60) if sec >= 3600 else \
+                        "%d:%02d" % (sec // 60, sec % 60)
+                field = max([5] + [len(mss(sec)) for _, sec in songs])      # vlcamp.lua decorate
+                for i, (s, sec) in enumerate(songs):
                     yy = oy + t + i * lh
                     if yy + lh > oy + b:
                         break
-                    if i == 2:
-                        dd.rectangle([ox + l, yy, ox + r - 1, yy + lh - 1], fill=H(n.colors["sel"]))
-                    dd.text((ox + l + 2, yy + 1), s, font=f, fill=H(n.colors["play" if i == 2 else "fg"]))
+                    if i != playing:
+                        room = cols - field - 2
+                        if len(s) > room:
+                            s = s[:room - 1] + "…"
+                        s = s + " " * (cols - len(s) - len(mss(sec))) + mss(sec)
+                    dd.text((ox + l + 7, yy + lh - f.getmetrics()[1]), s, font=f, anchor="ls",
+                            fill=H(n.colors["play" if i == playing else "fg"]))
                 sl = n.slider
                 th = skin.bitmaps[sl["thumb"] + "_up"]
                 sx = sl["x"] - bw + aw
