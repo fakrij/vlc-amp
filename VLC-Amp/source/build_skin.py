@@ -1709,14 +1709,17 @@ def build(skin, W, BH=BAR_DEFAULT):
     VIDH = (VW - 2 * VB) * 9 // 16                         # starts 16:9
     PBASE = VT + VIDH                                      # top of the control panel
     VH = PBASE + PH
+    RH = 30
+    # video-l and video-x need the same original size AND the same min / max limits: skins2 carries the
+    # window size over only between "tightly coupled" layouts (GenericLayout::isTightlyCoupledWith)
+    VMINH = VT + PH + RH + 90
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(VMIN), maxw=P(3840),
-                  minh=P(VT + PH + 90), maxh=P(2160))
+                  minh=P(VMINH), maxh=P(2160))
     # The same window with an extra row of controls below the panel (the arrow button switches):
     # the same original size, so skins2 carries the current (maximized) size between the two; the
     # row takes its height from the video, as a Video control cannot change size inside a layout.
-    RH = 30
     xlay = Layout(skin, "video-x", P(VW), P(VH), minw=P(VMIN), maxw=P(3840),
-                  minh=P(VT + PH + RH + 90), maxh=P(2160))
+                  minh=P(VMINH), maxh=P(2160))
     MW = 160                                               # shrunk: the title bar alone
     mlay = Layout(skin, "video-min", P(MW), P(VT))
     # Full screen: skins2 shows the window "fullscreenController" over the video when the mouse
