@@ -1039,12 +1039,19 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
         db = i - 20
         c = Canvas(EQ_FW, EQ_FH)
         c.rrect(0, 0, EQ_FW, EQ_FH, 0, LCD_BG)
-        c.rrect(14, EQ_G0, 2, EQ_G1 - EQ_G0, 1, EQ_TRACK)
+        # PP19: groove and fill on whole device px, centred on the same column pair (x = P(15), the slider's
+        # centre line): the fill is P(3) wide, widened by one px when its parity differs from the groove's
+        kx = EQ_FW / P(EQ_FW)       # logical px per device px
+        gw_ = max(2, P(2))
+        fw_ = max(gw_ + 2, P(3)) if (P(3) - gw_) % 2 == 0 else max(gw_ + 1, P(3) + 1)
+        cxd = P(15)
+        c.rrect((cxd - gw_ // 2) * kx, EQ_G0, gw_ * kx, EQ_G1 - EQ_G0, 1, EQ_TRACK)
         c.rrect(9, 55.5, 4, 1, 0, CYAN_DIM)       # 0 dB ticks either side of the groove
         c.rrect(17, 55.5, 4, 1, 0, CYAN_DIM)
         ct, cb = eq_travel()
         cy = (cb - (cb - ct) * i / 40.0) / S  # knob centre
-        c.rrect(13.5, cy, 3, 96 - cy, 0, col)
+        cyd = round(cy * S)         # fill top on a whole device row
+        c.rrect((cxd - fw_ // 2) * kx, cyd / S, fw_ * kx, 96 - cyd / S, 0, col)
         label = ("%+d" % db if db else "0") + ("dB" if pre and db else "")
         c.text(15, 6, label, 9, col if db else CYAN2, font="mono", anchor="mm")
         full = c.done()
@@ -1206,11 +1213,18 @@ def make_progress_frames(skin, bid, w, h, n, color):
     return bid
 
 
+def thumb_rim(b):
+    """Knob outline: light on dark themes, dark on light ones (a light rim vanishes on a light box / groove)."""
+    if _luminance(LCD_BG) < 0.5:
+        return mix(b, "#ffffff", 0.5)
+    return mix(b, "#000000", 0.6)
+
+
 def make_thumb(skin, bid, w, h, bg=None):
     """Metallic slider knob (bright top half, darker lower half) with an accent notch."""
     for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         mid = h // 2
         c.grad(1, 1, w - 2, mid - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, mid, w - 2, h - 1 - mid, 1, mix(t, b, 0.8), b)
@@ -1225,7 +1239,7 @@ def make_eq_thumb(skin, bid, w, h):
     for st, col in (("up", CYAN), ("over", LCD_HI)):
         c = Canvas(w, h)
         t, b = THUMB_UP if st == "up" else THUMB_OVER
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         c.grad(1, 1, w - 2, h // 2 - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, h // 2, w - 2, h - 1 - h // 2, 1, mix(t, b, 0.8), b)
         c.rrect(1, 1, w - 2, 1, 0, (255, 255, 255, 120))
@@ -1362,7 +1376,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_toggle(skin, "xt_ab", 44, 22, label="A-B", label_size=9)         # same look in both states (a button)
         make_button(skin, "xb_chprev", 44, 22, label="CH-", label_size=9)
         make_button(skin, "xb_chnext", 44, 22, label="CH+", label_size=9)
-        make_button(skin, "xb_snap", 48, 22, label="SNAP", label_size=9)
+        make_button(skin, "xb_snap", 44, 22, label="SNAP", label_size=9)
         make_button(skin, "xb_slower", 30, 22, "slower", icon_size=12)
         make_button(skin, "xb_faster", 30, 22, "faster", icon_size=12)
         c = Canvas(60, 22)                                                    # speed readout box (between slower / faster)
@@ -1491,8 +1505,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
                    "thumb_none", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
                    nbvert=FILL_FRAMES, **tr)
+        # text inset from both box edges by P(TIME_ZONE) (was: right edge at the box edge, 0.5 px off centre at
+        # 150 %); the +1 keeps the 100 / 125 % width of 70 / 88 px (measured centred in VLC at all four scales)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
+            lay.text(tx + P(TIME_ZONE), P(ty), P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
         panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
@@ -1506,7 +1522,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for rt, rb, v in bar_corners(d):
             c = Canvas(W, FH)
             panel_bg(c, 0, 0, W, FH, 6, rt=rt, rb=rb)
-            grip_dots(c, 4, 12)
+            grip_dots(c, 4, 13)                       # 10 rows: centred on the 22-row button band (y 9..30)
             resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
@@ -1557,7 +1573,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        lay.text(P(367), P(92), P(24), "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the box is exactly 4 device cells (the advance rule of vlcamp.lua), centred on the chip: no part of the
+        # 5th-last character shows, and the text sits in the middle at every scale
+        fw = 4 * int(P(10) * 0.6021 + 0.5)
+        lay.text(P(358) + (P(41) - fw) // 2, P(92), fw, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
@@ -1636,9 +1655,18 @@ def build(skin, W, BH=BAR_DEFAULT):
             lb, fb, tb = eq_boxes(i == 0)
             bands.paste(EQ_TICKS[i == 0], (x0s[i] + tb[0], P(4) + tb[1]))
         skin.add("eq_bands", bands)
+        from PIL import ImageChops
+        ink = bands.convert("RGB")
+        dif = ImageChops.difference(ink, Image.new("RGB", ink.size, H(LCD_BG)[:3]))
+        dif = ImageChops.lighter(ImageChops.lighter(dif.getchannel("R"), dif.getchannel("G")), dif.getchannel("B"))
+        il, _, ir, _ = dif.point(lambda v: 255 if v > 40 else 0).getbbox()
+        px_panel = P(12) + (PW - 2 * P(12) - (ir - il)) // 2 - il
         fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
         skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
-        lay.panel_begin("eq_panel" + sfx, P((W - EQ_BW) // 2), P(34), P(EQ_BW), P(120))
+        # PP22: centre the INK (the dB scale labels stick out about 3 logical px on the left, nothing on the
+        # right) in the band box P(12) .. PW - P(12): shift the block by the measured ink extent, in device px
+        # (a fixed 3 logical px is 1 - 2 px off at 125 / 150 %, where the glyphs do not scale linearly)
+        lay.panel_begin("eq_panel" + sfx, px_panel, P(34), P(EQ_BW), P(120))
         lay.image("eq_bands", 0, 0)
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
@@ -1683,7 +1711,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         # + gutter + left inset 18. PW - P(50), not P(W - 50): in whole px the same at 100 / 150 / 200 %,
         # 1 px wider at 125 % (713: 7 clean px + the track's anti-aliased column, as on the track's right).
         # lua/intf/vlcamp.lua pl_columns uses this width (PL_MARGIN): change both together.
-        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), P(194), "lcd12",
+        # PP15: the Playtree is a whole number of rows high, or skins2 draws the last stripe cut to a sliver.
+        # Row pitch = skins2's line height of lcd12 = ceil(1.2 * font px) (15 / 18 / 22 / 29 px at 100 / 125 / 150 /
+        # 200 %, measured in VLC); the leftover (< 1 row) goes to the gap above the bottom edge of the box.
+        pl_pitch = int(math.ceil(1.2 * P(12) - 1e-9))
+        pl_h = (P(194) // pl_pitch) * pl_pitch
+        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), pl_h, "lcd12",
                      dict(x=PW - P(12 + PL_GUTTER + 8), y=P(38), points="(%d,%d),(%d,%d)" % (P(4), P(182), P(4), P(12)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),
@@ -1754,13 +1787,13 @@ def build(skin, W, BH=BAR_DEFAULT):
         for i, (lbl, name, state, tp) in enumerate((("shuf", "Random", "playlist.isRandom", "Shuffle"),
                                                     ("loop", "Loop", "playlist.isLoop", "Loop playlist"),
                                                     ("rep1", "Repeat", "playlist.isRepeat", "Repeat one"))):
-            lay.checkbox("t_pl_" + lbl, P(214 + i * 56), y, state, "playlist.set%s(true)" % name,
+            lay.checkbox("t_pl_" + lbl, P(212 + i * 56), y, state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tp + ": off", tp + ": on", **k)
-        lay.button("xb_slower", P(390), y, "vlc.slower()", "Slower", **k)
-        lay.image("x_speed_bg", P(424), y, action="none", **k)
-        lay.text(P(426), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+        lay.button("xb_slower", P(388), y, "vlc.slower()", "Slower", **k)
+        lay.image("x_speed_bg", P(422), y, action="none", **k)
+        lay.text(P(424), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
                  sample="1.25x", focus=False, **k)
-        lay.button("xb_faster", P(488), y, "vlc.faster()", "Faster", **k)
+        lay.button("xb_faster", P(486), y, "vlc.faster()", "Faster", **k)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)
@@ -1768,7 +1801,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         # free-standing window: 1 px EDGE outline on all four sides
         c.rrect(0, 0, VW, VH, 6, EDGE)
         c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        resize_handle(c, grip_x(VW), VH - 13, 12)         # resize grip: the tab in the bottom-right corner slice
+        resize_handle(c, grip_x(VW) - 2, VH - 13, 9)     # resize grip: tab inside the corner slice, 3 px off the right and bottom outline (PP16)
         # the frame is a 9-slice (its middle-left / middle-right pieces tile vertically), so nothing
         # but the plain frame may sit in them: the title bar, with its grip dots, is its own piece on top
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
