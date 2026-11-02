@@ -1134,24 +1134,25 @@ def make_title_thumb(skin, bid, h):
     below its top): at 125 / 150 % the 1 px outline covers 1.5 / 1.25 device px, and a plain box-colour
     half hid the partly bright outline row the slider overlaps (a 1-row notch in the top / bottom edge
     right of the playhead). At 100 / 200 % that column is plain LCD_BG. The thumb stays fully opaque,
-    so its click area does not change."""
+    so its click area does not change. Height inner(h), the same as the fill frames (PP26)."""
     box = Canvas(20, h + 2)
     lcd(box, 0, 0, 20, h + 2, 3)
-    cx = box.pw // 2
-    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + P(h)))
+    cx, ph = box.pw // 2, inner(h)
+    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + ph))
     for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
-        im = Image.new("RGBA", (P(2 * TITLE_S), P(h)), H(LCD_BG))
-        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), P(h)), Image.NEAREST), (P(TITLE_S), 0))
+        im = Image.new("RGBA", (P(2 * TITLE_S), ph), H(LCD_BG))
+        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), ph), Image.NEAREST), (P(TITLE_S), 0))
         d = ImageDraw.Draw(im)
-        d.rectangle([0, 0, P(TITLE_S) - 1, P(h) - 1], fill=H(TITLE_FILL))
-        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, P(h) - 1], fill=H(col))
+        d.rectangle([0, 0, P(TITLE_S) - 1, ph - 1], fill=H(TITLE_FILL))
+        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, ph - 1], fill=H(col))
         skin.add("%s_%s" % (bid, st), im)
 
 
 def make_title_frames(skin, bid, w, h, n, color):
     """Title box fill frames. The play position runs from TITLE_S to w - TITLE_S (the thumb is
-    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position."""
-    pw, ph, ps = P(w), P(h), P(TITLE_S)
+    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position.
+    Height inner(h): the fill covers the box's top and bottom half-bright outline rows alike (PP26)."""
+    pw, ph, ps = P(w), inner(h), P(TITLE_S)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(n):      # frame 0 too: it is shown while the position is inside the first step (about 0-2 %),
@@ -1184,6 +1185,15 @@ def inset():
     return max(1, int(S))
 
 
+def inner(v):
+    """Device size of a fill that sits inset() inside a display box whose inside is v design px (the box is
+    v + 2 with its 1 px outline): the box's P(v + 2) minus inset() on both sides. P(v) is one row short at
+    125 / 150 % when P(v + 2) - P(v) = 3 (the 28 px full-player title box at 125 %: 35 rows, P(26) = 32;
+    the 18 px strip boxes at 150 %: 27 rows, P(16) = 24): the fill then covered the top half-bright outline
+    row but not the bottom one (PP26). Equal to P(v) at 100 / 200 %."""
+    return P(v + 2) - 2 * inset()
+
+
 def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
     """The progress slider(s) of one title box at (x, y) (device px), inner size fw x fh (design px)."""
     tip = "$T / $D  (click to jump, wheel = 5 %)"
@@ -1195,15 +1205,16 @@ def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
                    bid + "_ulthumb", "time", tip, bg=bid + "_ul", nbvert=TITLE_UL_FRAMES, rb="righttop")
         return
     make_title_frames(skin, bid + "_fill", fw, fh, TITLE_FRAMES, TITLE_FILL)
-    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), P(fh) // 2, P(fw) - P(TITLE_S) - 1, P(fh) // 2),
+    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), inner(fh) // 2, P(fw) - P(TITLE_S) - 1, inner(fh) // 2),
                thumb, "time", tip, bg=bid + "_fill", nbvert=TITLE_FRAMES, rb="righttop")
 
 
 def make_progress_frames(skin, bid, w, h, n, color):
     """Slider background drawn inside an LCD: frame i is filled to i/(n-1) from the left,
     the rest is fully transparent (the LCD shows through). Hard edges: X11 skins2 draws
-    without alpha blending."""
-    pw, ph = P(w), P(h)
+    without alpha blending. Sits inset() inside a box h + 2 high: height inner(h), so the fill covers the
+    top and bottom half-bright outline rows alike at 125 / 150 % (PP26, same as the title fill)."""
+    pw, ph = P(w), inner(h)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(1, n):
