@@ -4,14 +4,14 @@
   >>> RE-RUN THIS AFTER EVERY CHANGE TO source/build_skin.py (and commit configurator/). <<<
 
 Why a copy exists: the page is a static folder (GitHub Pages) served from configurator/, so it cannot
-fetch ../source/. The worker stages configurator/build_skin.py + configurator/fonts/DejaVu* into
+fetch ../source/. The worker stages configurator/build_skin.py + configurator/fonts/{DejaVu*,VLCAmpMono.ttf} into
 Pyodide's virtual FS as /work/build_skin.py and /work/fonts/ (generator's HERE = its own folder).
 
 Sync step (PATCHES below is the only place where the copy may differ from the source; it is empty
 today: the generator already forces Layout.BASIC, writes a reproducible .vlt and runs unchanged under
 Pyodide; the page's glue.py handles the rest, so no hand edits and no patches are needed):
   - configurator/build_skin.py        <- source/build_skin.py (+ PATCHES)
-  - configurator/fonts/DejaVu*, LICENSE-DejaVu.txt <- source/fonts/
+  - configurator/fonts/DejaVu*, VLCAmpMono.ttf, LICENSE-DejaVu.txt <- source/fonts/
 
 Verify step (non-zero exit on any difference):
   - runs source/build_skin.py and configurator/build_skin.py with identical options and compares every
@@ -36,7 +36,7 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "source")
 CFG = os.path.join(ROOT, "configurator")
-FONTS = ["DejaVuSansMono.ttf", "DejaVuSans-Bold.ttf", "LICENSE-DejaVu.txt"]
+FONTS = ["DejaVuSansMono.ttf", "VLCAmpMono.ttf", "DejaVuSans-Bold.ttf", "LICENSE-DejaVu.txt"]
 PATCHES = []   # list of (old, new) text replacements applied to the copy; each must match exactly once
 
 CASES = [["--bar-height", str(h), "--scale", str(s), "--themes", "midnight"]

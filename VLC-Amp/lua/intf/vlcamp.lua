@@ -363,7 +363,7 @@ end
 
 -- Characters that fit in a playlist line. skins2 (ctrl_tree.cpp makeImage) draws a flat playtree's
 -- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
--- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses DejaVu Sans Mono at
+-- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses VLC Amp Mono (DejaVu Sans Mono) at
 -- P(12) = round(12 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
 -- the playtree P(W - 60) wide (default window 620 px). Scale from the skin's file name
 -- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
@@ -381,10 +381,12 @@ local function pl_columns(w)
     end
     local px = py_round(PL_FONT * s)
     local adv = py_round(px * 0.6021)
-    local dot = (px <= 11 and 2) or (px <= 22 and 3) or (px <= 30 and 4) or math.floor(px / 6)   -- ink of "." (FreeType)
+    -- box width of "." in skins2: the skin's font (VLCAmpMono.ttf, tools/make-cell-font.py) makes every
+    -- glyph's box span its whole cell, 0 .. ceil(1233 units x px / 2048) (DejaVu: just the dot's ink)
+    local dot = math.ceil(px * 1233 / 2048)
     local tree = w - (py_round(PL_SKIN_W * s) - py_round((PL_SKIN_W - PL_MARGIN) * s))   -- the playtree is P(W - 60) wide
     -- skins2 (ft2_font.cpp drawString) shows the whole line only if after every character the pen
-    -- plus "..." (2 advances + the dot's ink) stays left of the limit (tree - 7); otherwise it ends
+    -- plus "..." (2 advances + the dot's box) stays left of the limit (tree - 7); otherwise it ends
     -- the line with "...". So the most characters n with n*adv + 2*adv + dot < tree - 7. Checked
     -- in VLC 3.0.20 (hi-fi skin, 620 px): see docs/architecture.md "Playlist durations".
     local limit = tree - 7 - 2 * adv - dot

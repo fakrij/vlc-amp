@@ -26,7 +26,7 @@ async function init() {
   post({ type: "status", text: "Loading Pillow..." });
   await py.loadPackage("pillow");
   py.FS.mkdirTree("/work/fonts");
-  for (const f of ["build_skin.py", "glue.py", "fonts/DejaVuSansMono.ttf", "fonts/DejaVuSans-Bold.ttf",
+  for (const f of ["build_skin.py", "glue.py", "fonts/DejaVuSansMono.ttf", "fonts/VLCAmpMono.ttf", "fonts/DejaVuSans-Bold.ttf",
                    "fonts/LICENSE-DejaVu.txt"]) await stage(f);
   py.runPython("import sys; sys.path.insert(0, '/work')\nimport glue");
   post({ type: "ready" });

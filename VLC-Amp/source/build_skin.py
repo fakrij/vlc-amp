@@ -46,7 +46,12 @@ def _truetype(path, size):
     return ImageFont.truetype(path, size, layout_engine=ImageFont.Layout.BASIC)
 
 
-FONT_FILE = ["fonts/DejaVuSansMono.ttf"]   # path of the LCD font inside the .vlt (--font changes it)
+# skins2 draws every glyph bitmap at the pen position and drops FreeType's bitmap_left (ft2_font.cpp
+# drawString), so ":" "." "r" sit at the left edge of their cell. VLCAmpMono.ttf is DejaVu Sans Mono
+# with every glyph box starting at the cell edge (tools/make-cell-font.py; same ink, advances and
+# hinting): it is the <Font> file in the .vlt. Pillow (FONT_MONO) keeps the original, which it places right.
+FONT_CELL = os.path.join(HERE, "fonts", "VLCAmpMono.ttf")
+FONT_FILE = ["fonts/VLCAmpMono.ttf"]      # path of the LCD font inside the .vlt (--font changes it)
 FONT_BOLD = os.path.join(HERE, "fonts", "DejaVuSans-Bold.ttf")
 SS = 4          # supersampling factor for shapes
 S = 1.0         # global scale, set in main()
@@ -2225,9 +2230,9 @@ def main():
         ap.error("--custom must look like #b48cff")
     S = a.scale
     global FONT_MONO
-    font_file = "DejaVuSansMono.ttf"
+    font_file, font_src = "VLCAmpMono.ttf", FONT_CELL
     if a.font:
-        FONT_MONO = a.font
+        FONT_MONO = font_src = a.font
         font_file = "lcd" + os.path.splitext(a.font)[1].lower()
         FONT_FILE[0] = "fonts/" + font_file
     if not BAR_DEFAULT <= a.bar_height <= 60:
@@ -2271,7 +2276,7 @@ def main():
             im.save(os.path.join(stage, "custom-ref", "img", fid + ".png"), optimize=True)
             im = recolour(im, a.custom)
         im.save(os.path.join(stage, "img", fid + ".png"), optimize=True)
-    shutil.copy(FONT_MONO, os.path.join(stage, "fonts", font_file))
+    shutil.copy(font_src, os.path.join(stage, "fonts", font_file))
     lic = os.path.join(HERE, "fonts", "LICENSE-DejaVu.txt")
     if os.path.exists(lic) and not a.font:
         shutil.copy(lic, os.path.join(stage, "fonts"))

@@ -84,7 +84,11 @@ each its own `TB_INSTANCE` and `TB_DISPLAY_NUM`, for example
 - `theme-audit.py`: contrast table of every theme.
 - `icon-symmetry.py`: mirror-diffs every icon (left-right / up-down alpha difference per icon, bar height
   and scale); `python tools/icon-symmetry.py <source dir> <out.json>`, needs numpy.
-- `sync-configurator.py`: copies `source/build_skin.py` and the DejaVu files into `configurator/` and
+- `make-cell-font.py`: makes `source/fonts/VLCAmpMono.ttf` (the `<Font>` file in every `.vlt`) from
+  `DejaVuSansMono.ttf`: glyph boxes widened to the cell, because skins2 drops FreeType's `bitmap_left`
+  (PP13, `docs/font-notes.md` "Glyph placement"). Needs fontTools in its own venv
+  (`python3 -m venv /tmp/ft && /tmp/ft/bin/pip install fonttools`); output is deterministic.
+- `sync-configurator.py`: copies `source/build_skin.py` and the font files (DejaVu, VLCAmpMono) into `configurator/` and
   verifies that the CLI and the copy build identical skins (8 option sets; `--pyodide <dir> <pillow wheel>`
   adds the Pyodide build). Run it after every generator change. `configurator/sync.sh` is its dependency-free
   copy-only twin.
