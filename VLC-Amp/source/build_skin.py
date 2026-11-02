@@ -1355,7 +1355,6 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("vb_full", "expand"), ("vb_min", "minimize"), ("vb_restore", "restore"), ("vb_close", "close")):
             make_button(skin, nm, 24, 22, ic, icon_size=11)
         make_toggle(skin, "vb_max", 24, 22, icon_off="maximize", icon_on="unmaximize", icon_size=11)
-        make_toggle(skin, "ft_mute", 30, 28, icon_off="speaker", icon_on="speaker_off", on_color=AMBER, icon_size=13)
         make_button(skin, "fb_fs", 30, 28, "expand", icon_size=13)            # fullscreen controller: leave full screen
         make_button(skin, "fb_more", 30, 28, "arrow_down", icon_size=12)      # show the extra row (it opens below)
         make_button(skin, "fb_less", 30, 28, "arrow_up", icon_size=12)        # hide it
@@ -1703,7 +1702,7 @@ def build(skin, W, BH=BAR_DEFAULT):
     # Title bar (name of what plays, maximize / full screen / shrink / close), the video, then a
     # control panel docked under it. As wide as the player, so the seek bar bitmap (sw) fits as in
     # the full player; the 12 px frame is the margin rule and holds the corner resize tab.
-    VB, VT, PH = 12, 36, 68                                # frame, title bar, control panel (logical px)
+    VB, VT, PH = 12, 36, 70                                # frame, title bar, control panel (logical px; 12 px under the buttons)
     VMIN = 580                                             # the panel's controls need this width
     VW = max(W, VMIN)                                      # --width 490-579 fits the strip, not this panel
     VIDH = (VW - 2 * VB) * 9 // 16                         # starts 16:9
@@ -1799,14 +1798,14 @@ def build(skin, W, BH=BAR_DEFAULT):
         else:
             lay.button("fb_more", P(VW - 222), P(ty), "video.setLayout(video-x)",
                        "More controls (A-B loop, chapters, snapshot, shuffle / loop / repeat, speed)", **rbk)
-        lay.checkbox("ft_mute", P(VW - 188), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
+        lay.checkbox("c_mute", P(VW - 191), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
         lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 152), P(ty + 9),
                    "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v", "Volume $V%",
                    bg="vol100", nbvert=P(100), **rbk)
         lay.text(P(VW - 48), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none",
                  sample="78%", focus=False, **rbk)
         if extra:
-            extra_row(lay, P(pb + PH - 6), "leftbottom", "leftbottom")
+            extra_row(lay, P(pb + PH - 4), "leftbottom", "leftbottom")
         lay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH - (RH if extra else 0)))
 
     cur = {}
