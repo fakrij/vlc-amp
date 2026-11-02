@@ -646,7 +646,7 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 | PP15 | P2 | Playlist: the last row stripe is cut to a sliver at the bottom of the list box at 125 / 150 / 200 % | Sonnet, medium | G-pan | open |
 | PP16 | P2 | Video window: the corner resize tab covers the bottom outline and the rounded bottom-right corner | Sonnet, medium | G-video | open |
 | PP17 | P2 | Format chip (".wav"): a 1 px sliver of the previous character at the left edge at 125 %; text right of the chip centre at 150 / 200 % | Sonnet, medium | G-full | open |
-| PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | open |
+| PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | done (branch worktree-agent-a16427824160c7542, unmerged): `thumb_rim(b)` in `make_thumb` / `make_eq_thumb`: light themes get `mix(b, black, 0.6)` rim (contrast 5.9-7.5 vs box on Paper/Sand/Sage/Rose, 100 and 150 %, 12x crops checked); dark themes unchanged (Midnight 100/150 .vlt byte-identical to design-tuning); 0 semi-transparent pixels |
 | PP19 | P3 | EQ fader fill 3 px with half-pixel edges at 100 / 150 % (soft columns), groove anti-aliased at 125 % | Sonnet, medium | G-pan | open |
 | PP20 | P3 | Strip time text 1.5 px right of the time box centre at 150 % | Haiku, low | G-strip | open |
 | PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | open |
