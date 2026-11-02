@@ -644,12 +644,12 @@ Windows helper); the strip's 18 px boxes sit 1 px low in the 24 px bar at 150 % 
 |----|---|------|-------|-------|--------|
 | PP7 | P3 | (reopened, see the row above) full player grip dots 1 - 1.5 px above the button row's centre | Haiku, low | G-full | open |
 | PP15 | P2 | Playlist: the last row stripe is cut to a sliver at the bottom of the list box at 125 / 150 / 200 % | Sonnet, medium | G-pan | open |
-| PP16 | P2 | Video window: the corner resize tab covers the bottom outline and the rounded bottom-right corner | Sonnet, medium | G-video | open |
+| PP16 | P2 | Video window: the corner resize tab covers the bottom outline and the rounded bottom-right corner | Sonnet, medium | G-video | done (branch worktree-agent-a3bca826b8f533ced, unmerged): tab is now 9 x 9 logical px at x VW-13..VW-4, y VH-13..VH-4 (3 px to the right and bottom outline), inside the `br` piece (cap 14; a taller tab at VH-14 trips the generator's tiled-middle seam check at 150 %). Real VLC (Xvfb :185): 12x crops at 100 / 125 / 150 / 200 %: bottom outline and the rounded corner arc intact, tab clear of both; dragging the tab resized the window at all four scales (height +80 x scale; width clipped by the 1280 px screen). Window size unchanged, helpers untouched. Release `.vlt` not rebuilt. |
 | PP17 | P2 | Format chip (".wav"): a 1 px sliver of the previous character at the left edge at 125 %; text right of the chip centre at 150 / 200 % | Sonnet, medium | G-full | open |
 | PP18 | P2 | Light themes: slider knobs (EQ, seek, volume) have a light outline that vanishes on the light box / groove | Sonnet, medium | G-bmp | open |
 | PP19 | P3 | EQ fader fill 3 px with half-pixel edges at 100 / 150 % (soft columns), groove anti-aliased at 125 % | Sonnet, medium | G-pan | open |
 | PP20 | P3 | Strip time text 1.5 px right of the time box centre at 150 % | Haiku, low | G-strip | open |
-| PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | open |
+| PP21 | P3 | Video extra row: SNAP 48 px among 44 px siblings, group gaps 10 / 12 / 5 px | Sonnet, medium (decision) | G-video | done (branch worktree-agent-a3bca826b8f533ced, unmerged): all four buttons 44 px (`xb_snap` bitmap 48 -> 44), both group gaps 12, speed box 4 px from slower / faster, 4 px inside groups, row's left edge kept (right end 518 -> 516). Real VLC 3.0.20 (Xvfb :185, `hasVout` -> `not isMute`), video-x at 100 / 150 %: run-length scan along the row: widths 44 x 4, 52 x 3, 30 / 60 / 30 (x1.5 at 150 %), gaps 4 4 4 12 4 4 12 4 4 (6 / 18 at 150 %); labels (A-B, CH-, CH+, SNAP) fit. Release `.vlt` not rebuilt. |
 | PP22 | P3 | EQ band block: ink 3 logical px left of the box centre (dB scale on the left, nothing on the right) | Haiku, low (decision) | G-pan | open |
 
 ### PP7 (reopened) - Full player grip dots 1 px high (Haiku, low) - P3
