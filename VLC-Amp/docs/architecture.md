@@ -1025,23 +1025,25 @@ the same advance. The line width in characters (`pl_columns`, at start): the
 Playtree draws a flat list's text 7 px in (`ctrl_tree.cpp` `makeImage`,
 `itemImageWidth` = 5 + 2) and cuts what does not fit with "..." (`ft2_font.cpp`
 `drawString`, glyph advance = FreeType's hinted `advance.x >> 6`); the skin's
-playtree is `P(W - 60)` wide (hi-fi skin, default window 620 px), its font
+playtree is `PW - P(50)` wide (hi-fi skin, default window `PW` = `P(620)` px; the rows end
+6 logical px before the scroll track, as wide as the left gutter, PP8), its font
 `P(12)` = `round(12 x scale)` px (Python rounding, half to even), and the
 advance `round(px x 0.6021)` = 7 / 9 / 11 / 14 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
 comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
-VLC saved at its last exit). The playtree is `P(620) - P(560)` px narrower
-than the window (60 / 75 / 90 / 120 px). skins2's `drawString` shows the whole
+VLC saved at its last exit). The playtree is `P(50)` px narrower
+than the window (50 / 62 / 75 / 100 px; it stretches with the window). skins2's `drawString` shows the whole
 line only if, after every character, the pen plus "..." (two advances and the
 box width of ".", `dot` = `ceil(px x 1233 / 2048)` = 8 / 10 / 11 / 15 px: VLC Amp Mono's
 glyph boxes span the whole cell, PP13; with plain DejaVu it was the dot's ink, 3-4 px) is left of the limit
 `playtree - 7`;
 otherwise it ends the line with "..." (`maxIndex < len`), even when the text
 itself would fit. So columns = the largest `n` with `n x adv + 2 x adv + dot <
-playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin and VLC Amp Mono (PP13, 2026-11-02): 75 at 100 % (76
-cut), 72 at 150 % (73 cut); predicted 73 at 125 %, 76 at 200 %. With plain DejaVu it was 76 / 74 / 73 / 77
-(76 and 74 measured; the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
+playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin and VLC Amp Mono (PP8, 2026-11-02, playtree
+`PW - P(50)`): 77 / 75 / 74 / 77 at 100 / 125 / 150 / 200 %, each with `columns=` one more cut with "...", and 99 in a
+window widened to 777 px at 100 % (100 cut). Before PP8 (playtree `P(W - 60)`) it was 75 / 73 / 72 / 76, with plain
+DejaVu 76 / 74 / 73 / 77 (the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
 the Windows helper is read on Windows only. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
 the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
@@ -1063,8 +1065,8 @@ Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
 suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
-the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **75 / 73 / 72 / 76** (the rule above with VLC Amp Mono's
-cell-wide "." box, the 12 px font and the 60 px playtree margin; 75 and 72 measured in VLC, one more character was cut).
+the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **77 / 75 / 74 / 77** (the rule above with VLC Amp Mono's
+cell-wide "." box, the 12 px font and the `P(50)` playtree margin; all four measured in VLC, one more character was cut).
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 

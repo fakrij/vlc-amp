@@ -1679,7 +1679,11 @@ def build(skin, W, BH=BAR_DEFAULT):
         c.rrect(W - 24 - PL_GUTTER - 8, 5, 8, 194, 3, SCROLL_TRACK)  # scroll track: PL_GUTTER from the box's right edge, like the row stripes on the left
         nslice(skin, lay, "pl_lcd", solid(c.done()), P(12), P(33), 18, actions={k: "none" for k in
                ("tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br")})
-        lay.playtree(P(18), P(38), P(W - 60), P(194), "lcd12",
+        # rows end PL_GUTTER before the scroll track (PP8): 50 = right box margin 12 + gutter + track 8
+        # + gutter + left inset 18. PW - P(50), not P(W - 50): in whole px the same at 100 / 150 / 200 %,
+        # 1 px wider at 125 % (713: 7 clean px + the track's anti-aliased column, as on the track's right).
+        # lua/intf/vlcamp.lua pl_columns uses this width (PL_MARGIN): change both together.
+        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), P(194), "lcd12",
                      dict(x=PW - P(12 + PL_GUTTER + 8), y=P(38), points="(%d,%d),(%d,%d)" % (P(4), P(182), P(4), P(12)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),
