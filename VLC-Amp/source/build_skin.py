@@ -1522,7 +1522,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for rt, rb, v in bar_corners(d):
             c = Canvas(W, FH)
             panel_bg(c, 0, 0, W, FH, 6, rt=rt, rb=rb)
-            grip_dots(c, 4, 12)
+            grip_dots(c, 4, 13)                       # 10 rows: centred on the 22-row button band (y 9..30)
             resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
@@ -1573,7 +1573,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        lay.text(P(367), P(92), P(24), "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the box is exactly 4 device cells (the advance rule of vlcamp.lua), centred on the chip: no part of the
+        # 5th-last character shows, and the text sits in the middle at every scale
+        fw = 4 * int(P(10) * 0.6021 + 0.5)
+        lay.text(P(358) + (P(41) - fw) // 2, P(92), fw, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
