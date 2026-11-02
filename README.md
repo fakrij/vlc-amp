@@ -6,12 +6,16 @@ into a full player with equalizer and playlist. For Windows and Linux.
 
 With VLC Amp you can:
 
-- keep the player as a 24 px strip in a title bar or the Windows taskbar, or expand it into the
+- keep the player as a 24 px **strip in a title bar** or **the Windows taskbar**, or expand it into the
   full player;
-- use it in a **dark or light** look, or build both and switch with one click (the Windows helper
-  can follow the system's light / dark setting);
+- use it in a **dark or light** look, or build both and switch with one click. The Windows helper
+  can **follow the system's light / dark** setting;
 - make **your own skin** in the [online configurator](https://fakrij.github.io/vlc-amp/): size,
   font, primary and secondary colour, built right in your browser.
+
+VLC Amp is and alwazs will be free. If you like it, you can
+[buy me a coffee on Ko-fi](https://ko-fi.com/jirkafiala).
+
 
 ![The strip](VLC-Amp/docs/img-thin/strip.png)
 
