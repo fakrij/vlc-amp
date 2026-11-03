@@ -502,6 +502,26 @@ def grip_tab(skin, lay, bg, x, y, h):
               action="resizeE")
 
 
+def corner_handle(c, x, y, w, h):
+    """The video window's corner resize tab (PP34): w x h logical px with its top-left at x, y, in device px
+    (left edge P(x), right edge P(x + w), odd width so the three 1 px ribs have equal margins). Drawn like
+    resize_handle's tab, 1 px of panel clear of the extra row's last button (it ends at VW - 12 / VH - 12)."""
+    pad = BTN["up"][0]
+    dx, dy = P(x), P(y)
+    tw, th = P(x + w) - dx, P(y + h) - dy
+    tw -= 1 - tw % 2
+    lx = lambda d: d * SS / c.kx - c.ox
+    ly = lambda d: d * SS / c.ky - c.oy
+    c.rrect(lx(dx), ly(dy), tw / (c.kx / SS), th / (c.ky / SS), 2, pad)
+    free = tw - 3
+    gap = max(1, int(round(free / 6.0)))
+    rib = mix(pad, ICON["up"], 0.6)
+    top, bot = dy + max(1, P(2)), dy + th - max(1, P(2))
+    for i in range(3):
+        rx = dx + (free - 2 * gap) // 2 + i * (gap + 1)
+        c.rrect(lx(rx), ly(top), 1 / (c.kx / SS), (bot - top) / (c.ky / SS), 0, rib)
+
+
 def resize_handle(c, x, y, h):
     """Grip for the right edge: a 9 px wide tab in the button colour with three light ribs, so it reads
     as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab.
@@ -1814,7 +1834,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         # free-standing window: 1 px EDGE outline on all four sides
         c.rrect(0, 0, VW, VH, 6, EDGE)
         c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        resize_handle(c, grip_x(VW) - 2, VH - 13, 9)     # resize grip: tab inside the corner slice, 3 px off the right and bottom outline (PP16)
+        corner_handle(c, VW - 11, VH - 11, 7, 7)     # resize tab: 7 x 7 inside the corner slice, 3 px off the outline, 1 px clear of the 12 px margin (PP16, PP34)
         # the frame is a 9-slice (its middle-left / middle-right pieces tile vertically), so nothing
         # but the plain frame may sit in them: the title bar, with its grip dots, is its own piece on top
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
