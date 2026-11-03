@@ -1001,7 +1001,7 @@ G-full PP43 (`add_full` volume group). Every task ends with `tools/sync-configur
 | PP40 | P2 | PL / EQ / ON toggles stayed 44 px wide after the LED was removed (Jiri) | Sonnet, medium | G-bmp + G-full + G-strip | done (87a0f54, merged 362cd6a): `PLW` = 36 for strip / full PL, EQ and ON; rows re-spaced, strip title +16 px. Verified in this pass (see verdicts above) |
 | PP41 | P3 | Strip row placed in rounded logical px: gaps 2,2,3,2 / 3,2,2 at 125 %, time box -> PL 4 vs PL -> EQ 3 at 150 %, taskbar strip 8,7,8,7 at 125 % | Sonnet, medium | G-strip | done (branch worktree-agent-a39d7bd89aa4d2845, 71904e6, merged 3e5e4cc): `add_strip` chains both groups in device px; gaps 2 / 2 / 3 px (24 px bar) and 6 / 8 / 9 px (36 px) at 100 / 125 / 150 %; 100 / 200 % `.vlt` byte-identical |
 | PP42 | P3 | Button / toggle / chip labels 1 - 1.5 px below the button's centre at 125 / 150 % (0.5 px high at 100 %) | Opus, high | G-bmp | done (branch worktree-agent-aac069af0ca6dea31, 2e300ab, merged 600dcc5): `button_label` helper, baseline on a device row with the "H" cap centred; T / B pads equal within 1 px at 4 scales (strip PL 125 %: 9/6 -> 7/8); 100 % byte-identical except ADD / CH- / CH+ (now ink-centred) |
-| PP43 | P3 | Full player: volume group now 20 px (box) / 39 px (ink) left of PL after PP40 (was 4 / 19) | Haiku, low | G-full | open: decided 2026-11-03 option (a), shift 16 px right |
+| PP43 | P3 | Full player: volume group now 20 px (box) / 39 px (ink) left of PL after PP40 (was 4 / 19) | Haiku, low | G-full | **DONE** (commit e63aac5): option (a), group shifted 16 px right; % box -> PL 4 px at 100 %, 6 px at 150 %; Next -> speaker at 510 px is 56 px (was 40) |
 | PP44 | P3 | Light themes: lit SHUF / LOOP / REP1 chips keep the pale ring while every lit label toggle has the full accent frame (PP30) | Haiku, low | G-bmp | done (5cb2d6b, merged 600dcc5): lit chips take the ring from `on_label_look`; Paper `1f7fc4`, Sage `217239`; dark themes byte-identical |
 | PP45 | P3 | Light themes: hover on a lit label toggle is almost invisible (face +4 levels, label unchanged) | Sonnet, medium | G-bmp | done (c96639f, merged 600dcc5): lit hover face 4 % tint and label accent mixed 50 % with black; Paper d5e2eb -> e7ecf1, label 9.1:1 |
 | PP46 | P3 | Light themes: the strip's STRIP button (lit) still uses the pale `ring_colour` ring, label 3.8:1 (reported by the PP42 agent) | Haiku, low | G-bmp | open |
@@ -1033,7 +1033,8 @@ G-full PP43 (`add_full` volume group). Every task ends with `tools/sync-configur
 - **Verify:** `lbl.py` on the buttons above at 4 scales: T / B pads equal within 1 device px (caps-only labels); `bitmap-audit.py` 0;
   12x crops of PL / EQ / ON / footer / chips.
 
-### PP43 - Full player volume group drifted from PL (Haiku, low; decision) - P3
+### PP43 - Full player volume group drifted from PL (Haiku, low; decision) - P3 - DONE (e63aac5)
+- **Result:** mute F(266), groove F(240), % F(132) in `add_full`. Measured from generated `theme.xml` (620 px layout): % box ends 524, PL at 528 (gap 4); at 150 % (930 px layout) % box ends 786, PL at 792 (gap 6). At 510 px minimum width Next ends 188, speaker starts 244: gap 56 (not the 24 this brief predicted; the shift moves the speaker right, away from Next, so the gap grows from 40). Bitmap audit BH=24: 0. Not rendered in VLC; Midnight / Paper share the same layout coordinates.
 - **Where:** full player transport row, all scales / themes: speaker zone F(282), groove F(256), % text F(148) (box ends F(112)); PL
   now at F(92) (was F(108)).
 - **Problem:** PP40 moved PL / EQ 16 px right but left the right-anchored volume group where it was: % text box -> PL 20 px (was 4),
