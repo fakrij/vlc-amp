@@ -1690,10 +1690,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.checkbox("ft_play", x3, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         lay.button("fb_faster", x4, P(ty), "vlc.faster()", "Faster")
         lay.button("fb_next", x5, P(ty), "playlist.next()", "Next")
-        lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
-        lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+        lay.checkbox("c_mute", F(266), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
+        lay.vol_slider("s_vol_" + lay.id, F(240), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
-        lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
+        lay.text(F(132), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
                  focus=False, **tr)
         panel_toggles(lay, "ft_pl", "ft_eq", F(12 + 2 * PLW + 8), F(12 + PLW), P(ty))   # right margin 12, gap 8
 
