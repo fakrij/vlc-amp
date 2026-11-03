@@ -1322,7 +1322,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, 
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 510   # narrowest strip: expand / prev / play / next + time box + PL / EQ / pin leave a 114 px title window (94 at 490). Full player: prev .. next end at 188, the mute zone starts at width - 282 (PP2 raised 490 to 510; the Stop button is gone, PP23, so now 40 px clear). Kept at 510 for the strip title
+MIN_W = 510   # narrowest strip: expand / prev / play / next + time box + PL / EQ / pin leave a 188 px title window (172 before PP40 narrowed PL / EQ by 8 px each). Full player: prev .. next end at 188, the mute zone starts at width - 282 (PP2 raised 490 to 510; the Stop button is gone, PP23, so now 40 px clear). Kept at 510 for the strip title
 TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (VLC-Amp-taskbar-NNN.vlt); the helper assumes the same
@@ -1376,7 +1376,7 @@ def build(skin, W, BH=BAR_DEFAULT):
     TW = M["tw"]                      # strip time box: fits "-1:23:45" (hours) in the strip font
     BT = M["btn"]                     # strip button height
     BW_, G_, BY = M["bw"], M["gap"], M["y"]
-    PLW = 44                          # PL / EQ toggle width (strip and full player)
+    PLW = 36                          # PL / EQ / ON toggle width (strip and full player, EQ header): ink 11-15 px + 11-12 px padding each side, like ADD / REM (PP40: was 44, room for the removed LED)
     MB = min(16, BT - 4)              # mode button (elapsed / time left) next to the strip's time box
     skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
     PW = P(W)
@@ -1412,8 +1412,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"), ("fb_next", "next")):
             make_button(skin, nm, 30, 28, ic, icon_size=13)
         make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
-        make_toggle(skin, "ft_pl", 44, 28, label="PL", label_size=9)
-        make_toggle(skin, "ft_eq", 44, 28, label="EQ", label_size=9)
+        make_toggle(skin, "ft_pl", PLW, 28, label="PL", label_size=9)
+        make_toggle(skin, "ft_eq", PLW, 28, label="EQ", label_size=9)
         # video window (title bar, control panel, extra row) and fullscreen controller
         for nm, ic in (("vb_full", "expand"), ("vb_min", "minimize"), ("vb_restore", "restore"), ("vb_close", "close")):
             make_button(skin, nm, 24, 22, ic, icon_size=11)
@@ -1432,7 +1432,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         lcd(c, 0, 0, 60, 22, 3)
         skin.add("x_speed_bg", solid(c.done()))
         make_thumb(skin, "thumb_s", 12, 20)
-        make_toggle(skin, "t_eqon", 44, 22, label="ON", label_size=9)
+        make_toggle(skin, "t_eqon", PLW, 22, label="ON", label_size=9)
         make_eq_thumb(skin, "thumb_eq", 18, 14)
         make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
         for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
@@ -1661,7 +1661,7 @@ def build(skin, W, BH=BAR_DEFAULT):
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
         lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
                  focus=False, **tr)
-        panel_toggles(lay, "ft_pl", "ft_eq", F(108), F(56), P(ty))
+        panel_toggles(lay, "ft_pl", "ft_eq", F(12 + 2 * PLW + 8), F(12 + PLW), P(ty))   # right margin 12, gap 8
 
     def flip_button(lay, mode, d, x, y):
         other = "up" if d == "dn" else "dn"
@@ -1686,8 +1686,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 122), GRIP_H)
         label_on(skin, "lbl_eq", bg, 18, 9, 110, 14, "EQUALIZER", 10)
         lay.image("lbl_eq", P(18), P(9), action="move")
-        flip_button(lay, mode, d, PW - P(86), P(6))
-        lay.checkbox("t_eqon", PW - P(56), P(6), "equalizer.isEnabled", "equalizer.enable()",
+        flip_button(lay, mode, d, PW - P(12 + PLW + 6 + 24), P(6))   # 6 px gap to ON, 24 px wide
+        lay.checkbox("t_eqon", PW - P(12 + PLW), P(6), "equalizer.isEnabled", "equalizer.enable()",
                      "equalizer.disable()", "Equalizer is off", "Equalizer is on", **tr)
         c = Canvas(W - 24, 122)
         lcd(c, 0, 0, W - 24, 122, 4, outline=False)
