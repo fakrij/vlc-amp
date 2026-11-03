@@ -8,6 +8,8 @@ Adds what the skins2 engine cannot do with buttons:
   * A bitrate for lossless files (FLAC, WAV, ...), so the skin's "kbps" is not 0
   * Durations in the playlist, at the right edge (not on the playing item;
     --lua-config "vlcamp={durations='suffix'}" for "Title (3:42)", 'off' for none)
+  * The playing file's name without its extension as the skin's title, when
+    the file has no title tag (the full player's format chip shows the type)
 
 Start it next to the skin:
     vlc --intf skins2 --extraintf luaintf --lua-intf vlcamp
@@ -472,6 +474,13 @@ local function pl_restore(id, item)
     pl.items[id] = nil
 end
 
+-- A local file's name without its extension ("song.flac" -> "song"); nil for anything else
+-- (streams, a name without an extension). Used as the title of a file without a title tag (bare_tick).
+local function bare_name(item)
+    if not item or not (item:uri() or ""):match("^file:") then return nil end
+    return (item:name() or ""):match("^(.+)%.%w%w?%w?%w?%w?$")
+end
+
 local function pl_pass(cur)
     local leaves = {}                          -- items with a known length, in playlist order
     local function walk(node, depth)
@@ -502,6 +511,10 @@ local function pl_pass(cur)
             else                                      -- new item, or its title changed since
                 local metas = node.item:metas() or {}
                 orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
+                local bare = bare_name(node.item)
+                if bare and orig == bare then          -- our title from bare_tick: the row keeps the extension
+                    orig, base = "", strip_len(node.item:name() or "")
+                end
             end
             local shown = decorate(base, node.duration)
             if node.name ~= shown then node.item:set_meta("title", shown) end
@@ -554,6 +567,24 @@ local function pl_tick()
 end
 
 ----------------------------------------------------------------------
+-- Title without the file extension: the skin's title ($N: strip, full
+-- player seek bar, video window) shows a file without a title tag by its
+-- file name, extension and all; the full player has a format chip for that.
+-- So the playing item gets the name without the extension as its title (in
+-- memory only, the file is not changed). Runs right after pl_tick, which puts
+-- the playing item's real title back (empty for such a file) on a track change.
+-- Playlist rows keep the extension (pl_pass recognises this title).
+----------------------------------------------------------------------
+local function bare_tick()
+    local item = vlc.input.item()
+    if not item then return end
+    local title = (item:metas() or {}).title
+    if title and title ~= "" then return end
+    local bare = bare_name(item)
+    if bare then item:set_meta("title", bare) end
+end
+
+----------------------------------------------------------------------
 -- Dispatch and main loop
 ----------------------------------------------------------------------
 local handlers = {}
@@ -584,6 +615,7 @@ local function tick(lib)
     guarded("A-B loop", ab_tick)
     guarded("equalizer", eq_tick)
     guarded("playlist durations", pl_tick)
+    guarded("title", bare_tick)
     local input = vlc.object.input()
     if input then guarded("bitrate", bitrate_tick, input) end
 end

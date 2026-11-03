@@ -58,7 +58,7 @@ if ($src.TrimEnd('\') -ne $dest.TrimEnd('\')) {
     Step "Copying the skin to $dest"
     # a running helper uses the old copy: stop it (the setup starts it again)
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
-        Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*vlc-taskbar.ps1*" } |
+        Where-Object { $_.ProcessId -ne $PID -and ($_.CommandLine -like "*vlc-taskbar.ps1*" -or $_.CommandLine -like "*vlc-amp-url.ps1*") } |
         ForEach-Object {
             try { Add-Content -LiteralPath (Join-Path $env:TEMP "vlc-amp-helper.log") -Value ((Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff") + "  helper (pid " + $_.ProcessId + ") stopped by Install (new copy)") } catch { }
             Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue

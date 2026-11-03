@@ -62,6 +62,10 @@ The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from re
 - **Media controls**: keyboard media keys and the system's media panel show
   and control VLC. Windows: optional plugin, installed by Setup (see
   [Media controls](#media-controls)). Linux: built into VLC.
+- **Links from the browser**: right-click a page, link or video > Play in VLC
+  Amp (or audio only): YouTube (up to 1080p) and the other sites yt-dlp knows.
+  Optional; needs yt-dlp and the browser extension in `browser/`. See
+  [Links from the browser](#links-from-the-browser).
 
 ## Requirements
 
@@ -315,6 +319,7 @@ do; other distributions are not checked).
 | **Next / previous equalizer preset** (turns the equalizer on; the EQ panel follows) | `Ctrl+Shift+Up` / `Down` | hotkey only |
 | **Bitrate for FLAC** and other lossless files (shown by the full player; VLC shows none) | automatic | |
 | **Durations in the playlist**, lined up at the right edge, for every item whose length VLC knows | automatic | |
+| **Song name without the file extension** in the strip, the full player and the video window, for a file without a title tag (`song.flac` shows as `song`; the format chip shows `.flac`; playlist rows keep the extension) | automatic | |
 
 - Folders are the directories of local files; streams are skipped. A folder
   must be in one piece in the playlist.
@@ -537,6 +542,21 @@ Interface > Control interfaces > tick **Windows SMTC integration** > Save.
 desktop's media widget, media keys and `playerctl` control the skinned player.
 Tested with this skin.
 
+### Links from the browser
+
+Play a web page's video or music in VLC: right-click the page, a link or a
+video > **Play in VLC Amp** or **Play audio only in VLC Amp**, or click the
+extension's toolbar button. YouTube plays up to 1080p (H.264 + m4a); the other
+~1800 sites [yt-dlp](https://github.com/yt-dlp/yt-dlp) knows and direct media
+links work too. A running VLC gets it in its playlist, otherwise VLC starts.
+
+Setup asks for it (Windows: also offers to install yt-dlp with winget; Linux:
+`linux/setup.sh --links`). Then load the extension from `browser/extension`
+(Chrome: `chrome://extensions` > Developer mode > Load unpacked; Edge works too) and keep
+yt-dlp current: an old one gets cut off by YouTube. A bookmarklet works without
+the extension. Details, how it works and the limits:
+[browser/README.md](browser/README.md).
+
 ### Online configurator
 
 **<https://fakrij.github.io/vlc-amp/>** builds your own `.vlt` in the
@@ -752,6 +772,7 @@ These come from VLC's skin engine (skins2); details in
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
 | `configurator/` | The online configurator (static page, Pyodide; `sync.sh` copies the generator into it), [configurator/README.md](configurator/README.md) |
+| `browser/` | Links from the browser: the extension, the `vlc-amp:` handler and its local relay (`vlc-amp-url.py` for Linux, `vlc-amp-url.ps1` + `VlcAmpRelay.cs` for Windows), [browser/README.md](browser/README.md) |
 | `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, pin autostart, `--uninstall`), `vlc-amp-pin.py` (pin on start), `follow-system-theme.sh` (light / dark prototype) |
 | `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
 | `tools/make-windows-package.sh` | Builds `dist/VLC-Amp-windows/` (+ zip) to copy to a Windows PC |

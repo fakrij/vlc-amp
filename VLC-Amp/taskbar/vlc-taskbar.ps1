@@ -417,6 +417,23 @@ function Set-VlcFileAssociations($vlcExe) {
     return $all.Count
 }
 
+# ---- links from the browser (browser\vlc-amp-url.vbs): the vlc-amp: URL scheme ----
+# A per-user key (no admin): HKCU\Software\Classes\vlc-amp, opened by wscript.exe vlc-amp-url.vbs "%1".
+# The browser extension (browser\extension) and the bookmarklet open vlc-amp:play?mode=...&url=... links.
+$LinkKey = "HKCU:\Software\Classes\vlc-amp"
+function Register-LinkHandler($handler, $vlcExe) {
+    New-Item -Path "$LinkKey\shell\open\command" -Force | Out-Null
+    Set-Item -Path $LinkKey -Value "URL:VLC Amp link"
+    New-ItemProperty -Path $LinkKey -Name "URL Protocol" -Value "" -PropertyType String -Force | Out-Null
+    if ($vlcExe) { New-Item -Path "$LinkKey\DefaultIcon" -Value "`"$vlcExe`",0" -Force | Out-Null }
+    Set-Item -Path "$LinkKey\shell\open\command" -Value ('"' + (Join-Path $env:SystemRoot "System32\wscript.exe") + "`" `"$handler`" `"%1`"")
+}
+# Only our own key (its command runs vlc-amp-url.vbs) is removed.
+function Unregister-LinkHandler {
+    $cmd = (Get-Item -Path "$LinkKey\shell\open\command" -ErrorAction SilentlyContinue)
+    if ($cmd -and $cmd.GetValue("") -like "*vlc-amp-url.vbs*") { Remove-Item -Path $LinkKey -Recurse -Force }
+}
+
 function Invoke-Setup {
     if (Get-Process vlc -ErrorAction SilentlyContinue) {
         Show-Msg "Please close VLC first, then run Setup again.`n(VLC rewrites its settings file when it exits.)" | Out-Null
@@ -447,6 +464,26 @@ function Invoke-Setup {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             try { $smtc = Install-SmtcPlugin $vlcExe }
             catch { Show-Msg "Media controls not installed: $($_.Exception.Message)" | Out-Null }
+        }
+    }
+
+    # links from the browser (YouTube and other sites): the vlc-amp: handler, and yt-dlp to read the pages
+    $links = $false
+    $linkHandler = Join-Path $root "browser\vlc-amp-url.vbs"
+    if (Test-Path $linkHandler) {
+        if ((Show-Msg ("Play videos and music from web pages in VLC (YouTube and many other sites)?`n`n" +
+            "A Chrome extension (in the browser folder) then adds 'Play in VLC Amp' to the right-click menu. " +
+            "It needs the free tool yt-dlp, which reads the pages.") "YesNo") -eq "Yes") {
+            Register-LinkHandler $linkHandler $vlcExe
+            $links = $true
+            . (Join-Path $root "browser\find-ytdlp.ps1")
+            $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+            if (-not (Find-YtDlp) -and $winget -and
+                (Show-Msg "yt-dlp is not installed. Install it now with winget (yt-dlp.yt-dlp)?" "YesNo") -eq "Yes") {
+                & $winget.Source install --id yt-dlp.yt-dlp --exact --silent --accept-package-agreements --accept-source-agreements | Out-Host
+            }
+        } else {
+            Unregister-LinkHandler
         }
     }
 
@@ -539,6 +576,12 @@ function Invoke-Setup {
     if ($luaOther) {   # (linux/setup.sh warns the same way)
         $extra += "The Lua extras (song lengths in the playlist, A-B loop, folder jump, EQ preset keys) were NOT installed: " +
             "vlcrc already runs the Lua interface '$luaOther' (lua-intf). Remove that line from vlcrc and run Setup again to get them.`n`n"
+    }
+    if ($links) {
+        . (Join-Path $root "browser\find-ytdlp.ps1")
+        $extra += "Links from the browser: add the Chrome extension from $root\browser\extension (chrome://extensions, " +
+            "Developer mode, Load unpacked; see browser\README.md), then right-click a page or link > Play in VLC Amp. " +
+            $(if (Find-YtDlp) { "" } else { "yt-dlp is NOT installed yet: winget install yt-dlp.yt-dlp. " }) + "`n`n"
     }
     if ($assoc -gt 0) {
         $extra += "Files and folders opened from Explorer start VLC without the Media Library entry ($assoc per-user file association entries, removed by the uninstaller). " +

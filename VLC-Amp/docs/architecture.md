@@ -1230,10 +1230,49 @@ the script.
   one. The sample rate (`$S`) stays integer kHz ("44" for 44.1 kHz): skins2
   does `sample-rate / 1000` in integer arithmetic (`vlcproc.cpp`) and
   the skin has no other source for it, so neither Lua nor the skin can show "44.1".
+- **Title without the extension** (backlog item 40): `$N` falls back to the file name, extension and all,
+  for a file without a title tag. `bare_tick` (every tick, after `pl_tick` puts the real title back on a
+  track change) sets such a playing `file:` item's title meta to the name without its extension (1-5
+  letters / digits after the last dot). It reaches the skin although `$N` is read once per input: the meta
+  change comes within one tick of the start and skins2 picks it up (checked: first track and Next 4/4 in
+  the harness). The playlist rows keep the extension: `pl_pass` treats a title equal to `bare_name(item)`
+  as "no title tag" and decorates from `item:name()`.
 - Robustness: every part runs in `pcall`; an error is logged (once per 5 s per
   message) and the loop goes on. Nothing playing, empty playlist, stop / start,
   playlist changes were tried. The loop ends when VLC quits (`vlc.misc.mwait`
   raises "Interrupted"). CPU: 0.1 % more over 30 s while playing (harness).
+
+## Links from the browser (`browser/`)
+
+User guide: [browser/README.md](../browser/README.md); backlog item 39.
+
+- **Chain.** Extension / bookmarklet -> `vlc-amp:play?mode=video|audio&url=<enc>` -> handler (Windows
+  `HKCU\Software\Classes\vlc-amp` -> `wscript vlc-amp-url.vbs "%1"` -> hidden `vlc-amp-url.ps1`, link in
+  `VLCAMP_URI`; Linux `vlc-amp-url.desktop`, `x-scheme-handler/vlc-amp` -> `vlc-amp-url.py`) -> yt-dlp
+  (`-O` with a field subset, one JSON line) -> VLC. The two scripts implement the same flow; keep them in step.
+- **Why a relay.** googlevideo URLs answer 403 to an open-ended request (no `Range`, or `bytes=N-`), which
+  is all VLC's http access sends. The relay (`127.0.0.1:48081`, Python `--relay` mode / `VlcAmpRelay.cs`)
+  turns each VLC request into consecutive closed 10 MB ranges and streams them as one 200 / 206 response
+  with the full `Content-Length`, so VLC seeks by reconnecting. Streams are marked `chunked` when yt-dlp
+  gives `downloader_options.http_chunk_size` or the host is `*.googlevideo.com`; other streams go to VLC
+  directly with `:http-user-agent` / `:http-referrer`. The relay URL carries the stream URL and its
+  User-Agent / Referer, so it is stateless; the secret in the path (state dir, 0600 on Linux) keeps web
+  pages from using it. No User-Agent from yt-dlp = VLC's own (`VLC/3.0.20 LibVLC/3.0.20`): some servers
+  block `Python-urllib`.
+- **How the item reaches VLC.** Video + separate audio = one item with `:input-slave=<audio>`. Item options
+  survive VLC's command line and the web interface's `in_play&option=...` (the Lua http interface adds them
+  as trusted); they are dropped from an XSPF (`input-slave` is unsafe) and over D-Bus one-instance ("item
+  option ... incompatible with single instance"). So: VLC running and the web interface answers (probed
+  with a plain `status.json`) -> `in_play`; VLC not running -> start it with the options (Windows through
+  `taskbar\launch.vbs`, Linux with the `Exec` of `vlc-amp.desktop`); Linux VLC running without the web
+  interface -> `--one-instance <item>` with a single muxed stream (`b[...][acodec!=none]`).
+- **Network detail.** Python's `socket.create_connection` tries addresses one by one with the full
+  timeout; on a network with one dead address every chunk stalled. `Upstream.connect` remembers the
+  address that worked per host and uses a 4 s connect timeout. .NET's `HttpWebRequest` needs
+  `ServicePointManager.DefaultConnectionLimit` raised (default 2 per host: video + audio + a seek).
+- **Tests.** `VLCAMP_VLC` (Linux) replaces the VLC command, `VLCAMP_CHUNK` the chunk size (exercise chunk
+  changes with a small file). Run the Linux handler inside `dbus-run-session` so `--one-instance` cannot
+  reach another VLC on the desktop session.
 
 ## Building and testing
 
