@@ -440,8 +440,9 @@ class Canvas:
                   fill=H(color) if isinstance(color, str) else color)
         self.im.alpha_composite(layer)
 
-    def text(self, x, y, s, size, color, font="bold", anchor="la"):
-        self.texts.append((x + self.ox, y + self.oy, s, size, color, font, anchor))
+    def text(self, x, y, s, size, color, font="bold", anchor="la", dev=None):
+        """dev = (x, y): the anchor point in whole device px of the canvas (button_label); x, y are then ignored."""
+        self.texts.append((x + self.ox, y + self.oy, s, size, color, font, anchor, dev))
 
     def done(self, hard_edges=False):
         out = self.im.resize((self.pw, self.ph), Image.BOX)
@@ -449,9 +450,9 @@ class Canvas:
             a = out.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
             out.putalpha(a)
         d = ImageDraw.Draw(out)
-        for x, y, s, size, color, font, anchor in self.texts:
+        for x, y, s, size, color, font, anchor, dev in self.texts:
             f = _truetype(FONT_MONO if font == "mono" else FONT_BOLD, max(6, P(size)))
-            d.text((x * self.pw / self.w, y * self.ph / self.h), s, font=f, fill=H(color), anchor=anchor)
+            d.text(dev or (x * self.pw / self.w, y * self.ph / self.h), s, font=f, fill=H(color), anchor=anchor)
         return out
 
 
@@ -605,9 +606,12 @@ def _light_theme():
 def on_label_look(st):
     """Lit label toggle: (ring, text colour, face tint). Dark themes: pale accent ring, accent text, plain face.
     Light themes (PP30): a pale accent ring and accent text read weaker than the dark off label, so the ring is the
-    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint."""
+    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint.
+    PP45: hover on a lit toggle (light themes) shows like the off hover: a lighter face (less tint) and a darker label."""
     if not _light_theme():
         return ring_colour(CYAN), CYAN if st != "down" else None, None
+    if st == "over":
+        return CYAN, mix(CYAN, "#000000", 0.5), (CYAN, 0.04)
     return CYAN, mix(CYAN, "#000000", 0.35), (CYAN, 0.12)
 
 
@@ -963,7 +967,7 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
         if icon_name:
             icon(c, icon_name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, ICON[st])
         if label:
-            c.text(w / 2, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
+            button_label(c, w, h, label, label_size, ICON[st])
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
@@ -995,20 +999,49 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None,
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
             if label:
-                il, ir = _ink_x(FONT_BOLD, label_size, label)      # centre the ink, not the advance box
-                c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, label_size, col, anchor="lm")
+                button_label(c, w, h, label, label_size, col)
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
-def _ink_x(font_file, size, label):
-    """Ink left / right of `label` in logical px from the text origin (getlength() counts side bearings)."""
+def _ink(font_file, size, label):
+    """Ink box of `label` drawn at P(size) with its baseline at 0: (left, top, right, bottom), device px from the
+    text origin (bottom exclusive; getlength() counts side bearings, the ascender / descender box is not the ink)."""
     f = _truetype(font_file, P(size))
     pad = P(size) * 2
     probe = Image.new("L", (int(f.getlength(label)) + 2 * pad, 3 * pad), 0)
     ImageDraw.Draw(probe).text((pad, 2 * pad), label, font=f, fill=255, anchor="ls")
-    il, _, ir, _ = probe.getbbox()
-    return (il - pad) / S, (ir - pad) / S
+    il, it, ir, ib = probe.getbbox()
+    return il - pad, it - 2 * pad, ir - pad, ib - 2 * pad
+
+
+def _ink_x(font_file, size, label):
+    """Ink left / right of `label` in logical px from the text origin."""
+    il, _, ir, _ = _ink(font_file, size, label)
+    return il / S, ir / S
+
+
+def _centre_px(a, b, n):
+    """First device px of an n px run centred in a .. b (device px, may be fractional); half a px rounds up / left."""
+    return math.ceil((a + b - n) / 2 - 0.5)
+
+
+def button_label(c, w, h, label, size, col, font="bold", x=None):
+    """A button / toggle / chip label (PP42: one rule for all):
+    - across: the label's measured ink centred in the w px button (or the text origin at logical x), as since PP24;
+    - down: the baseline on a whole device row that centres the cap ink on the button's device-pixel centre (half a
+      px left over: 0.5 px high, as at 100 % before). The cap height is measured on "H", so every label of one
+      font / size shares one baseline (the tail of "Q" hangs below it, as in print). It used to be anchor "lm" at
+      h / 2 + 0.5 (middle of the ascender / descender box): 1 - 1.5 px low at 125 / 150 %.
+    The button is c.ox .. c.ox + w, c.oy .. c.oy + h (logical) of the canvas."""
+    ff = FONT_MONO if font == "mono" else FONT_BOLD
+    if x is None:
+        il, ir = _ink_x(ff, size, label)       # centre the ink, not the advance box
+        x = (w - (ir - il)) / 2 - il
+    ky = c.ph / c.h
+    _, top, _, bot = _ink(ff, size, "H")
+    yd = _centre_px(c.oy * ky, (c.oy + h) * ky, bot - top) - top     # baseline row
+    c.text(0, 0, label, size, col, font=font, anchor="ls", dev=((c.ox + x) * c.pw / c.w, yd))
 
 
 def make_strip_button(skin, base, w, h):
@@ -1016,19 +1049,14 @@ def make_strip_button(skin, base, w, h):
     # icon (10) + gap (6) + text, centred as one group (as PP4 centres groups). The text's
     # ink is measured by rendering it: getlength() counts the side bearings, which put the group 2 px
     # off-centre at 200 %.
-    f9 = _truetype(FONT_BOLD, P(9))
-    pad = P(9) * 2
-    probe = Image.new("L", (int(f9.getlength("STRIP")) + 2 * pad, 3 * pad), 0)
-    ImageDraw.Draw(probe).text((pad, 2 * pad), "STRIP", font=f9, fill=255, anchor="ls")
-    il, _, ir, _ = probe.getbbox()
-    il, ir = (il - pad) / S, (ir - pad) / S          # ink left / right, logical, from the text origin
+    il, ir = _ink_x(FONT_BOLD, 9, "STRIP")          # ink left / right, logical, from the text origin
     x0 = (w - (16 + ir - il)) / 2                    # icon left
     for st in ("up", "over", "down"):
         c = Canvas(w, h)
         button_face(c, w, h, st, ring_colour(CYAN))
         col = CYAN if st != "down" else ICON[st]
         icon(c, "collapse", x0, (h - 10) / 2, 10, col)
-        c.text(x0 + 16 - il, h / 2 + 0.5, "STRIP", 9, col, anchor="lm")
+        button_label(c, w, h, "STRIP", 9, col, x=x0 + 16 - il)
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
@@ -1112,8 +1140,9 @@ def make_chip_toggle(skin, base, w, h, label):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
             # same rules as the buttons: the outline (lit ring) is the same in every state, hover lightens
-            # the face, pressed darkens it and turns the text accent-coloured
-            edge = ring_colour(CYAN) if on else box_edge(0.16)
+            # the face, pressed darkens it and turns the text accent-coloured. Lit ring = the lit label toggles'
+            # (PP44: on light themes the full accent, like the footer SHUF / LOOP / REP1 with the same functions)
+            edge = on_label_look(st)[0] if on else box_edge(0.16)
             face = mix(LCD_BG, CYAN, 0.14 if on else 0.0)
             if st == "over":
                 face = mix(face, CYAN, 0.10)
@@ -1121,8 +1150,7 @@ def make_chip_toggle(skin, base, w, h, label):
                 face = mix(face, "#000000", 0.35 if not _light_theme() else 0.10)   # PP31: light LCD: a slightly darker face, like the buttons
             c.rrect(0, 0, w, h, 3, edge)
             c.rrect(1, 1, w - 2, h - 2, 2, face)
-            il, ir = _ink_x(FONT_MONO, 9, label)
-            c.text((w - (ir - il)) / 2 - il, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
+            button_label(c, w, h, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done(), LCD_BG))
     return base
 
@@ -1521,35 +1549,41 @@ def build(skin, W, BH=BAR_DEFAULT):
             hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb), check=False)
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), 3, BH - 6)
-        x = 16
-        lay.button("b_expand", P(x), P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
-        x += BW_ + G_
-        lay.button("b_prev", P(x), P(BY), "playlist.previous()", "Previous")
-        x += BW_ + G_
-        lay.checkbox("t_play", P(x), P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        x += BW_ + 4 + G_
-        lay.button("b_next", P(x), P(BY), "playlist.next()", "Next")
-        dx = x + BW_ + G_
-        RP = 14 + BW_ + 2 * (G_ + PLW)           # distance of the PL button's left edge from the right edge
-        MG = 3                                       # tight gap around the mode button
-        dw = W - (RP + G_ + TW + 2 * MG + MB) - dx
+        # PP41: both button groups are chained in device px (each step = P(width) + P(gap)), so equal
+        # logical gaps are equal device gaps at every scale; the title box takes what is left
+        bw, gp = P(BW_), P(G_)
+        x_exp = P(16)
+        x_prev = x_exp + bw + gp
+        x_play = x_prev + bw + gp
+        x_next = x_play + P(BW_ + 4) + gp            # the play bitmap is BW_ + 4 wide
+        dxp = x_next + bw + gp
+        x_top = PW - P(14) - bw                      # pin; EQ and PL chain leftwards from it
+        x_eq = x_top - gp - P(PLW)
+        x_pl = x_eq - gp - P(PLW)
+        tx = x_pl - gp - P(TW)                       # time box
+        x_mode = tx - P(3) - P(MB)                   # tight gap (3) around the mode button
+        dwp = x_mode - P(3) - dxp                    # title box width (device px)
+        dw = dwp / S                                 # logical width that renders as exactly dwp device px
+        dw = int(dw) if dw == int(dw) else dw
+        lay.button("b_expand", x_exp, P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
+        lay.button("b_prev", x_prev, P(BY), "playlist.previous()", "Previous")
+        lay.checkbox("t_play", x_play, P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("b_next", x_next, P(BY), "playlist.next()", "Next")
         c = Canvas(dw, BT)
         lcd(c, 0, 0, dw, BT, 3)
-        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(BY), 4, 4)
+        hslice(skin, lay, "strip_lcd", solid(c.done()), dxp, P(BY), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
-        title_slider(lay, skin, "s_title_" + lay.id, "title", P(dx) + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
+        title_slider(lay, skin, "s_title_" + lay.id, "title", dxp + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
         # text top in device px, from the box's device centre (was: logical centre, rounded, then scaled: 1 px low at 150 %)
         ty = round(P(BY) + P(BT) / 2 - 0.582 * P(M["font"]))   # the line (1.164 em) is centred in the box
-        lay.text(P(dx + 8), ty, P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
+        lay.text(dxp + P(8), ty, dwp - P(16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        R = lambda v: PW - P(v)
-        tx = R(RP + G_ + TW)
         # time box = volume bar filled from the left like the title's seek fill; click / drag / wheel sets
         # the volume. The small button on its left switches elapsed <-> time left (remembered by VLC)
         lay.image("c_time_s", tx, P(BY), action="move", **tr)
-        lay.checkbox("c_mode", R(RP + G_ + TW + MG + MB), P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
+        lay.checkbox("c_mode", x_mode, P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
         vw, vfh = TW - TIME_ZONE - 1, BT - 2
         lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
@@ -1561,8 +1595,8 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.text(tx + P(TIME_ZONE), ty, P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
-        lay.checkbox("t_top", R(14 + BW_), P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
+        panel_toggles(lay, "t_pl", "t_eq", x_pl, x_eq, P(BY))
+        lay.checkbox("t_top", x_top, P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
 
     # ================= full player bar
