@@ -1494,8 +1494,9 @@ def build(skin, W, BH=BAR_DEFAULT):
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
         title_slider(lay, skin, "s_title_" + lay.id, "title", P(dx) + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
-        ty = round(BH / 2 - 0.582 * M["font"])   # text top: the line (1.164 em) is centred in the bar
-        lay.text(P(dx + 8), P(ty), P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
+        # text top in device px, from the box's device centre (was: logical centre, rounded, then scaled: 1 px low at 150 %)
+        ty = round(P(BY) + P(BT) / 2 - 0.582 * P(M["font"]))   # the line (1.164 em) is centred in the box
+        lay.text(P(dx + 8), ty, P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
         R = lambda v: PW - P(v)
         tx = R(RP + G_ + TW)
@@ -1511,7 +1512,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         # text inset from both box edges by P(TIME_ZONE) (was: right edge at the box edge, 0.5 px off centre at
         # 150 %); the +1 keeps the 100 / 125 % width of 70 / 88 px (measured centred in VLC at all four scales)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(TIME_ZONE), P(ty), P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
+            lay.text(tx + P(TIME_ZONE), ty, P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
         panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
