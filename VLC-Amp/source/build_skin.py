@@ -582,17 +582,33 @@ def grip_dots(c, x, y, rows=3):
             c.circle(cx, y + 3 + 4 * i, 1, GRIP)
 
 
-def button_face(c, w, h, state, ring=None):
-    """Hairline outline, nearly flat gradient face; ring = accent outline (lit toggles)."""
+def button_face(c, w, h, state, ring=None, tint=None):
+    """Hairline outline, nearly flat gradient face; ring = accent outline (lit toggles), tint = (colour, share)
+    mixed into the face (lit toggles on light themes)."""
     top, bot = BTN[state]
     r = 4 if h >= 18 else 3
     c.rrect(0, 0, w, h, r, ring or EDGE)
     top, bot = mix(top, bot, 0.3), mix(top, bot, 0.8)
+    if tint:
+        top, bot = mix(top, tint[0], tint[1]), mix(bot, tint[0], tint[1])
     c.grad(1, 1, w - 2, h - 2, r - 1, top, bot)
 
 
 def ring_colour(col):
     return mix(col, BG_BOT, 0.45)
+
+
+def _light_theme():
+    return _luminance(BG_TOP) >= 0.5
+
+
+def on_label_look(st):
+    """Lit label toggle: (ring, text colour, face tint). Dark themes: pale accent ring, accent text, plain face.
+    Light themes (PP30): a pale accent ring and accent text read weaker than the dark off label, so the ring is the
+    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint."""
+    if not _light_theme():
+        return ring_colour(CYAN), CYAN if st != "down" else None, None
+    return CYAN, mix(CYAN, "#000000", 0.35), (CYAN, 0.12)
 
 
 def icon(c, name, ox, oy, size, color):
@@ -966,15 +982,15 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None,
             col = ICON[st]
             if on and on_color and st != "down":
                 col = on_color
-            ring = None
+            ring = tint = None
             if on and on_color:
                 ring = ring_colour(on_color)
             elif on and label:
-                ring = ring_colour(CYAN)
-                col = CYAN if st != "down" else col
+                ring, lc, tint = on_label_look(st)
+                col = lc or col
             elif icon_on == "pause":
                 ring = ring_colour(CYAN)
-            button_face(c, w, h, st, ring)
+            button_face(c, w, h, st, ring, tint)
             name = icon_on if on else icon_off
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
