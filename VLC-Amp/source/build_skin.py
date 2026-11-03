@@ -1851,12 +1851,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
                  sample="1:02 / 4:12", focus=False, **bl)
         if extra:
-            lay.button("fb_less", P(VW - 222), P(ty), "video.setLayout(video-l)", "Fewer controls", **rbk)
+            lay.button("fb_less", P(VW - 213), P(ty), "video.setLayout(video-l)", "Fewer controls", **rbk)
         else:
-            lay.button("fb_more", P(VW - 222), P(ty), "video.setLayout(video-x)",
+            lay.button("fb_more", P(VW - 213), P(ty), "video.setLayout(video-x)",
                        "More controls (A-B loop, chapters, snapshot, shuffle / loop / repeat, speed)", **rbk)
-        lay.checkbox("c_mute", P(VW - 191), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
-        lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 152), P(ty + 9),
+        lay.checkbox("c_mute", P(VW - 182), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
+        lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 156), P(ty + 9),
                    "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v", "Volume $V%",
                    bg="vol100", nbvert=P(100), **rbk)
         lay.text(P(VW - 48), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none",
@@ -1915,17 +1915,17 @@ def build(skin, W, BH=BAR_DEFAULT):
         hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
         flay.slider("s_seek_fsc", P(12), P(12), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)), "thumb_s",
                     "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES)
-        flay.button("fb_prev", P(12), P(32), "playlist.previous()", "Previous")
-        flay.checkbox("ft_play", P(46), P(32), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        flay.button("fb_next", P(90), P(32), "playlist.next()", "Next")
-        flay.text(P(132), P(37), P(170), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
+        flay.button("fb_prev", P(12), P(30), "playlist.previous()", "Previous")
+        flay.checkbox("ft_play", P(46), P(30), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        flay.button("fb_next", P(90), P(30), "playlist.next()", "Next")
+        flay.text(P(132), P(35), P(170), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
                   focus=False)
-        flay.checkbox("ft_more", P(W - 222), P(32), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
+        flay.checkbox("ft_more", P(W - 213), P(30), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
                       "More controls", "Fewer controls")
-        flay.checkbox("c_mute", P(W - 191), P(32), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
-        flay.vol_slider("s_vol_fsc", P(W - 168), P(41), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+        flay.checkbox("c_mute", P(W - 182), P(30), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
+        flay.vol_slider("s_vol_fsc", P(W - 156), P(39), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                     "Volume $V%", bg="vol100", nbvert=P(100))
-        flay.button("fb_fs", P(W - 42), P(32), "vlc.fullscreen()", "Leave full screen")
+        flay.button("fb_fs", P(W - 42), P(30), "vlc.fullscreen()", "Leave full screen")
         c = Canvas(W, RH - 2)                              # the extra row: its own panel below the controls
         panel_bg(c, 0, 0, W, RH - 2, 6)
         flay.vis, flay.oy = "fxflag.isVisible", P(FSH + 2)
