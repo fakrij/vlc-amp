@@ -816,13 +816,12 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
 | PP31 | P2 | Light themes: SHUF / LOOP / REP1 chips turn a dark grey block with dark text while pressed | Haiku, low | G-bmp | open |
 | PP32 | P2 | Volume group spacing differs: speaker -> groove ink gap 6 px (full player), 19 px (video panel), 3 px (fullscreen controller); fullscreen controller rhythm 12 / 10 / 10 px vs 12 / 8 / 12 in the video panel | Sonnet, medium | G-video | open |
 | PP33 | P2 | Video panel and fullscreen controller show the time in hour format ("0:00:14 / 0:02:56") while the strip and full player show "01:32" | Haiku, low | G-video | open |
-| PP34 | P2 | video-x: the corner resize tab touches the faster button's bottom-right corner (side effect of PP28) | Sonnet, medium (decision) | G-video | open |
+| PP34 | P2 | video-x: the corner resize tab touches the faster button's bottom-right corner (side effect of PP28) | Sonnet, medium (decision) | G-video | open, decided 2026-11-03: (a) smaller tab 7 x 7 inside the 12 px margin |
 | PP35 | P3 | Full player transport gaps 5 / 4 / 5 / 5 px at 125 % (rounded logical positions) | Haiku, low | G-full | open |
-| PP36 | P2 | Linux: narrowing the window live cuts every playlist length to "..." (the Lua keeps the start width's column count) | Opus, high (decision) | Lua | open |
+| PP36 | P2 | Linux: narrowing the window live cuts every playlist length to "..." (the Lua keeps the start width's column count) | Opus, high (decision) | Lua | open, decided 2026-11-03: (a) on Linux pad to the MIN_W column count |
 | PP37 | P3 | Playlist: Lua cuts long titles with "…" (one glyph), skins2 cuts the plain playing row with "..." | Haiku, low | Lua | open |
 | PP38 | P3 | Strip time / title text 1 px below the box centre at 150 % (ink pad top 7 / bottom 5) | Haiku, low | G-strip | open |
-| PP39 | P3 | Format chip shows the last 4 letters of a name without extension ("No extension" -> "sion") | Haiku, low (decision) | G-full | open |
-
+| PP39 | P3 | Format chip shows the last 4 letters of a name without extension ("No extension" -> "sion") | Haiku, low (decision) | G-full | open, decided 2026-11-03: investigate a workaround (hide / blank the chip without an extension) |
 ### PP30 - Light themes: "on" weaker than "off" (Sonnet, medium) - P2
 - **Where:** every `make_toggle` label toggle (full player PL / EQ, strip PL / EQ, EQ ON, playlist SHUF / LOOP / REP1, video row
   SHUF / LOOP / REP1, A-B), light themes; worst on Paper (all scales), then Sand / Sage / Rose. Dark themes fine (Carbon borderline).
