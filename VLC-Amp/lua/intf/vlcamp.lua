@@ -8,6 +8,8 @@ Adds what the skins2 engine cannot do with buttons:
   * A bitrate for lossless files (FLAC, WAV, ...), so the skin's "kbps" is not 0
   * Durations in the playlist, at the right edge (not on the playing item;
     --lua-config "vlcamp={durations='suffix'}" for "Title (3:42)", 'off' for none)
+  * The playing file's name without its extension as the skin's title, when
+    the file has no title tag (the full player's format chip shows the type)
 
 Start it next to the skin:
     vlc --intf skins2 --extraintf luaintf --lua-intf vlcamp
@@ -340,15 +342,23 @@ end
 -- playlist's "item-change" event, which a meta change raises. So the title of
 -- every item with a known length gets it at the right edge: the playlist font
 -- is monospaced, so the title is padded with spaces (or cut with "...") to the
--- number of characters that fit (pl_columns). The playing item keeps its real
--- title: the strip, the web interface (taskbar card), MPRIS and SMTC all show
--- the current title. The length goes after the title (not before it), so the
+-- number of characters that fit (pl_columns), with the lengths in one
+-- right-aligned field (decorate). Items with no known length (streams, missing
+-- files, not read yet) are left alone. The playing item keeps its real title:
+-- skins2's own text ($N) reads it only when a track starts, but the web
+-- interface (taskbar card), MPRIS and SMTC (the system media panels) show the
+-- current item's title live, padded with spaces it would look broken there.
+-- The length goes after the title (not before it), so the
 -- playlist's SORT button, which sorts by title, still sorts by name.
 -- --lua-config "vlcamp={durations='suffix'}" gives "Title (3:42)" instead,
 -- 'off' none; columns=N overrides the computed width.
 ----------------------------------------------------------------------
 local PL_EVERY_US = 2000000                    -- full playlist pass
-local PL_SKIN_W, PL_MARGIN, PL_FONT = 620, 60, 12   -- the skin's default width, playtree = width - margin, font px (build_skin.py)
+local PL_SKIN_W, PL_MARGIN, PL_FONT = 620, 50, 12   -- the skin's default width, playtree = width - P(margin), font px (build_skin.py add_pl)
+-- The narrowest window (logical px), = MIN_W in source/build_skin.py: change both together. Without the
+-- Windows helper's width file (Linux, macOS) the length column is padded for this width, so narrowing
+-- the window never cuts the lengths (PP36, pl_columns).
+local PL_MIN_W = 510
 local PL_DECORATED = {                         -- a title we (or a saved playlist) decorated
     "^(.-) %(%d+:%d%d%)$", "^(.-) %(%d+:%d%d:%d%d%)$", "^(.-)  +%d+:%d%d$", "^(.-)  +%d+:%d%d:%d%d$" }
 local pl = { mode = "right", cols = 72, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
@@ -361,19 +371,37 @@ local function py_round(x)
     return f
 end
 
+-- Scale of the skin from its file name: the last "-NNN" (50..400) in it, so "VLC-Amp-125.vlt",
+-- "VLC-Amp-taskbar-125.vlt", and also a renamed copy such as "VLC-Amp-125 (1).vlt" (a browser's second
+-- download from the configurator) or "VLC-Amp-125 - Copy.vlt" give 1.25. None: 1 (a guess; the lengths
+-- may then be cut with "..." by a scaled skin, see docs/architecture.md "Playlist durations").
+local function skin_scale(last)
+    local name = (last or ""):match("([^/\\]*)$") or ""
+    local s
+    for d in name:gmatch("%-(%d+)") do
+        local v = tonumber(d)
+        if v and v >= 50 and v <= 400 then s = v / 100 end
+    end
+    return s or 1
+end
+
 -- Characters that fit in a playlist line. skins2 (ctrl_tree.cpp makeImage) draws a flat playtree's
 -- text 7 px in (itemImageWidth: 5 + 2) and cuts what does not fit with "..."; each glyph is
--- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses DejaVu Sans Mono at
+-- FreeType's hinted advance (ft2_font.cpp). The skin (build_skin.py) uses VLC Amp Mono (DejaVu Sans Mono) at
 -- P(12) = round(12 x scale) px, whose advance is round(px x 0.6021) for every character, and makes
--- the playtree P(W - 60) wide (default window 620 px). Scale from the skin's file name
--- (VLC-Amp-150.vlt), window width from skins2-config (the width VLC saved at its last exit).
--- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
+-- the playtree PW - P(50) wide (rows end 6 px before the scroll track, PP8). Scale from the skin's file name
+-- (VLC-Amp-150.vlt, skin_scale), window width from skins2-config (the width VLC saved at its last exit).
+-- source/build_skin.py preview_layout draws the preview's playlist with the same rule: change both together.
+-- w = the main window's width in px (nil: where the helper's width file gives none, see below)
+-- Without w: on Windows the width VLC saved at its last exit, else the default (the helper's live
+-- width normally comes in as w); elsewhere nothing reports a live width, and a column padded for
+-- the saved width would be cut to "..." by a narrower window, so the minimum width (PL_MIN_W) is
+-- used: the column sits further left in a wider window, but is never cut.
 local function pl_columns(w)
-    local s = 1
-    local last = vlc.config.get("skins2-last") or ""
-    local pct = last:match("%-(%d+)%.vlt$")
-    if pct then s = tonumber(pct) / 100 end
-    if not w then
+    local s = skin_scale(vlc.config.get("skins2-last"))
+    if not w and not is_windows then
+        w = py_round(PL_MIN_W * s)
+    elseif not w then
         w = py_round(PL_SKIN_W * s)
         local cfg = vlc.config.get("skins2-config") or ""
         local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
@@ -381,10 +409,12 @@ local function pl_columns(w)
     end
     local px = py_round(PL_FONT * s)
     local adv = py_round(px * 0.6021)
-    local dot = (px <= 11 and 2) or (px <= 22 and 3) or (px <= 30 and 4) or math.floor(px / 6)   -- ink of "." (FreeType)
-    local tree = w - (py_round(PL_SKIN_W * s) - py_round((PL_SKIN_W - PL_MARGIN) * s))   -- the playtree is P(W - 60) wide
+    -- box width of "." in skins2: the skin's font (VLCAmpMono.ttf, tools/make-cell-font.py) makes every
+    -- glyph's box span its whole cell, 0 .. ceil(1233 units x px / 2048) (DejaVu: just the dot's ink)
+    local dot = math.ceil(px * 1233 / 2048)
+    local tree = w - py_round(PL_MARGIN * s)   -- the playtree is PW - P(50) wide
     -- skins2 (ft2_font.cpp drawString) shows the whole line only if after every character the pen
-    -- plus "..." (2 advances + the dot's ink) stays left of the limit (tree - 7); otherwise it ends
+    -- plus "..." (2 advances + the dot's box) stays left of the limit (tree - 7); otherwise it ends
     -- the line with "...". So the most characters n with n*adv + 2*adv + dot < tree - 7. Checked
     -- in VLC 3.0.20 (hi-fi skin, 620 px): see docs/architecture.md "Playlist durations".
     local limit = tree - 7 - 2 * adv - dot
@@ -422,13 +452,17 @@ local function strip_len(title)
     return title
 end
 
--- "Title          3:42" filling pl.cols characters (a title that is too long is cut with an
--- ellipsis, so the length stays visible); in "suffix" mode "Title (3:42)"
+-- Two columns in one line of pl.cols characters: the title, then the length right-aligned in a field
+-- of pl.field characters (the widest length in the playlist, at least "mm:ss"), PL_GAP spaces apart.
+-- A title longer than its column is cut with "..." (as skins2 cuts the playing row, PP37), so every cut title ends at the same column
+-- and the length is never cut. In "suffix" mode "Title (3:42)".
+local PL_GAP, PL_FIELD_MIN = 2, 5
 local function decorate(title, sec)
     local len = fmt_len(sec)
     if pl.mode == "suffix" then return title .. " (" .. len .. ")" end
-    local room = pl.cols - u_len(len) - 2             -- at least two spaces before the length
-    if u_len(title) > room then title = u_sub(title, room - 1) .. "\226\128\166" end   -- U+2026
+    local field = math.max(pl.field or PL_FIELD_MIN, u_len(len))
+    local room = pl.cols - field - PL_GAP              -- the title column
+    if u_len(title) > room then title = u_sub(title, room - 3) .. "..." end   -- the same ellipsis as skins2's own cut
     return title .. string.rep(" ", pl.cols - u_len(title) - u_len(len)) .. len
 end
 
@@ -440,33 +474,53 @@ local function pl_restore(id, item)
     pl.items[id] = nil
 end
 
+-- A local file's name without its extension ("song.flac" -> "song"); nil for anything else
+-- (streams, a name without an extension). Used as the title of a file without a title tag (bare_tick).
+local function bare_name(item)
+    if not item or not (item:uri() or ""):match("^file:") then return nil end
+    return (item:name() or ""):match("^(.+)%.%w%w?%w?%w?%w?$")
+end
+
 local function pl_pass(cur)
-    local seen = {}
+    local leaves = {}                          -- items with a known length, in playlist order
     local function walk(node, depth)
         if depth > 32 then return end
         if node.children then
             for _, c in ipairs(node.children) do walk(c, depth + 1) end
         elseif node.id and node.item and node.duration and node.duration > 0 then
-            seen[node.id] = true
-            local e = pl.items[node.id]
-            if node.id == cur then
-                if e then pl_restore(node.id, node.item) end
-            elseif not e or node.name ~= e.shown or e.cols ~= pl.cols then
-                local orig, base
-                if e and node.name == e.shown then        -- only the width changed: from the remembered title
-                    orig, base = e.orig, e.base
-                else                                      -- new item, or its title changed since
-                    local metas = node.item:metas() or {}
-                    orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
-                end
-                local shown = decorate(base, node.duration)
-                if node.name ~= shown then node.item:set_meta("title", shown) end
-                pl.items[node.id] = { orig = orig, base = base, shown = shown, cols = pl.cols }
-            end
+            leaves[#leaves + 1] = node
         end
     end
     local root = vlc.playlist.get("playlist")
     if root then walk(root, 0) end
+    -- the length column is as wide as the widest length (the playing item's too: it is decorated later)
+    local field = PL_FIELD_MIN
+    for _, node in ipairs(leaves) do field = math.max(field, u_len(fmt_len(node.duration))) end
+    pl.field = field
+    local layout = pl.cols .. ":" .. field     -- a change re-pads every title
+    local seen = {}
+    for _, node in ipairs(leaves) do
+        seen[node.id] = true
+        local e = pl.items[node.id]
+        if node.id == cur then
+            if e then pl_restore(node.id, node.item) end
+        elseif not e or node.name ~= e.shown or e.layout ~= layout then
+            local orig, base
+            if e and node.name == e.shown then        -- only the width changed: from the remembered title
+                orig, base = e.orig, e.base
+            else                                      -- new item, or its title changed since
+                local metas = node.item:metas() or {}
+                orig, base = strip_len(metas.title or ""), strip_len(node.name or "")
+                local bare = bare_name(node.item)
+                if bare and orig == bare then          -- our title from bare_tick: the row keeps the extension
+                    orig, base = "", strip_len(node.item:name() or "")
+                end
+            end
+            local shown = decorate(base, node.duration)
+            if node.name ~= shown then node.item:set_meta("title", shown) end
+            pl.items[node.id] = { orig = orig, base = base, shown = shown, layout = layout }
+        end
+    end
     for id in pairs(pl.items) do if not seen[id] then pl.items[id] = nil end end   -- removed items
 end
 
@@ -513,6 +567,24 @@ local function pl_tick()
 end
 
 ----------------------------------------------------------------------
+-- Title without the file extension: the skin's title ($N: strip, full
+-- player seek bar, video window) shows a file without a title tag by its
+-- file name, extension and all; the full player has a format chip for that.
+-- So the playing item gets the name without the extension as its title (in
+-- memory only, the file is not changed). Runs right after pl_tick, which puts
+-- the playing item's real title back (empty for such a file) on a track change.
+-- Playlist rows keep the extension (pl_pass recognises this title).
+----------------------------------------------------------------------
+local function bare_tick()
+    local item = vlc.input.item()
+    if not item then return end
+    local title = (item:metas() or {}).title
+    if title and title ~= "" then return end
+    local bare = bare_name(item)
+    if bare then item:set_meta("title", bare) end
+end
+
+----------------------------------------------------------------------
 -- Dispatch and main loop
 ----------------------------------------------------------------------
 local handlers = {}
@@ -543,6 +615,7 @@ local function tick(lib)
     guarded("A-B loop", ab_tick)
     guarded("equalizer", eq_tick)
     guarded("playlist durations", pl_tick)
+    guarded("title", bare_tick)
     local input = vlc.object.input()
     if input then guarded("bitrate", bitrate_tick, input) end
 end

@@ -46,7 +46,12 @@ def _truetype(path, size):
     return ImageFont.truetype(path, size, layout_engine=ImageFont.Layout.BASIC)
 
 
-FONT_FILE = ["fonts/DejaVuSansMono.ttf"]   # path of the LCD font inside the .vlt (--font changes it)
+# skins2 draws every glyph bitmap at the pen position and drops FreeType's bitmap_left (ft2_font.cpp
+# drawString), so ":" "." "r" sit at the left edge of their cell. VLCAmpMono.ttf is DejaVu Sans Mono
+# with every glyph box starting at the cell edge (tools/make-cell-font.py; same ink, advances and
+# hinting): it is the <Font> file in the .vlt. Pillow (FONT_MONO) keeps the original, which it places right.
+FONT_CELL = os.path.join(HERE, "fonts", "VLCAmpMono.ttf")
+FONT_FILE = ["fonts/VLCAmpMono.ttf"]      # path of the LCD font inside the .vlt (--font changes it)
 FONT_BOLD = os.path.join(HERE, "fonts", "DejaVuSans-Bold.ttf")
 SS = 4          # supersampling factor for shapes
 S = 1.0         # global scale, set in main()
@@ -435,8 +440,9 @@ class Canvas:
                   fill=H(color) if isinstance(color, str) else color)
         self.im.alpha_composite(layer)
 
-    def text(self, x, y, s, size, color, font="bold", anchor="la"):
-        self.texts.append((x + self.ox, y + self.oy, s, size, color, font, anchor))
+    def text(self, x, y, s, size, color, font="bold", anchor="la", dev=None):
+        """dev = (x, y): the anchor point in whole device px of the canvas (button_label); x, y are then ignored."""
+        self.texts.append((x + self.ox, y + self.oy, s, size, color, font, anchor, dev))
 
     def done(self, hard_edges=False):
         out = self.im.resize((self.pw, self.ph), Image.BOX)
@@ -444,9 +450,9 @@ class Canvas:
             a = out.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
             out.putalpha(a)
         d = ImageDraw.Draw(out)
-        for x, y, s, size, color, font, anchor in self.texts:
+        for x, y, s, size, color, font, anchor, dev in self.texts:
             f = _truetype(FONT_MONO if font == "mono" else FONT_BOLD, max(6, P(size)))
-            d.text((x * self.pw / self.w, y * self.ph / self.h), s, font=f, fill=H(color), anchor=anchor)
+            d.text(dev or (x * self.pw / self.w, y * self.ph / self.h), s, font=f, fill=H(color), anchor=anchor)
         return out
 
 
@@ -466,6 +472,16 @@ GRIP_W = 9                          # resize tab width
 GRIP_H = 70                         # tab height in the EQ, playlist and full player (the strip: bar height - 6)
 
 
+def row_x(*widths):
+    """Device x of each button of the transport row (PP35): the first at P(12), the next at the previous one's
+    x + P(its width) + P(4), so equal gaps stay equal after rounding (at 125 % P(46) alone would be 58, not 57.5)."""
+    x, out = P(12), []
+    for w in widths:
+        out.append(x)
+        x += P(w) + P(4)
+    return out
+
+
 def grip_x(w):
     """Left edge of the resize tab: 9 px centred in the 12 px right margin (W - 12 .. W - 1)."""
     return w - 12 + (12 - GRIP_W) // 2
@@ -476,11 +492,20 @@ def grip_y(box_y, box_h, h=GRIP_H):
     return box_y + (box_h - h) // 2
 
 
+def grip_dev(x, y, h):
+    """The resize tab in device px: (left, width, top, bottom). x = grip_x(W), y / h logical.
+    The width is odd (P(9) rounded up), so the three 1 px ribs can sit with equal gaps and equal margins;
+    the tab is centred in its 12 logical px margin (an odd leftover pixel goes to the right)."""
+    ms, me = P(x - (12 - GRIP_W) // 2), P(x - (12 - GRIP_W) // 2 + 12)
+    tw = P(GRIP_W) | 1
+    return ms + (me - ms - tw) // 2, tw, P(y), P(y + h)
+
+
 def grip_tab(skin, lay, bg, x, y, h):
     """The resize zone: the drawn tab as its own control (resizeE), so the hit area is exactly the tab.
     The section backgrounds only move the window. bg = a section bitmap (opaque at the tab), x / y / h logical px."""
-    x0, x1 = int(math.floor(x * S)), int(math.ceil((x + GRIP_W) * S))
-    y0, y1 = int(math.floor(y * S)), int(math.ceil((y + h) * S))
+    x0, tw, y0, y1 = grip_dev(x, y, h)
+    x1 = x0 + tw
     im = bg.crop((x0, y0, x1, y1))
     if im.getchannel("A").getextrema()[0] != 255:
         raise SystemExit("error: resize tab must be opaque")
@@ -488,13 +513,42 @@ def grip_tab(skin, lay, bg, x, y, h):
               action="resizeE")
 
 
+def corner_handle(c, x, y, w, h):
+    """The video window's corner resize tab (PP34): w x h logical px with its top-left at x, y, in device px
+    (left edge P(x), right edge P(x + w), odd width so the three 1 px ribs have equal margins). Drawn like
+    resize_handle's tab, 1 px of panel clear of the extra row's last button (it ends at VW - 12 / VH - 12)."""
+    pad = BTN["up"][0]
+    dx, dy = P(x), P(y)
+    tw, th = P(x + w) - dx, P(y + h) - dy
+    tw -= 1 - tw % 2
+    lx = lambda d: d * SS / c.kx - c.ox
+    ly = lambda d: d * SS / c.ky - c.oy
+    c.rrect(lx(dx), ly(dy), tw / (c.kx / SS), th / (c.ky / SS), 2, pad)
+    free = tw - 3
+    gap = max(1, int(round(free / 6.0)))
+    rib = mix(pad, ICON["up"], 0.6)
+    top, bot = dy + max(1, P(2)), dy + th - max(1, P(2))
+    for i in range(3):
+        rx = dx + (free - 2 * gap) // 2 + i * (gap + 1)
+        c.rrect(lx(rx), ly(top), 1 / (c.kx / SS), (bot - top) / (c.ky / SS), 0, rib)
+
+
 def resize_handle(c, x, y, h):
     """Grip for the right edge: a 9 px wide tab in the button colour with three light ribs, so it reads
-    as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab."""
+    as something to grab. x = its left edge in logical px (grip_x(W)). The hit zone is made by grip_tab.
+    Drawn in device px (grip_dev): tab edges and 1 px ribs sit on whole device columns at every scale."""
     pad = BTN["up"][0]
-    c.rrect(x, y, 9, h, 2, pad)
-    for rx in (x + 2, x + 4, x + 6):
-        c.rrect(rx, y + 3, 1, h - 6, 0, mix(pad, ICON["up"], 0.6))
+    dx, tw, dy, dy1 = grip_dev(x, y, h)
+    lx = lambda d: d * SS / c.kx - c.ox         # device px -> logical px of this canvas
+    ly = lambda d: d * SS / c.ky - c.oy
+    c.rrect(lx(dx), ly(dy), tw / (c.kx / SS), (dy1 - dy) / (c.ky / SS), 2, pad)
+    free = tw - 3
+    gap = int(round(free / 6.0))
+    rib = mix(pad, ICON["up"], 0.6)
+    top, bot = dy + P(3), dy1 - P(3)
+    for i in range(3):
+        rx = dx + (free - 2 * gap) // 2 + i * (gap + 1)
+        c.rrect(lx(rx), ly(top), 1 / (c.kx / SS), (bot - top) / (c.ky / SS), 0, rib)
 
 
 # ---------------------------------------------------------------- primitives
@@ -529,12 +583,15 @@ def grip_dots(c, x, y, rows=3):
             c.circle(cx, y + 3 + 4 * i, 1, GRIP)
 
 
-def button_face(c, w, h, state, ring=None):
-    """Hairline outline, nearly flat gradient face; ring = accent outline (lit toggles)."""
+def button_face(c, w, h, state, ring=None, tint=None):
+    """Hairline outline, nearly flat gradient face; ring = accent outline (lit toggles), tint = (colour, share)
+    mixed into the face (lit toggles on light themes)."""
     top, bot = BTN[state]
     r = 4 if h >= 18 else 3
     c.rrect(0, 0, w, h, r, ring or EDGE)
     top, bot = mix(top, bot, 0.3), mix(top, bot, 0.8)
+    if tint:
+        top, bot = mix(top, tint[0], tint[1]), mix(bot, tint[0], tint[1])
     c.grad(1, 1, w - 2, h - 2, r - 1, top, bot)
 
 
@@ -542,12 +599,20 @@ def ring_colour(col):
     return mix(col, BG_BOT, 0.45)
 
 
-def led(c, cx, cy, on):
-    if on:
-        c.circle(cx, cy, 3.2, H(AMBER, 70))
-        c.circle(cx, cy, 2, AMBER)
-    else:
-        c.circle(cx, cy, 2, LED_OFF)
+def _light_theme():
+    return _luminance(BG_TOP) >= 0.5
+
+
+def on_label_look(st):
+    """Lit label toggle: (ring, text colour, face tint). Dark themes: pale accent ring, accent text, plain face.
+    Light themes (PP30): a pale accent ring and accent text read weaker than the dark off label, so the ring is the
+    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint.
+    PP45: hover on a lit toggle (light themes) shows like the off hover: a lighter face (less tint) and a darker label."""
+    if not _light_theme():
+        return ring_colour(CYAN), CYAN if st != "down" else None, None
+    if st == "over":
+        return CYAN, mix(CYAN, "#000000", 0.5), (CYAN, 0.04)
+    return CYAN, mix(CYAN, "#000000", 0.35), (CYAN, 0.12)
 
 
 def icon(c, name, ox, oy, size, color):
@@ -566,6 +631,58 @@ def icon(c, name, ox, oy, size, color):
         c.crisp = False
 
 
+def _speaker(c, ox, oy, f, color, off):
+    """Speaker with two sound waves, or with a cross (off = muted), laid out in whole device pixels (PP12):
+    proportions of a 12-unit glyph (f = logical px per unit) rounded to device px, with at least 1 px between
+    the waves, so they never melt into one blurred oval at 13 / 16 px. Vertical edges sit on pixel edges and
+    stay mirror-symmetric about the centre row (icon() put it on a half device pixel). The ink (speaker + waves;
+    the cross ends where the waves end) is centred on the glyph box, not the box's left part."""
+    sx, sy = c.kx / SS, c.ky / SS                      # device px per logical px
+    u = f * sx                                         # device px per glyph unit
+
+    def n(v, lo=1):
+        return max(lo, int(math.floor(v + 0.5)))
+
+    cx, cy = c.X(ox + 6 * f) / SS, c.Y(oy + 6 * f) / SS
+
+    def half(h):                                       # half height snapped so cy +- it are pixel edges
+        hh = cy - math.floor(cy - h + 0.5)
+        return hh if hh > 0 else hh + 1
+
+    def P2(x, y):                                      # device px -> logical (what the Canvas draws in)
+        return (x / sx - c.ox, y / sy - c.oy)
+
+    bw, cw = n(2.1 * u), n(3.0 * u)                    # box, cone
+    bh, ch = half(1.5 * u), half(4.0 * u)
+    # wave width, gap between the waves (2 px at least: 1 px fills up with the anti-aliasing), cone tip -> first wave
+    w, g, d1 = n(1.3 * u), n(1.2 * u, 2), n(1.7 * u)
+    width = bw + cw + d1 + 2 * w + g
+    left = math.floor(cx - width / 2 + 0.5)
+    tip, right = left + bw + cw, left + width
+    c.poly([P2(left, cy - bh), P2(left + bw, cy - bh), P2(tip, cy - ch), P2(tip, cy + ch),
+            P2(left + bw, cy + bh), P2(left, cy + bh)], color)
+    if off:
+        # a cross ending where the waves end, drawn as exact 45-degree pixel steps (an anti-aliased X of this size is
+        # a blob): each device row holds a run of w px per diagonal, one px further per row, so the cross is
+        # rows + w - 1 px wide; it keeps 1 px clear of the cone
+        avail = right - tip - 1
+        k = half((avail - w + 1) / 2.0)
+        if 2 * k + w - 1 > avail:
+            k -= 1
+        rows = int(round(2 * k))
+        x0, y0 = right - (rows + w - 1), cy - k
+        for i in range(rows):
+            for xr in (x0 + i, x0 + rows - 1 - i):
+                c.poly([P2(xr, y0 + i), P2(xr + w, y0 + i), P2(xr + w, y0 + i + 1), P2(xr, y0 + i + 1)], color)
+        return
+    a1 = tip + d1 + w                                  # outer edge of the first wave on the centre row
+    r1 = max(w + 1, n(3.0 * u))                        # a smaller inner wave is only a dot at 16 px
+    xa = a1 - r1
+    for r in (r1, r1 + g + w):
+        a = min(50.0, math.degrees(math.asin(min(1.0, ch / r))))   # no taller than the cone
+        c.arc(*P2(xa, cy), r / sx, -a, a, color, w / sx)
+
+
 def _icon(c, name, ox, oy, size, color):
     f = size / 12.0
 
@@ -582,8 +699,6 @@ def _icon(c, name, ox, oy, size, color):
     elif name == "prev":
         c.poly(T([(2, 2), (3.6, 2), (3.6, 10), (2, 10)]), color)
         c.poly(T([(10, 2), (4.4, 6), (10, 10)]), color)
-    elif name == "stop":   # hollow square
-        c.lines(T([(2.5, 2.5), (9.5, 2.5), (9.5, 9.5), (2.5, 9.5), (2.5, 2.5)]), color, 1.4 * f)
     elif name == "next":
         c.poly(T([(2, 2), (7.6, 6), (2, 10)]), color)
         c.poly(T([(8.4, 2), (10, 2), (10, 10), (8.4, 10)]), color)
@@ -613,10 +728,8 @@ def _icon(c, name, ox, oy, size, color):
     elif name == "restore":  # a window outline: "open the video window again"
         c.lines(T([(2, 2.5), (10, 2.5), (10, 9.5), (2, 9.5), (2, 2.5)]), color, 1.4 * f)
         c.lines(T([(2, 4.5), (10, 4.5)]), color, 1.4 * f)
-    elif name == "speaker_off":  # muted: the speaker with a cross
-        c.poly(T([(1.2, 4.5), (3.3, 4.5), (6.3, 2), (6.3, 10), (3.3, 7.5), (1.2, 7.5)]), color)
-        c.lines(T([(7.6, 4.2), (11, 7.8)]), color, 1.4 * f)
-        c.lines(T([(11, 4.2), (7.6, 7.8)]), color, 1.4 * f)
+    elif name in ("speaker", "speaker_off"):
+        _speaker(c, ox, oy, f, color, name == "speaker_off")
     elif name == "close":
         c.lines(T([(2.5, 2.5), (9.5, 9.5)]), color, 1.6 * f)
         c.lines(T([(9.5, 2.5), (2.5, 9.5)]), color, 1.6 * f)
@@ -641,10 +754,6 @@ def _icon(c, name, ox, oy, size, color):
         for a in range(320, 39, -10):
             pts.append((8.6 + 4 * math.cos(math.radians(a)), 6 + 4 * math.sin(math.radians(a))))
         c.poly(T(pts), color)
-    elif name == "speaker":
-        c.poly(T([(1.5, 4.5), (3.6, 4.5), (6.6, 2), (6.6, 10), (3.6, 7.5), (1.5, 7.5)]), color)
-        c.arc(ox + 7 * f, oy + 6 * f, 2.6 * f, -50, 50, color, 1.3 * f)
-        c.arc(ox + 7 * f, oy + 6 * f, 4.6 * f, -50, 50, color, 1.3 * f)
 
 
 # ---------------------------------------------------------------- skin model
@@ -780,25 +889,58 @@ def add_shared(skin, name, im):
         n += 1
 
 
-def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None, tag=""):
+def _rows_uniform(im):
+    """First row of im whose pixels are not all one colour, or None."""
+    w, h = im.size
+    for y in range(h):
+        if len(set(im.crop((0, y, w, y + 1)).get_flattened_data() if hasattr(im, "get_flattened_data") else im.crop((0, y, w, y + 1)).getdata())) > 1:
+            return y
+    return None
+
+
+def _check_middle(name, mid, horizontal=None, vertical=None):
+    """Mosaic / tile rule: a piece tiled along x must be one colour per row (no change along x), a piece tiled
+    along y must be one colour per column. Otherwise the copies show a seam (PP1: half a grip dot)."""
+    if horizontal:
+        y = _rows_uniform(mid)
+        if y is not None:
+            raise SystemExit("error: %s middle piece changes along x in row %d (tiled horizontally: seam)" % (name, y))
+    if vertical:
+        x = _rows_uniform(mid.transpose(Image.TRANSPOSE))
+        if x is not None:
+            raise SystemExit("error: %s middle piece changes along y in column %d (tiled vertically: seam)" % (name, x))
+
+
+def hslice(skin, lay, name, im, x, y, capl, capr, action="move", action2="none", right_action=None, tag="",
+           check=True):
     """Cut a horizontally stretchable element into left cap / mosaic middle / right cap.
-    tag names the caps only (corner variants share the middle piece)."""
+    tag names the caps only (corner variants share the middle piece). check: the middle must be plain (see
+    _check_middle); False only for an exception that is listed in the brief."""
     w, h = im.size
     l, r = P(capl), P(capr)
     skin.add(name + tag + "_l", im.crop((0, 0, l, h)))
     mid = add_shared(skin, name + "_m", im.crop((l, 0, w - r, h)))
+    if check:
+        _check_middle(name, im.crop((l, 0, w - r, h)), horizontal=True)
     skin.add(name + tag + "_r", im.crop((w - r, 0, w, h)))
     lay.image(name + tag + "_l", x, y, action=action, action2=action2)
     lay.image(mid, x + l, y, rb="righttop", action=action, action2=action2)
     lay.image(name + tag + "_r", x + w - r, y, lt="righttop", rb="righttop", action=right_action or action)
 
 
-def nslice(skin, lay, name, im, x, y, cap, actions=None, tag=""):
-    """Nine-slice for elements stretching in both directions."""
+def nslice(skin, lay, name, im, x, y, cap, actions=None, tag="", check=True):
+    """Nine-slice for elements stretching in both directions. check: as in hslice."""
     w, h = im.size
     c = P(cap)
     xs = [(0, c, "l"), (c, w - c, "m"), (w - c, w, "r")]
     ys = [(0, c, "t"), (c, h - c, "m"), (h - c, h, "b")]
+    if check:
+        for y0, y1, vy in ys:
+            for x0, x1, vx in xs:
+                if "m" in (vy, vx):
+                    # x-middles tile horizontally, y-middles vertically, the centre both ways
+                    _check_middle("%s_%s%s" % (name, vy, vx), im.crop((x0, y0, x1, y1)),
+                                  horizontal=(vx == "m"), vertical=(vy == "m"))
     anchor_x = {"l": ("lefttop", "lefttop"), "m": ("lefttop", "righttop"), "r": ("righttop", "righttop")}
     actions = actions or {}
     for y0, y1, vy in ys:
@@ -825,12 +967,12 @@ def make_button(skin, base, w, h, icon_name=None, icon_size=12, label=None, led_
         if icon_name:
             icon(c, icon_name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, ICON[st])
         if label:
-            c.text(w / 2, h / 2 + 0.5, label, label_size, ICON[st], anchor="mm")
+            button_label(c, w, h, label, label_size, ICON[st])
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
 
-def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_led=False,
+def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None,
                 on_color=None, icon_size=12, label_size=8, well=None):
     """Checkbox bitmaps: <base>_off_* (state false) and <base>_on_* (state true).
     well = (outer width, outer height): the button sits in a recessed box (w x h is the button)."""
@@ -844,38 +986,77 @@ def make_toggle(skin, base, w, h, icon_off=None, icon_on=None, label=None, use_l
             col = ICON[st]
             if on and on_color and st != "down":
                 col = on_color
-            ring = None
+            ring = tint = None
             if on and on_color:
                 ring = ring_colour(on_color)
-            elif on and (use_led or label):
-                ring = ring_colour(CYAN)
-                col = CYAN if st != "down" else col
+            elif on and label:
+                ring, lc, tint = on_label_look(st)
+                col = lc or col
             elif icon_on == "pause":
                 ring = ring_colour(CYAN)
-            button_face(c, w, h, st, ring)
+            button_face(c, w, h, st, ring, tint)
             name = icon_on if on else icon_off
             if name:
                 icon(c, name, (w - icon_size) / 2, (h - icon_size) / 2, icon_size, col)
             if label:
-                if use_led:      # dot + gap + text, centred as one group
-                    tw_ = _truetype(FONT_BOLD, P(label_size)).getlength(label) / S
-                    x0 = (w - (4 + 5 + tw_)) / 2
-                    led(c, x0 + 2, h / 2, on)
-                    c.text(x0 + 9, h / 2 + 0.5, label, label_size, col, anchor="lm")
-                else:
-                    c.text(w / 2, h / 2 + 0.5, label, label_size, col, anchor="mm")
+                button_label(c, w, h, label, label_size, col)
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done()))
     return base
 
 
+def _ink(font_file, size, label):
+    """Ink box of `label` drawn at P(size) with its baseline at 0: (left, top, right, bottom), device px from the
+    text origin (bottom exclusive; getlength() counts side bearings, the ascender / descender box is not the ink)."""
+    f = _truetype(font_file, P(size))
+    pad = P(size) * 2
+    probe = Image.new("L", (int(f.getlength(label)) + 2 * pad, 3 * pad), 0)
+    ImageDraw.Draw(probe).text((pad, 2 * pad), label, font=f, fill=255, anchor="ls")
+    il, it, ir, ib = probe.getbbox()
+    return il - pad, it - 2 * pad, ir - pad, ib - 2 * pad
+
+
+def _ink_x(font_file, size, label):
+    """Ink left / right of `label` in logical px from the text origin."""
+    il, _, ir, _ = _ink(font_file, size, label)
+    return il / S, ir / S
+
+
+def _centre_px(a, b, n):
+    """First device px of an n px run centred in a .. b (device px, may be fractional); half a px rounds up / left."""
+    return math.ceil((a + b - n) / 2 - 0.5)
+
+
+def button_label(c, w, h, label, size, col, font="bold", x=None):
+    """A button / toggle / chip label (PP42: one rule for all):
+    - across: the label's measured ink centred in the w px button (or the text origin at logical x), as since PP24;
+    - down: the baseline on a whole device row that centres the cap ink on the button's device-pixel centre (half a
+      px left over: 0.5 px high, as at 100 % before). The cap height is measured on "H", so every label of one
+      font / size shares one baseline (the tail of "Q" hangs below it, as in print). It used to be anchor "lm" at
+      h / 2 + 0.5 (middle of the ascender / descender box): 1 - 1.5 px low at 125 / 150 %.
+    The button is c.ox .. c.ox + w, c.oy .. c.oy + h (logical) of the canvas."""
+    ff = FONT_MONO if font == "mono" else FONT_BOLD
+    if x is None:
+        il, ir = _ink_x(ff, size, label)       # centre the ink, not the advance box
+        x = (w - (ir - il)) / 2 - il
+    ky = c.ph / c.h
+    _, top, _, bot = _ink(ff, size, "H")
+    yd = _centre_px(c.oy * ky, (c.oy + h) * ky, bot - top) - top     # baseline row
+    c.text(0, 0, label, size, col, font=font, anchor="ls", dev=((c.ox + x) * c.pw / c.w, yd))
+
+
 def make_strip_button(skin, base, w, h):
     """Labelled "STRIP" button (icon + text, accent ring) that collapses the full player."""
+    # icon (10) + gap (6) + text, centred as one group (as PP4 centres groups). The text's
+    # ink is measured by rendering it: getlength() counts the side bearings, which put the group 2 px
+    # off-centre at 200 %.
+    il, ir = _ink_x(FONT_BOLD, 9, "STRIP")          # ink left / right, logical, from the text origin
+    x0 = (w - (16 + ir - il)) / 2                    # icon left
     for st in ("up", "over", "down"):
         c = Canvas(w, h)
         button_face(c, w, h, st, ring_colour(CYAN))
         col = CYAN if st != "down" else ICON[st]
-        icon(c, "collapse", 7, (h - 10) / 2, 10, col)
-        c.text(23, h / 2 + 0.5, "STRIP", 9, col, anchor="lm")
+        icon(c, "collapse", x0, (h - 10) / 2, 10, col)
+        button_label(c, w, h, "STRIP", 9, col, x=x0 + 16 - il)
         skin.add("%s_%s" % (base, st), solid(c.done()))
     return base
 
@@ -927,12 +1108,19 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
         db = i - 20
         c = Canvas(EQ_FW, EQ_FH)
         c.rrect(0, 0, EQ_FW, EQ_FH, 0, LCD_BG)
-        c.rrect(14, EQ_G0, 2, EQ_G1 - EQ_G0, 1, EQ_TRACK)
+        # PP19: groove and fill on whole device px, centred on the same column pair (x = P(15), the slider's
+        # centre line): the fill is P(3) wide, widened by one px when its parity differs from the groove's
+        kx = EQ_FW / P(EQ_FW)       # logical px per device px
+        gw_ = max(2, P(2))
+        fw_ = max(gw_ + 2, P(3)) if (P(3) - gw_) % 2 == 0 else max(gw_ + 1, P(3) + 1)
+        cxd = P(15)
+        c.rrect((cxd - gw_ // 2) * kx, EQ_G0, gw_ * kx, EQ_G1 - EQ_G0, 1, EQ_TRACK)
         c.rrect(9, 55.5, 4, 1, 0, CYAN_DIM)       # 0 dB ticks either side of the groove
         c.rrect(17, 55.5, 4, 1, 0, CYAN_DIM)
         ct, cb = eq_travel()
         cy = (cb - (cb - ct) * i / 40.0) / S  # knob centre
-        c.rrect(13.5, cy, 3, 96 - cy, 0, col)
+        cyd = round(cy * S)         # fill top on a whole device row
+        c.rrect((cxd - fw_ // 2) * kx, cyd / S, fw_ * kx, 96 - cyd / S, 0, col)
         label = ("%+d" % db if db else "0") + ("dB" if pre and db else "")
         c.text(15, 6, label, 9, col if db else CYAN2, font="mono", anchor="mm")
         full = c.done()
@@ -947,24 +1135,22 @@ def make_eq_frames(skin, bid, lbl_bid, col, pre=False):
 
 
 def make_chip_toggle(skin, base, w, h, label):
-    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): dot + text, accent border when on."""
+    """Bordered mode chip inside an LCD (SHUF / LOOP / REP1): text only, centred by its ink; accent border and tinted face when on."""
     for on in (False, True):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
             # same rules as the buttons: the outline (lit ring) is the same in every state, hover lightens
-            # the face, pressed darkens it and turns the text accent-coloured
-            edge = ring_colour(CYAN) if on else box_edge(0.16)
+            # the face, pressed darkens it and turns the text accent-coloured. Lit ring = the lit label toggles'
+            # (PP44: on light themes the full accent, like the footer SHUF / LOOP / REP1 with the same functions)
+            edge = on_label_look(st)[0] if on else box_edge(0.16)
             face = mix(LCD_BG, CYAN, 0.14 if on else 0.0)
             if st == "over":
                 face = mix(face, CYAN, 0.10)
             elif st == "down":
-                face = mix(face, "#000000", 0.35)
+                face = mix(face, "#000000", 0.35 if not _light_theme() else 0.10)   # PP31: light LCD: a slightly darker face, like the buttons
             c.rrect(0, 0, w, h, 3, edge)
             c.rrect(1, 1, w - 2, h - 2, 2, face)
-            tw_ = _truetype(FONT_MONO, P(9)).getlength(label) / S
-            x0 = (w - (4 + 5 + tw_)) / 2
-            c.circle(x0 + 2, h / 2, 2, CYAN if on else mix(LCD_BG, CYAN, 0.45))
-            c.text(x0 + 9, h / 2 + 0.5, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono", anchor="lm")
+            button_label(c, w, h, label, 9, CYAN_TXT if (on or st == "down") else CYAN2, font="mono")
             skin.add("%s_%s_%s" % (base, "on" if on else "off", st), solid(c.done(), LCD_BG))
     return base
 
@@ -1010,19 +1196,30 @@ def make_mode_toggle(skin, base, w, h):
 def make_title_thumb(skin, bid, h):
     """Thumb of a title box: left half = fill colour, right half = box colour, accent line at the
     centre (the thumb's centre sits on the playing position). It covers the gap between the fill
-    frame (4 % steps, rounded down) and the exact position, so progress moves pixel by pixel."""
+    frame (4 % steps, rounded down) and the exact position, so progress moves pixel by pixel.
+    The right half copies a middle column of the unlit box (lcd(), h + 2 high, the thumb sits inset()
+    below its top): at 125 / 150 % the 1 px outline covers 1.5 / 1.25 device px, and a plain box-colour
+    half hid the partly bright outline row the slider overlaps (a 1-row notch in the top / bottom edge
+    right of the playhead). At 100 / 200 % that column is plain LCD_BG. The thumb stays fully opaque,
+    so its click area does not change. Height inner(h), the same as the fill frames (PP26)."""
+    box = Canvas(20, h + 2)
+    lcd(box, 0, 0, 20, h + 2, 3)
+    cx, ph = box.pw // 2, inner(h)
+    unlit = solid(box.done()).crop((cx, inset(), cx + 1, inset() + ph))
     for st, col in (("up", mix(CYAN, TITLE_FILL, 0.5)), ("over", CYAN)):
-        im = Image.new("RGBA", (P(2 * TITLE_S), P(h)), H(LCD_BG))
+        im = Image.new("RGBA", (P(2 * TITLE_S), ph), H(LCD_BG))
+        im.paste(unlit.resize((P(2 * TITLE_S) - P(TITLE_S), ph), Image.NEAREST), (P(TITLE_S), 0))
         d = ImageDraw.Draw(im)
-        d.rectangle([0, 0, P(TITLE_S) - 1, P(h) - 1], fill=H(TITLE_FILL))
-        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, P(h) - 1], fill=H(col))
+        d.rectangle([0, 0, P(TITLE_S) - 1, ph - 1], fill=H(TITLE_FILL))
+        d.rectangle([P(TITLE_S) - 0, 0, P(TITLE_S) + max(1, P(1)) - 1, ph - 1], fill=H(col))
         skin.add("%s_%s" % (bid, st), im)
 
 
 def make_title_frames(skin, bid, w, h, n, color):
     """Title box fill frames. The play position runs from TITLE_S to w - TITLE_S (the thumb is
-    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position."""
-    pw, ph, ps = P(w), P(h), P(TITLE_S)
+    2 x TITLE_S wide and must stay inside the box); frame i is filled up to that position.
+    Height inner(h): the fill covers the box's top and bottom half-bright outline rows alike (PP26)."""
+    pw, ph, ps = P(w), inner(h), P(TITLE_S)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(n):      # frame 0 too: it is shown while the position is inside the first step (about 0-2 %),
@@ -1055,6 +1252,15 @@ def inset():
     return max(1, int(S))
 
 
+def inner(v):
+    """Device size of a fill that sits inset() inside a display box whose inside is v design px (the box is
+    v + 2 with its 1 px outline): the box's P(v + 2) minus inset() on both sides. P(v) is one row short at
+    125 / 150 % when P(v + 2) - P(v) = 3 (the 28 px full-player title box at 125 %: 35 rows, P(26) = 32;
+    the 18 px strip boxes at 150 %: 27 rows, P(16) = 24): the fill then covered the top half-bright outline
+    row but not the bottom one (PP26). Equal to P(v) at 100 / 200 %."""
+    return P(v + 2) - 2 * inset()
+
+
 def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
     """The progress slider(s) of one title box at (x, y) (device px), inner size fw x fh (design px)."""
     tip = "$T / $D  (click to jump, wheel = 5 %)"
@@ -1066,15 +1272,16 @@ def title_slider(lay, skin, sid, bid, x, y, fw, fh, frames, thumb):
                    bid + "_ulthumb", "time", tip, bg=bid + "_ul", nbvert=TITLE_UL_FRAMES, rb="righttop")
         return
     make_title_frames(skin, bid + "_fill", fw, fh, TITLE_FRAMES, TITLE_FILL)
-    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), P(fh) // 2, P(fw) - P(TITLE_S) - 1, P(fh) // 2),
+    lay.slider(sid, x, y, "(%d,%d),(%d,%d)" % (P(TITLE_S), inner(fh) // 2, P(fw) - P(TITLE_S) - 1, inner(fh) // 2),
                thumb, "time", tip, bg=bid + "_fill", nbvert=TITLE_FRAMES, rb="righttop")
 
 
 def make_progress_frames(skin, bid, w, h, n, color):
     """Slider background drawn inside an LCD: frame i is filled to i/(n-1) from the left,
     the rest is fully transparent (the LCD shows through). Hard edges: X11 skins2 draws
-    without alpha blending."""
-    pw, ph = P(w), P(h)
+    without alpha blending. Sits inset() inside a box h + 2 high: height inner(h), so the fill covers the
+    top and bottom half-bright outline rows alike at 125 / 150 % (PP26, same as the title fill)."""
+    pw, ph = P(w), inner(h)
     sheet = Image.new("RGBA", (pw, ph * n), (0, 0, 0, 0))
     d = ImageDraw.Draw(sheet)
     for i in range(1, n):
@@ -1084,11 +1291,18 @@ def make_progress_frames(skin, bid, w, h, n, color):
     return bid
 
 
+def thumb_rim(b):
+    """Knob outline: light on dark themes, dark on light ones (a light rim vanishes on a light box / groove)."""
+    if _luminance(LCD_BG) < 0.5:
+        return mix(b, "#ffffff", 0.5)
+    return mix(b, "#000000", 0.6)
+
+
 def make_thumb(skin, bid, w, h, bg=None):
     """Metallic slider knob (bright top half, darker lower half) with an accent notch."""
     for st, (t, b) in (("up", THUMB_UP), ("over", THUMB_OVER)):
         c = Canvas(w, h)
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         mid = h // 2
         c.grad(1, 1, w - 2, mid - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, mid, w - 2, h - 1 - mid, 1, mix(t, b, 0.8), b)
@@ -1103,7 +1317,7 @@ def make_eq_thumb(skin, bid, w, h):
     for st, col in (("up", CYAN), ("over", LCD_HI)):
         c = Canvas(w, h)
         t, b = THUMB_UP if st == "up" else THUMB_OVER
-        c.rrect(0, 0, w, h, 2, mix(b, "#ffffff", 0.5))
+        c.rrect(0, 0, w, h, 2, thumb_rim(b))
         c.grad(1, 1, w - 2, h // 2 - 1, 1, t, mix(t, b, 0.55))
         c.grad(1, h // 2, w - 2, h - 1 - h // 2, 1, mix(t, b, 0.8), b)
         c.rrect(1, 1, w - 2, 1, 0, (255, 255, 255, 120))
@@ -1136,7 +1350,7 @@ def make_fill_frames(skin, bid, w, h, track_y, track_h, n, knob=None, lead=0.0, 
 
 
 # ---------------------------------------------------------------- windows
-MIN_W = 490   # narrowest strip: stop / prev / slower / play / faster / next + time box + PL / EQ / pin leave a 94 px title window
+MIN_W = 510   # narrowest strip: expand / prev / play / next + time box + PL / EQ / pin leave a 188 px title window (172 before PP40 narrowed PL / EQ by 8 px each). Full player: prev .. next end at 188, the mute zone starts at width - 282 (PP2 raised 490 to 510; the Stop button is gone, PP23, so now 40 px clear). Kept at 510 for the strip title
 TIME_ZONE = 1    # inset of the volume fill in the strip's time box (the box border)
 BAR_DEFAULT = 24   # strip height (logical px) of the normal skin
 BAR_TASKBAR = 36   # --bar-height of the taskbar build (VLC-Amp-taskbar-NNN.vlt); the helper assumes the same
@@ -1190,7 +1404,7 @@ def build(skin, W, BH=BAR_DEFAULT):
     TW = M["tw"]                      # strip time box: fits "-1:23:45" (hours) in the strip font
     BT = M["btn"]                     # strip button height
     BW_, G_, BY = M["bw"], M["gap"], M["y"]
-    PLW = 44                          # PL / EQ toggle width (strip and full player)
+    PLW = 36                          # PL / EQ / ON toggle width (strip and full player, EQ header): ink 11-15 px + 11-12 px padding each side, like ADD / REM (PP40: was 44, room for the removed LED)
     MB = min(16, BT - 4)              # mode button (elapsed / time left) next to the strip's time box
     skin.strip_font = ("lcd12" if M["font"] == 12 else "lcdbar", M["font"])
     PW = P(W)
@@ -1206,8 +1420,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         for nm, ic in (("b_expand", "expand"), ("b_prev", "prev"), ("b_next", "next")):
             make_button(skin, nm, BW_, BT, ic, icon_size=isz)
         make_toggle(skin, "t_play", BW_ + 4, BT, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=isz)
-        make_toggle(skin, "t_pl", PLW, BT, label="PL", use_led=True, label_size=lsz)   # same look as the full player's
-        make_toggle(skin, "t_eq", PLW, BT, label="EQ", use_led=True, label_size=lsz)
+        make_toggle(skin, "t_pl", PLW, BT, label="PL", label_size=lsz)   # same look as the full player's
+        make_toggle(skin, "t_eq", PLW, BT, label="EQ", label_size=lsz)
         make_toggle(skin, "t_top", BW_, BT, icon_off="pin", icon_on="pin", on_color=AMBER, icon_size=isz)
         make_thumb(skin, "thumb_v", 10, 18)
         make_title_thumb(skin, "thumb_title", BT - 2)
@@ -1223,17 +1437,15 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_button(skin, "b_close", 24, 22, "close", icon_size=11)
         make_button(skin, "b_flip_up", 24, 22, "arrow_up", icon_size=10)
         make_button(skin, "b_flip_dn", 24, 22, "arrow_down", icon_size=10)
-        for nm, ic in (("fb_stop", "stop"), ("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"),
-                       ("fb_next", "next")):
+        for nm, ic in (("fb_prev", "prev"), ("fb_slower", "slower"), ("fb_faster", "faster"), ("fb_next", "next")):
             make_button(skin, nm, 30, 28, ic, icon_size=13)
         make_toggle(skin, "ft_play", 40, 28, icon_off="play", icon_on="pause", on_color=CYAN, icon_size=14)
-        make_toggle(skin, "ft_pl", 44, 28, label="PL", use_led=True, label_size=9)
-        make_toggle(skin, "ft_eq", 44, 28, label="EQ", use_led=True, label_size=9)
+        make_toggle(skin, "ft_pl", PLW, 28, label="PL", label_size=9)
+        make_toggle(skin, "ft_eq", PLW, 28, label="EQ", label_size=9)
         # video window (title bar, control panel, extra row) and fullscreen controller
         for nm, ic in (("vb_full", "expand"), ("vb_min", "minimize"), ("vb_restore", "restore"), ("vb_close", "close")):
             make_button(skin, nm, 24, 22, ic, icon_size=11)
         make_toggle(skin, "vb_max", 24, 22, icon_off="maximize", icon_on="unmaximize", icon_size=11)
-        make_toggle(skin, "ft_mute", 30, 28, icon_off="speaker", icon_on="speaker_off", on_color=AMBER, icon_size=13)
         make_button(skin, "fb_fs", 30, 28, "expand", icon_size=13)            # fullscreen controller: leave full screen
         make_button(skin, "fb_more", 30, 28, "arrow_down", icon_size=12)      # show the extra row (it opens below)
         make_button(skin, "fb_less", 30, 28, "arrow_up", icon_size=12)        # hide it
@@ -1241,14 +1453,14 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_toggle(skin, "xt_ab", 44, 22, label="A-B", label_size=9)         # same look in both states (a button)
         make_button(skin, "xb_chprev", 44, 22, label="CH-", label_size=9)
         make_button(skin, "xb_chnext", 44, 22, label="CH+", label_size=9)
-        make_button(skin, "xb_snap", 48, 22, label="SNAP", label_size=9)
+        make_button(skin, "xb_snap", 44, 22, label="SNAP", label_size=9)
         make_button(skin, "xb_slower", 30, 22, "slower", icon_size=12)
         make_button(skin, "xb_faster", 30, 22, "faster", icon_size=12)
         c = Canvas(60, 22)                                                    # speed readout box (between slower / faster)
         lcd(c, 0, 0, 60, 22, 3)
         skin.add("x_speed_bg", solid(c.done()))
         make_thumb(skin, "thumb_s", 12, 20)
-        make_toggle(skin, "t_eqon", 44, 22, label="ON", use_led=True, label_size=9)
+        make_toggle(skin, "t_eqon", PLW, 22, label="ON", label_size=9)
         make_eq_thumb(skin, "thumb_eq", 18, 14)
         make_thumb(skin, "thumb_pl", 8, 24, SCROLL_TRACK)
         for nm, lbl in (("l_shuf", "SHUF"), ("l_loop", "LOOP"), ("l_rep", "REP1")):
@@ -1259,8 +1471,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         make_fill_frames(skin, "seek", sw, 10, 0, 10, SEEK_FRAMES, lead=SEEK_LEAD)
         for on in (False, True):                           # the speaker next to the volume slider = mute button
             for st in ("up", "over", "down"):
-                c = Canvas(22, 28)                         # 22 x 28 click zone around the 12 px icon
-                icon(c, "speaker_off" if on else "speaker", 5, 8, 12, AMBER if on else (LABEL if st == "up" else ICON[st]))
+                c = Canvas(22, 28)                         # 22 x 28 click zone around the 16 px icon
+                icon(c, "speaker_off" if on else "speaker", 3, 6, 16, AMBER if on else (LABEL if st == "up" else ICON[st]))
                 skin.add("c_mute_%s_%s" % ("on" if on else "off", st), solid(c.done()))
         # time readout backgrounds, used as checkboxes (an Image only reacts to double-clicks)
         c = Canvas(TW, BT)
@@ -1275,7 +1487,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         for lbl in ("add", "rem", "sort", "load", "save"):
             make_button(skin, "b_pl_" + lbl, 44, 22, label=lbl.upper(), label_size=9)
         for lbl in ("shuf", "loop", "rep1"):
-            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), use_led=True, label_size=9)
+            make_toggle(skin, "t_pl_" + lbl, 52, 22, label=lbl.upper(), label_size=9)
         c = Canvas(62, 16)
         c.rrect(0, 0, 62, 16, 3, mix(LCD_BG, CYAN, 0.28))
         c.rrect(1, 1, 60, 14, 2, mix(LCD_BG, CYAN, 0.08))
@@ -1333,48 +1545,58 @@ def build(skin, W, BH=BAR_DEFAULT):
             resize_handle(c, grip_x(W), 3, BH - 6)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
-            hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+            # check off: the resize tab's left pad sits at x = W - 11, one column inside the middle (as full_bg, reported)
+            hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb), check=False)
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), 3, BH - 6)
-        x = 16
-        lay.button("b_expand", P(x), P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
-        x += BW_ + G_
-        lay.button("b_prev", P(x), P(BY), "playlist.previous()", "Previous")
-        x += BW_ + G_
-        lay.checkbox("t_play", P(x), P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        x += BW_ + 4 + G_
-        lay.button("b_next", P(x), P(BY), "playlist.next()", "Next")
-        dx = x + BW_ + G_
-        RP = 14 + BW_ + 2 * (G_ + PLW)           # distance of the PL button's left edge from the right edge
-        MG = 3                                       # tight gap around the mode button
-        dw = W - (RP + G_ + TW + 2 * MG + MB) - dx
+        # PP41: both button groups are chained in device px (each step = P(width) + P(gap)), so equal
+        # logical gaps are equal device gaps at every scale; the title box takes what is left
+        bw, gp = P(BW_), P(G_)
+        x_exp = P(16)
+        x_prev = x_exp + bw + gp
+        x_play = x_prev + bw + gp
+        x_next = x_play + P(BW_ + 4) + gp            # the play bitmap is BW_ + 4 wide
+        dxp = x_next + bw + gp
+        x_top = PW - P(14) - bw                      # pin; EQ and PL chain leftwards from it
+        x_eq = x_top - gp - P(PLW)
+        x_pl = x_eq - gp - P(PLW)
+        tx = x_pl - gp - P(TW)                       # time box
+        x_mode = tx - P(3) - P(MB)                   # tight gap (3) around the mode button
+        dwp = x_mode - P(3) - dxp                    # title box width (device px)
+        dw = dwp / S                                 # logical width that renders as exactly dwp device px
+        dw = int(dw) if dw == int(dw) else dw
+        lay.button("b_expand", x_exp, P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
+        lay.button("b_prev", x_prev, P(BY), "playlist.previous()", "Previous")
+        lay.checkbox("t_play", x_play, P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("b_next", x_next, P(BY), "playlist.next()", "Next")
         c = Canvas(dw, BT)
         lcd(c, 0, 0, dw, BT, 3)
-        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(BY), 4, 4)
+        hslice(skin, lay, "strip_lcd", solid(c.done()), dxp, P(BY), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
-        title_slider(lay, skin, "s_title_" + lay.id, "title", P(dx) + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
-        ty = round(BH / 2 - 0.582 * M["font"])   # text top: the line (1.164 em) is centred in the bar
-        lay.text(P(dx + 8), P(ty), P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
+        title_slider(lay, skin, "s_title_" + lay.id, "title", dxp + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
+        # text top in device px, from the box's device centre (was: logical centre, rounded, then scaled: 1 px low at 150 %)
+        ty = round(P(BY) + P(BT) / 2 - 0.582 * P(M["font"]))   # the line (1.164 em) is centred in the box
+        lay.text(dxp + P(8), ty, dwp - P(16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        R = lambda v: PW - P(v)
-        tx = R(RP + G_ + TW)
         # time box = volume bar filled from the left like the title's seek fill; click / drag / wheel sets
         # the volume. The small button on its left switches elapsed <-> time left (remembered by VLC)
         lay.image("c_time_s", tx, P(BY), action="move", **tr)
-        lay.checkbox("c_mode", R(RP + G_ + TW + MG + MB), P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
+        lay.checkbox("c_mode", x_mode, P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
         vw, vfh = TW - TIME_ZONE - 1, BT - 2
         lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
                    "thumb_none", "Volume $V%  (click to set, wheel to change)", bg="vol_fill",
                    nbvert=FILL_FRAMES, **tr)
+        # text inset from both box edges by P(TIME_ZONE) (was: right edge at the box edge, 0.5 px off centre at
+        # 150 %); the +1 keeps the 100 / 125 % width of 70 / 88 px (measured centred in VLC at all four scales)
         for text, vis, sample in (("$t", "not " + COUNTDOWN, "1:02"), ("-$l", COUNTDOWN, "-3:10")):
-            lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
+            lay.text(tx + P(TIME_ZONE), ty, P(TW) - 2 * P(TIME_ZONE) + 1, skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
-        lay.checkbox("t_top", R(14 + BW_), P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
+        panel_toggles(lay, "t_pl", "t_eq", x_pl, x_eq, P(BY))
+        lay.checkbox("t_top", x_top, P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
 
     # ================= full player bar
@@ -1384,11 +1606,12 @@ def build(skin, W, BH=BAR_DEFAULT):
         for rt, rb, v in bar_corners(d):
             c = Canvas(W, FH)
             panel_bg(c, 0, 0, W, FH, 6, rt=rt, rb=rb)
-            grip_dots(c, 4, 12)
+            grip_dots(c, 4, 13)                       # 10 rows: centred on the 22-row button band (y 9..30)
             resize_handle(c, grip_x(W), grip_y(44, 108), GRIP_H)     # centred on the display card (y 44..152)
             lay.vis = vis_and(base_vis, v)
             bg = c.done(hard_edges=True)
-            hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
+            # check off: the resize tab (grip_x(W)) starts one column inside the middle, not fixed here (reported)
+            hslice(skin, lay, "full_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb), check=False)
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), grip_y(44, 108), GRIP_H)
         nxt = (cur["theme"] + 1) % len(THEMES)
@@ -1434,8 +1657,20 @@ def build(skin, W, BH=BAR_DEFAULT):
         # file format from the file name: "$F" is the path; a right-aligned box too narrow for it shows
         # only the end, i.e. the extension (4 characters: ".wav", ".mp3", "flac", "opus")
         lay.image("chip_fmt", P(358), P(90), action="move")
-        lay.text(P(367), P(92), P(24), "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
+        # the 4 cells of the extension are centred on the chip. The text box reaches one cell further left, so
+        # whatever the font renderer does with the 5th-last character (a tick of its right arm, a whole glyph,
+        # any FreeType version) lands in that cell, and an opaque piece of the chip (its left padding, cut
+        # from the chip bitmap itself) is drawn over it, above the text: layout controls draw in file order
+        # (GenericLayout::addControl keeps same-layer controls in insertion order). PP17 sized the box to
+        # exactly 4 cells, PP27 made it independent of the renderer.
+        cell = int(P(10) * 0.6021 + 0.5)           # the advance rule of vlcamp.lua
+        fw = 4 * cell
+        pad = (P(41) - fw) // 2                    # chip left edge .. first cell
+        chip = skin.bitmaps[skin.prefix + "chip_fmt"]
+        skin.add("chip_fmt_pad", chip.crop((0, 0, pad, chip.height)))
+        lay.text(P(358) + pad - cell, P(92), fw + cell, "lcd10", "$F", CYAN_TXT, scrolling="none", align="right",
                  sample=".wav", focus=False)
+        lay.image("chip_fmt_pad", P(358), P(90), action="move")
         lay.checkbox("l_shuf", P(222), P(122), "playlist.isRandom", "playlist.setRandom(true)",
                      "playlist.setRandom(false)", "Shuffle: off", "Shuffle: on")
         lay.checkbox("l_loop", P(274), P(122), "playlist.isLoop", "playlist.setLoop(true)",
@@ -1449,18 +1684,18 @@ def build(skin, W, BH=BAR_DEFAULT):
                    "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, rb="righttop")
         # transport row
         ty = 195
-        for nm, x, act, tip in (("fb_stop", 12, "vlc.stop()", "Stop"), ("fb_prev", 46, "playlist.previous()", "Previous"),
-                                ("fb_slower", 80, "vlc.slower()", "Slower")):
-            lay.button(nm, P(x), P(ty), act, tip)
-        lay.checkbox("ft_play", P(114), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("fb_faster", P(158), P(ty), "vlc.faster()", "Faster")
-        lay.button("fb_next", P(192), P(ty), "playlist.next()", "Next")
+        x1, x2, x3, x4, x5 = row_x(30, 30, 40, 30, 30)
+        lay.button("fb_prev", x1, P(ty), "playlist.previous()", "Previous")
+        lay.button("fb_slower", x2, P(ty), "vlc.slower()", "Slower")
+        lay.checkbox("ft_play", x3, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("fb_faster", x4, P(ty), "vlc.faster()", "Faster")
+        lay.button("fb_next", x5, P(ty), "playlist.next()", "Next")
         lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
         lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
         lay.text(F(148), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none", sample="78%",
                  focus=False, **tr)
-        panel_toggles(lay, "ft_pl", "ft_eq", F(108), F(56), P(ty))
+        panel_toggles(lay, "ft_pl", "ft_eq", F(12 + 2 * PLW + 8), F(12 + PLW), P(ty))   # right margin 12, gap 8
 
     def flip_button(lay, mode, d, x, y):
         other = "up" if d == "dn" else "dn"
@@ -1477,13 +1712,16 @@ def build(skin, W, BH=BAR_DEFAULT):
             resize_handle(c, grip_x(W), grip_y(33, 122), GRIP_H)     # centred on the band box (y 33..155)
             bg = c.done(hard_edges=True)
             lay.vis = vis_and(base_vis, v)
-            hslice(skin, lay, "eq_bg", bg, 0, 0, 10, 10, tag=cap_tag(rt, rb))
+            # caps 14 / 12: grip_dots at x 4..11 lie in the left cap (PP1 half dot); the resize tab starts at
+            # grip_x(W) = W - 11, so the right cap must hold its left column too. 12 (not 11): P() rounds, and
+            # at 150 % P(11) = 16 px leaves the column in the middle (checked at 100, 125, 150, 200 %)
+            hslice(skin, lay, "eq_bg", bg, 0, 0, 14, 12, tag=cap_tag(rt, rb))
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 122), GRIP_H)
         label_on(skin, "lbl_eq", bg, 18, 9, 110, 14, "EQUALIZER", 10)
         lay.image("lbl_eq", P(18), P(9), action="move")
-        flip_button(lay, mode, d, PW - P(86), P(6))
-        lay.checkbox("t_eqon", PW - P(56), P(6), "equalizer.isEnabled", "equalizer.enable()",
+        flip_button(lay, mode, d, PW - P(12 + PLW + 6 + 24), P(6))   # 6 px gap to ON, 24 px wide
+        lay.checkbox("t_eqon", PW - P(12 + PLW), P(6), "equalizer.isEnabled", "equalizer.enable()",
                      "equalizer.disable()", "Equalizer is off", "Equalizer is on", **tr)
         c = Canvas(W - 24, 122)
         lcd(c, 0, 0, W - 24, 122, 4, outline=False)
@@ -1491,27 +1729,43 @@ def build(skin, W, BH=BAR_DEFAULT):
         # band block: fixed width, kept centred when the window is resized
         names = ["PRE", "60", "170", "310", "600", "1K", "3K", "6K", "12K", "14K", "16K"]
         cxs = [36 + i * 38 + (12 if i else 0) for i in range(11)]
+        # PP6: the 10 band faders sit on ONE device-pixel pitch (round(38 * S)), centred on the span the
+        # rounded logical positions had; the preamp keeps its own position. x0s = device x of each fader's 30 px box.
+        pitch = P(38)
+        b0 = P(cxs[1] - EQ_FW // 2)
+        b0 += (P(cxs[10] - EQ_FW // 2) - b0 - 9 * pitch) // 2
+        x0s = [P(cxs[0] - EQ_FW // 2)] + [b0 + k * pitch for k in range(10)]
+        lcx = [(x + P(EQ_FW // 2)) * EQ_BW / P(EQ_BW) for x in x0s]     # fader centres, logical px for the Canvas
         c = Canvas(EQ_BW, 120)
         c.rrect(0, 0, EQ_BW, 120, 0, LCD_BG)  # opaque, same as the LCD interior, keeps small text crisp
         for lbl, yy in (("+20", 24), ("0", 60), ("-20", 96)):
             c.text(18, yy, lbl, 8, CYAN2, font="mono", anchor="rm")
-        for i, cx in enumerate(cxs):
+        for i, cx in enumerate(lcx):
             c.text(cx, 111, names[i], 9, AMBER if i == 0 else CYAN2, font="mono", anchor="mm")
-        c.rrect((cxs[0] + cxs[1]) / 2, 8, 1, 100, 0, DIVIDER)
+        c.rrect((lcx[0] + lcx[1]) / 2, 8, 1, 100, 0, DIVIDER)
         bands = c.done()
         for i, cx in enumerate(cxs):     # the 0 dB ticks of every fader (not part of the frame sheets)
             lb, fb, tb = eq_boxes(i == 0)
-            bands.paste(EQ_TICKS[i == 0], (P(cx - EQ_FW // 2) + tb[0], P(4) + tb[1]))
+            bands.paste(EQ_TICKS[i == 0], (x0s[i] + tb[0], P(4) + tb[1]))
         skin.add("eq_bands", bands)
+        from PIL import ImageChops
+        ink = bands.convert("RGB")
+        dif = ImageChops.difference(ink, Image.new("RGB", ink.size, H(LCD_BG)[:3]))
+        dif = ImageChops.lighter(ImageChops.lighter(dif.getchannel("R"), dif.getchannel("G")), dif.getchannel("B"))
+        il, _, ir, _ = dif.point(lambda v: 255 if v > 40 else 0).getbbox()
+        px_panel = P(12) + (PW - 2 * P(12) - (ir - il)) // 2 - il
         fbx = eq_boxes(False)[1]      # click-zone sheet: fully transparent (not drawn, but it takes clicks), fader column wide
         skin.add("eqclick", Image.new("RGBA", (P(EQ_FW), fbx[3] - fbx[1]), (0, 0, 0, 0)))
-        lay.panel_begin("eq_panel" + sfx, P((W - EQ_BW) // 2), P(34), P(EQ_BW), P(120))
+        # PP22: centre the INK (the dB scale labels stick out about 3 logical px on the left, nothing on the
+        # right) in the band box P(12) .. PW - P(12): shift the block by the measured ink extent, in device px
+        # (a fixed 3 logical px is 1 - 2 px off at 125 / 150 %, where the glyphs do not scale linearly)
+        lay.panel_begin("eq_panel" + sfx, px_panel, P(34), P(EQ_BW), P(120))
         lay.image("eq_bands", 0, 0)
         tips = ["Preamp"] + [n.replace("K", " kHz") if "K" in n else n + " Hz" for n in names[1:]]
         for i, cx in enumerate(cxs):
             value = "equalizer.preamp" if i == 0 else "equalizer.band(%d)" % (i - 1)
             lb, fb, tb = eq_boxes(i == 0)    # the sheets are crops of the 30 x 104 design: offsets lb / fb
-            x0 = P(cx - EQ_FW // 2)
+            x0 = x0s[i]
             pre = "_pre" if i == 0 else ""
             # click zone: an invisible slider as wide as the fader column, under the others (skins2 hit-tests the
             # topmost control first, so the knob and groove keep working; a click beside the groove lands here)
@@ -1535,7 +1789,8 @@ def build(skin, W, BH=BAR_DEFAULT):
         grip_dots(c, 4, 12, 2)
         resize_handle(c, grip_x(W), grip_y(33, 204), GRIP_H)     # centred on the list box (y 33..237)
         bg = c.done(hard_edges=True)
-        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, tag=cap_tag(rt, rb))
+        # check off: the left column carries grip dots and is tiled vertically (not PP1; reported, no PP item yet)
+        nslice(skin, lay, "pl_bg", bg, 0, 0, 12, tag=cap_tag(rt, rb), check=False)
         grip_tab(skin, lay, bg, grip_x(W), grip_y(33, 204), GRIP_H)
         label_on(skin, "lbl_pl", bg, 18, 9, 110, 14, "PLAYLIST", 10)
         lay.image("lbl_pl", P(18), P(9), action="move")
@@ -1545,7 +1800,16 @@ def build(skin, W, BH=BAR_DEFAULT):
         c.rrect(W - 24 - PL_GUTTER - 8, 5, 8, 194, 3, SCROLL_TRACK)  # scroll track: PL_GUTTER from the box's right edge, like the row stripes on the left
         nslice(skin, lay, "pl_lcd", solid(c.done()), P(12), P(33), 18, actions={k: "none" for k in
                ("tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br")})
-        lay.playtree(P(18), P(38), P(W - 60), P(194), "lcd12",
+        # rows end PL_GUTTER before the scroll track (PP8): 50 = right box margin 12 + gutter + track 8
+        # + gutter + left inset 18. PW - P(50), not P(W - 50): in whole px the same at 100 / 150 / 200 %,
+        # 1 px wider at 125 % (713: 7 clean px + the track's anti-aliased column, as on the track's right).
+        # lua/intf/vlcamp.lua pl_columns uses this width (PL_MARGIN): change both together.
+        # PP15: the Playtree is a whole number of rows high, or skins2 draws the last stripe cut to a sliver.
+        # Row pitch = skins2's line height of lcd12 = ceil(1.2 * font px) (15 / 18 / 22 / 29 px at 100 / 125 / 150 /
+        # 200 %, measured in VLC); the leftover (< 1 row) goes to the gap above the bottom edge of the box.
+        pl_pitch = int(math.ceil(1.2 * P(12) - 1e-9))
+        pl_h = (P(194) // pl_pitch) * pl_pitch
+        lay.playtree(P(18), P(38), PW - P(12 + PL_GUTTER + 8 + PL_GUTTER + 18), pl_h, "lcd12",
                      dict(x=PW - P(12 + PL_GUTTER + 8), y=P(38), points="(%d,%d),(%d,%d)" % (P(4), P(182), P(4), P(12)),
                           thumb="thumb_pl"), pid="playtree" + sfx, sid="pl_scroll" + sfx)
         for i, (lbl, act, tip) in enumerate((("add", "playlist.add()", "Add files"),
@@ -1575,20 +1839,23 @@ def build(skin, W, BH=BAR_DEFAULT):
     # Title bar (name of what plays, maximize / full screen / shrink / close), the video, then a
     # control panel docked under it. As wide as the player, so the seek bar bitmap (sw) fits as in
     # the full player; the 12 px frame is the margin rule and holds the corner resize tab.
-    VB, VT, PH = 12, 36, 68                                # frame, title bar, control panel (logical px)
+    VB, VT, PH = 12, 36, 70                                # frame, title bar, control panel (logical px; 12 px under the buttons)
     VMIN = 580                                             # the panel's controls need this width
     VW = max(W, VMIN)                                      # --width 490-579 fits the strip, not this panel
     VIDH = (VW - 2 * VB) * 9 // 16                         # starts 16:9
     PBASE = VT + VIDH                                      # top of the control panel
     VH = PBASE + PH
+    RH = 30
+    # video-l and video-x need the same original size AND the same min / max limits: skins2 carries the
+    # window size over only between "tightly coupled" layouts (GenericLayout::isTightlyCoupledWith)
+    VMINH = VT + PH + RH + 90
     vlay = Layout(skin, "video-l", P(VW), P(VH), minw=P(VMIN), maxw=P(3840),
-                  minh=P(VT + PH + 90), maxh=P(2160))
+                  minh=P(VMINH), maxh=P(2160))
     # The same window with an extra row of controls below the panel (the arrow button switches):
     # the same original size, so skins2 carries the current (maximized) size between the two; the
     # row takes its height from the video, as a Video control cannot change size inside a layout.
-    RH = 30
     xlay = Layout(skin, "video-x", P(VW), P(VH), minw=P(VMIN), maxw=P(3840),
-                  minh=P(VT + PH + RH + 90), maxh=P(2160))
+                  minh=P(VMINH), maxh=P(2160))
     MW = 160                                               # shrunk: the title bar alone
     mlay = Layout(skin, "video-min", P(MW), P(VT))
     # Full screen: skins2 shows the window "fullscreenController" over the video when the mouse
@@ -1613,13 +1880,15 @@ def build(skin, W, BH=BAR_DEFAULT):
         for i, (lbl, name, state, tp) in enumerate((("shuf", "Random", "playlist.isRandom", "Shuffle"),
                                                     ("loop", "Loop", "playlist.isLoop", "Loop playlist"),
                                                     ("rep1", "Repeat", "playlist.isRepeat", "Repeat one"))):
-            lay.checkbox("t_pl_" + lbl, P(214 + i * 56), y, state, "playlist.set%s(true)" % name,
+            lay.checkbox("t_pl_" + lbl, P(212 + i * 56), y, state, "playlist.set%s(true)" % name,
                          "playlist.set%s(false)" % name, tp + ": off", tp + ": on", **k)
-        lay.button("xb_slower", P(390), y, "vlc.slower()", "Slower", **k)
-        lay.image("x_speed_bg", P(424), y, action="none", **k)
-        lay.text(P(426), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
-                 sample="1.25x", focus=False, **k)
-        lay.button("xb_faster", P(488), y, "vlc.faster()", "Faster", **k)
+        # speed group (128 px wide), anchored right like the volume group: its right edge is VW - 12
+        r = dict(lt="rightbottom", rb="rightbottom")
+        lay.button("xb_slower", P(VW - 140), y, "vlc.slower()", "Slower", **r)
+        lay.image("x_speed_bg", P(VW - 106), y, action="none", **r)
+        lay.text(P(VW - 104), y + P(4), P(56), "lcd12", "$Rx", CYAN_TXT, align="center", scrolling="none",
+                 sample="1.25x", focus=False, **r)
+        lay.button("xb_faster", P(VW - 42), y, "vlc.faster()", "Faster", **r)
 
     def video_layout(lay, extra):
         pb = PBASE - (RH if extra else 0)                 # top of the control panel (the row is below it)
@@ -1627,10 +1896,13 @@ def build(skin, W, BH=BAR_DEFAULT):
         # free-standing window: 1 px EDGE outline on all four sides
         c.rrect(0, 0, VW, VH, 6, EDGE)
         c.rrect(1, 1, VW - 2, VH - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        grip_dots(c, 4, 12)                               # title bar grip, left
-        resize_handle(c, grip_x(VW), VH - 13, 12)         # resize grip: the tab in the bottom-right corner slice
+        corner_handle(c, VW - 11, VH - 11, 7, 7)     # resize tab: 7 x 7 inside the corner slice, 3 px off the outline, 1 px clear of the 12 px margin (PP16, PP34)
+        # the frame is a 9-slice (its middle-left / middle-right pieces tile vertically), so nothing
+        # but the plain frame may sit in them: the title bar, with its grip dots, is its own piece on top
         nslice(skin, lay, "video_bg", c.done(hard_edges=True), 0, 0, VB + 2,
                actions={"mr": "resizeE", "bm": "resizeS", "br": "resizeSE"})
+        grip_dots(c, 4, 11)                               # centred on the 22 px buttons (rows 7..28)
+        hslice(skin, lay, "video_title", c.done(hard_edges=True).crop((0, 0, P(VW), P(VT))), 0, 0, 14, 14)
         rt = dict(lt="righttop", rb="righttop")
         # the name of what plays, across the title bar (clicks go through to the bar: it moves the window)
         lay.text(P(24), P(11), P(VW - 24 - 132), "lcd12", "$N", CYAN_TXT, rb="righttop", scrolling="none",
@@ -1647,32 +1919,34 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.slider("s_seek_vid" + ("_x" if extra else ""), P(12), P(pb + 12), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)),
                    "thumb_s", "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, lt="leftbottom", rb="rightbottom")
         ty = pb + 30
-        lay.button("fb_prev", P(12), P(ty), "playlist.previous()", "Previous", **bl)
+        x1, x2, x3, x4, x5 = row_x(30, 30, 40, 30, 30)    # device px (PP35)
+        lay.button("fb_prev", x1, P(ty), "playlist.previous()", "Previous", **bl)
         if extra:                                         # slower / faster are in the row, around the speed
-            lay.checkbox("ft_play", P(46), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-            lay.button("fb_next", P(90), P(ty), "playlist.next()", "Next", **bl)
+            _, x2, x3 = row_x(30, 40, 30)                 # prev, play, next
+            lay.checkbox("ft_play", x2, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_next", x3, P(ty), "playlist.next()", "Next", **bl)
             tx = 132
         else:
-            lay.button("fb_slower", P(46), P(ty), "vlc.slower()", "Slower", **bl)
-            lay.checkbox("ft_play", P(80), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-            lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster", **bl)
-            lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next", **bl)
+            lay.button("fb_slower", x2, P(ty), "vlc.slower()", "Slower", **bl)
+            lay.checkbox("ft_play", x3, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_faster", x4, P(ty), "vlc.faster()", "Faster", **bl)
+            lay.button("fb_next", x5, P(ty), "playlist.next()", "Next", **bl)
             tx = 200
-        lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+        lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$t / $d", CYAN_TXT, scrolling="none",
                  sample="1:02 / 4:12", focus=False, **bl)
         if extra:
-            lay.button("fb_less", P(VW - 222), P(ty), "video.setLayout(video-l)", "Fewer controls", **rbk)
+            lay.button("fb_less", P(VW - 213), P(ty), "video.setLayout(video-l)", "Fewer controls", **rbk)
         else:
-            lay.button("fb_more", P(VW - 222), P(ty), "video.setLayout(video-x)",
+            lay.button("fb_more", P(VW - 213), P(ty), "video.setLayout(video-x)",
                        "More controls (A-B loop, chapters, snapshot, shuffle / loop / repeat, speed)", **rbk)
-        lay.checkbox("ft_mute", P(VW - 188), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
-        lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 152), P(ty + 9),
+        lay.checkbox("c_mute", P(VW - 182), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **rbk)
+        lay.vol_slider("s_vol_vid" + ("_x" if extra else ""), P(VW - 156), P(ty + 9),
                    "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v", "Volume $V%",
                    bg="vol100", nbvert=P(100), **rbk)
         lay.text(P(VW - 48), P(ty + 8), P(36), "lcd10", "$V%", CYAN2, align="left", scrolling="none",
                  sample="78%", focus=False, **rbk)
         if extra:
-            extra_row(lay, P(pb + PH - 6), "leftbottom", "leftbottom")
+            extra_row(lay, P(pb + PH - 4), "leftbottom", "leftbottom")
         lay.video(P(VB), P(VT), P(VW - 2 * VB), P(VIDH - (RH if extra else 0)))
 
     cur = {}
@@ -1714,7 +1988,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         c = Canvas(MW, VT)
         c.rrect(0, 0, MW, VT, 6, EDGE)
         c.rrect(1, 1, MW - 2, VT - 2, 5, mix(BG_TOP, BG_BOT, 0.5))
-        grip_dots(c, 4, 12)
+        grip_dots(c, 4, 11)                               # centred on the 22 px buttons
         skin.add("video_min_bg", c.done(hard_edges=True))
         mlay.image("video_min_bg", 0, 0, action="move")
         mlay.button("vb_restore", P(MW - 64), P(7), "video.setLayout(video-l)", "Show the video")
@@ -1725,17 +1999,18 @@ def build(skin, W, BH=BAR_DEFAULT):
         hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
         flay.slider("s_seek_fsc", P(12), P(12), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)), "thumb_s",
                     "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES)
-        flay.button("fb_prev", P(12), P(32), "playlist.previous()", "Previous")
-        flay.checkbox("ft_play", P(46), P(32), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        flay.button("fb_next", P(90), P(32), "playlist.next()", "Next")
-        flay.text(P(132), P(37), P(170), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
+        fx1, fx2, fx3 = row_x(30, 40, 30)
+        flay.button("fb_prev", fx1, P(30), "playlist.previous()", "Previous")
+        flay.checkbox("ft_play", fx2, P(30), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        flay.button("fb_next", fx3, P(30), "playlist.next()", "Next")
+        flay.text(P(132), P(35), P(170), "lcd14", "$t / $d", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
                   focus=False)
-        flay.checkbox("ft_more", P(W - 222), P(32), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
+        flay.checkbox("ft_more", P(W - 213), P(30), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
                       "More controls", "Fewer controls")
-        flay.checkbox("c_mute", P(W - 191), P(32), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
-        flay.vol_slider("s_vol_fsc", P(W - 168), P(41), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
+        flay.checkbox("c_mute", P(W - 182), P(30), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute")
+        flay.vol_slider("s_vol_fsc", P(W - 156), P(39), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                     "Volume $V%", bg="vol100", nbvert=P(100))
-        flay.button("fb_fs", P(W - 42), P(32), "vlc.fullscreen()", "Leave full screen")
+        flay.button("fb_fs", P(W - 42), P(30), "vlc.fullscreen()", "Leave full screen")
         c = Canvas(W, RH - 2)                              # the extra row: its own panel below the controls
         panel_bg(c, 0, 0, W, RH - 2, 6)
         flay.vis, flay.oy = "fxflag.isVisible", P(FSH + 2)
@@ -1915,6 +2190,7 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
         e = getattr(n, "vis", None)
         if not e:
             return True
+        e = e.replace("vlc.isMute", "False")        # preview: not muted
         e = e.replace("vlc.hasVout", "True")    # preview shows the video window as if a video played
         on = set(flags) | {"th%d" % theme}
         return eval(re.sub(r"(\w+)\.isVisible", lambda m: str(m.group(1) in on), e))
@@ -1988,20 +2264,44 @@ def preview_layout(skin, lay, AW=None, AH=None, flags=(), theme=0):
                 dd.text((ox + (l + r) // 2, oy + (t + b) // 2), "video placeholder", font=_truetype(FONT_MONO, P(10)),
                         fill=(110, 110, 110, 255), anchor="mm")
             elif n.kind == "Playtree":
+                # As skins2 draws it (ctrl_tree.cpp makeImage) with lua/intf/vlcamp.lua's lengths: rows of
+                # ceil(1.2 x font px), stripes bg1 / bg2 from the first row, text 7 px in, bottom-aligned in
+                # the row (baseline = row bottom - descent); every item but the playing one gets its length
+                # in one right-aligned column (vlcamp.lua pl_columns / decorate: same rule, change both).
                 l, t, r, b = pos(n, bw, bh, aw, ah, n.w, n.h)
-                f = _truetype(FONT_MONO, font_px[n.font])
+                px = font_px[n.font]
+                f = _truetype(FONT_MONO, px)
                 dd = ImageDraw.Draw(out)
-                lh = int(font_px[n.font] * 1.35)
-                songs = ["Harbour Lights", "Paper Satellites", "Slow Burn Across the River (Extended Mix)",
-                         "Static Bloom", "Glass Elevator", "Northbound", "Low Tide Radio", "Afterimage",
-                         "Late Train to Brno", "Copper Wire", "Quiet Hours", "Field Recording No. 3"]
-                for i, s in enumerate(songs):
+                lh = int(math.ceil(1.2 * px - 1e-9))
+                for i in range(-(-(b - t) // lh)):
+                    yy = oy + t + i * lh
+                    dd.rectangle([ox + l, yy, ox + r - 1, min(yy + lh, oy + b) - 1],
+                                 fill=H(n.colors["bg2" if i % 2 else "bg1"]))
+                songs = [("Harbour Lights", 222), ("Paper Satellites", 245),
+                         ("Slow Burn Across the River (Extended Mix)", 451), ("Static Bloom", 197),
+                         ("Glass Elevator", 252), ("Northbound", 190),
+                         ("Low Tide Radio - Live at the Harbour Hall, Night Two (Remastered Deluxe Edition)", 728),
+                         ("Afterimage", 203), ("Late Train to Brno", 274), ("Copper Wire", 166),
+                         ("Quiet Hours", 312), ("Field Recording No. 3", 95)]
+                playing = 2
+                adv, dot = int(round(px * 0.6021)), int(math.ceil(px * 1233 / 2048))
+                cols = max(20, (r - l - 7 - 2 * adv - dot - 1) // adv)      # vlcamp.lua pl_columns
+
+                def mss(sec):
+                    return "%d:%02d:%02d" % (sec // 3600, sec // 60 % 60, sec % 60) if sec >= 3600 else \
+                        "%d:%02d" % (sec // 60, sec % 60)
+                field = max([5] + [len(mss(sec)) for _, sec in songs])      # vlcamp.lua decorate
+                for i, (s, sec) in enumerate(songs):
                     yy = oy + t + i * lh
                     if yy + lh > oy + b:
                         break
-                    if i == 2:
-                        dd.rectangle([ox + l, yy, ox + r - 1, yy + lh - 1], fill=H(n.colors["sel"]))
-                    dd.text((ox + l + 2, yy + 1), s, font=f, fill=H(n.colors["play" if i == 2 else "fg"]))
+                    if i != playing:
+                        room = cols - field - 2
+                        if len(s) > room:
+                            s = s[:room - 1] + "…"
+                        s = s + " " * (cols - len(s) - len(mss(sec))) + mss(sec)
+                    dd.text((ox + l + 7, yy + lh - f.getmetrics()[1]), s, font=f, anchor="ls",
+                            fill=H(n.colors["play" if i == playing else "fg"]))
                 sl = n.slider
                 th = skin.bitmaps[sl["thumb"] + "_up"]
                 sx = sl["x"] - bw + aw
@@ -2098,9 +2398,9 @@ def main():
         ap.error("--custom must look like #b48cff")
     S = a.scale
     global FONT_MONO
-    font_file = "DejaVuSansMono.ttf"
+    font_file, font_src = "VLCAmpMono.ttf", FONT_CELL
     if a.font:
-        FONT_MONO = a.font
+        FONT_MONO = font_src = a.font
         font_file = "lcd" + os.path.splitext(a.font)[1].lower()
         FONT_FILE[0] = "fonts/" + font_file
     if not BAR_DEFAULT <= a.bar_height <= 60:
@@ -2144,7 +2444,7 @@ def main():
             im.save(os.path.join(stage, "custom-ref", "img", fid + ".png"), optimize=True)
             im = recolour(im, a.custom)
         im.save(os.path.join(stage, "img", fid + ".png"), optimize=True)
-    shutil.copy(FONT_MONO, os.path.join(stage, "fonts", font_file))
+    shutil.copy(font_src, os.path.join(stage, "fonts", font_file))
     lic = os.path.join(HERE, "fonts", "LICENSE-DejaVu.txt")
     if os.path.exists(lic) and not a.font:
         shutil.copy(lic, os.path.join(stage, "fonts"))

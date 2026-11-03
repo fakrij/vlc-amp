@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Play in VLC Amp",
+  "version": "1.0",
+  "description": "Plays the page, a link or a video in VLC (VLC Amp): right-click > Play in VLC Amp, or the toolbar button.",
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "Play this page in VLC Amp",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
+  },
+  "permissions": ["contextMenus", "activeTab"],
+  "minimum_chrome_version": "102",
+  "background": { "service_worker": "background.js" }
+}

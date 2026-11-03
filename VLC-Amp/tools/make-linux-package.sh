@@ -9,7 +9,7 @@ OUT=${1:-dist}
 NAME=VLC-Amp-linux
 PKG="${OUT:?}/${NAME:?}"
 
-paths=(README.md 'VLC-Amp-*.vlt' linux lua docs/img-thin)
+paths=(README.md 'VLC-Amp-*.vlt' linux lua browser docs/img-thin)
 dirty=$(git status --porcelain -- "${paths[@]}")
 [ -z "$dirty" ] || { echo "warning: uncommitted changes in packaged files (not included):"; echo "$dirty"; }
 

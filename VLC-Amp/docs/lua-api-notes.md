@@ -139,6 +139,7 @@ end
 - `playlist.c:128-137` (`vlclua_playlist_gotoitem`): `playlist_ViewPlay( p_playlist, NULL, playlist_ItemGetById( p_playlist, i_id ) );` then `return vlclua_push_ret( L, VLC_SUCCESS );`. For an unknown ID the item is NULL, and `src/playlist/control.c:70-86` accepts that without failing: it only clears `request.p_item`, so the engine picks the next item by its normal rules.
 - `playlist.c:426-429`: `#if LUA_VERSION_NUM < 502` adds the `goto` alias. `gotoitem` is always registered (`:429`).
 - `playlist.c:331-344`: `vlc.playlist.current()` returns the current item ID, or -1.
+- `duration` is -1 until VLC knows the length: the core preparses each added item (local files, `auto-preparse`, `src/playlist/item.c:735-752`) or the item is played. Lua 3.0 cannot ask for a preparse: the `input_item` methods (`modules/lua/libs/input.c:425-441`) have `is_preparsed` but no request (checked for PP25).
 - `playlist.c:56-68`: `vlc.playlist.next()` and `prev()` call `playlist_Next` and `playlist_Prev`, so they follow the playlist's own order, including repeat and random.
 - Decoding helpers: `vlc.strings.decode_uri(uri)` (`modules/lua/libs/strings.c:47-62`, registered at `:182`). `vlc.strings.make_path(uri)` (`strings.c:94-101`, registered at `:185`) is in the code but not in `share/lua/README.txt`.
 - The current item's URI: `vlc.input.item():uri()` (`modules/lua/libs/input.c:302-317` and `:331-337`).

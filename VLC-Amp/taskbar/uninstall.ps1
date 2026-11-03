@@ -2,6 +2,7 @@
 #
 #   restores VLC's settings from vlcrc.before-vlc-amp (the current file is kept as vlcrc.vlc-amp-removed),
 #   stops the helper, removes its Startup shortcut, the Lua extras, the Start menu entries,
+#   the vlc-amp: link handler and the relay secret (links from the browser),
 #   the per-user file association overrides listed in file-associations.txt (only keys that still have
 #   --no-media-library),
 #   optionally the media controls plugin, and the installed folder %LOCALAPPDATA%\VLC-Amp.
@@ -24,7 +25,7 @@ while (Get-Process vlc -ErrorAction SilentlyContinue) {
 
 Step "Stopping the helper"
 Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
-    Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like "*vlc-taskbar.ps1*" } |
+    Where-Object { $_.ProcessId -ne $PID -and ($_.CommandLine -like "*vlc-taskbar.ps1*" -or $_.CommandLine -like "*vlc-amp-url.ps1*") } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
 
 Step "Restoring VLC's settings"
@@ -85,6 +86,14 @@ $lua = Join-Path $env:APPDATA "vlc\lua\intf\vlcamp.lua"
 if (Test-Path $lua) { Remove-Item $lua }
 $menu = Join-Path ([Environment]::GetFolderPath("Programs")) "VLC Amp"
 if (Test-Path $menu) { Remove-Item -Recurse -Force $menu }
+
+Step "Removing the vlc-amp: link handler (links from the browser)"
+$linkKey = "HKCU:\Software\Classes\vlc-amp"
+$cmd = Get-Item -Path "$linkKey\shell\open\command" -ErrorAction SilentlyContinue
+if ($cmd -and $cmd.GetValue("") -like "*vlc-amp-url.vbs*") { Remove-Item -Path $linkKey -Recurse -Force }
+$state = Join-Path $env:LOCALAPPDATA "VLC-Amp-state"   # the relay's secret
+if (Test-Path $state) { Remove-Item -Recurse -Force $state }
+Write-Host "   (the browser extension and yt-dlp stay; remove them in the browser and with winget uninstall yt-dlp.yt-dlp)"
 
 # the media controls plugin is harmless once switched off (restored vlcrc), so only on request
 foreach ($key in 'HKLM:\SOFTWARE\VideoLAN\VLC', 'HKLM:\SOFTWARE\WOW6432Node\VideoLAN\VLC') {

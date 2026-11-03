@@ -35,7 +35,7 @@ source/build_skin.py  --(Pillow)-->  VLC-Amp-NNN.vlt  (tar.gz: theme.xml + img/*
 skins2 only carries a dragged size from one layout to the next when both have
 the same original size and limits (`GenericLayout::isTightlyCoupledWith`,
 used in `TopWindow::setActiveLayout`). So all layouts of the main window are
-**the same size**: 620 x 676 logical px at the default width (minimum 490), the
+**the same size**: 620 x 676 logical px at the default width (minimum 510), the
 full player (232) + EQ (164) + playlist (280) stacked.
 
 | Layout | Bar position | Panels |
@@ -66,7 +66,7 @@ button height `min(bh - 6, 24)` (3 px margin), icon 12 px (13 from 30 px), label
 8 px (9 from 30 px), the title / time font `12 + (bh-24)//6` (`lcdbar` only when
 it differs from `lcd12`), grip rows and grip height. Widths do **not** grow, except
 the time box (`tw`: 71 px at 24, 81 px at 36, enough for "-1:23:45" in that font).
-`MIN_W` is 490 at every height.
+`MIN_W` is 510 at every height.
 
 Build names carry the height: `VLC-Amp-NNN` (24), `VLC-Amp-taskbar-NNN` (36,
 `BAR_TASKBAR`), `VLC-Amp-bar<N>-NNN` (any other; `skin_name`). `ThemeInfo` reads
@@ -108,10 +108,15 @@ the release skins have `th0` only). Shown = on.
   resize tab, 36 px title bar (24 x 22 buttons), the control panel below the
   video with the full player's 10 px seek bar (`seek` frames, 12 x 20 knob) 12
   px under the video, so the knob keeps a margin, then the 30 x 28 transport
-  row. skins2 hit-tests a slider background by its rectangle
+  row, 12 px above the bottom edge like the sides (panel 70 px high; in
+  `video-x` the extra row is 8 px under the transport row and also 12 px above
+  the edge). Mute is the bare speaker (`c_mute_*`, 22 x 28 zone), as in the full
+  player and the fullscreen controller. skins2 hit-tests a slider background by its rectangle
   (`CtrlSliderBg::mouseOver`), so the thick bar is easy to grab. The arrow button
   switches with `video.setLayout(...)`. Both layouts have the same original
-  size, so skins2 carries the current (also maximized) size across, as with the
+  size and the same minimum / maximum size (`video-l` uses the larger minimum
+  height, `VMINH`; with only the original size equal, the arrow reset the window
+  to the default size), so skins2 carries the current (also maximized) size across, as with the
   main window's layouts; the row takes its height from the Video control (a
   control cannot change size inside a layout).
 - A-B button: a skin button runs only skins2's actions, so it is a checkbox
@@ -361,6 +366,10 @@ plus the total ("of 5:16"), never elapsed and time left side by side.
 - An `<Image>`'s size in the default layout is its bitmap's size; stretching
   only comes from `lefttop` / `rightbottom` anchors. That is why stretch pieces
   (`hslice`, `nslice`) are full width and cannot be shrunk to a 1 px column.
+- Text (`<Text>`, Playtree) uses `fonts/VLCAmpMono.ttf`: DejaVu Sans Mono with every glyph's box widened
+  to its cell (`tools/make-cell-font.py`), because skins2 drops FreeType's `bitmap_left` and would otherwise
+  draw ":" "." "r" at the left edge of their cell. Bitmap labels (Pillow) still use `DejaVuSansMono.ttf`.
+  Details and the source lines: `docs/font-notes.md`, "Glyph placement".
 - Windows extracts the `.vlt` to disk; on its case-insensitive file system
   `b_x.png` and `B_x.png` collide. Ids differing only by case are rejected by
   the build.
@@ -1011,31 +1020,42 @@ on any item, not only the playing one (`modules/lua/libs/input.c:354-441`).
 So every 2 s the script walks the playlist and sets the title of each item with
 a known `duration` (seconds, `-1` = unknown) to `<title or name>`, spaces, and
 the length (`m:ss`, `h:mm:ss` from an hour), filling the line: right-aligned
-by padding, because the playlist font (DejaVu Sans Mono) gives every character
+by padding, because the playlist font (VLC Amp Mono = DejaVu Sans Mono, see `docs/font-notes.md`) gives every character
 the same advance. The line width in characters (`pl_columns`, at start): the
 Playtree draws a flat list's text 7 px in (`ctrl_tree.cpp` `makeImage`,
 `itemImageWidth` = 5 + 2) and cuts what does not fit with "..." (`ft2_font.cpp`
 `drawString`, glyph advance = FreeType's hinted `advance.x >> 6`); the skin's
-playtree is `P(W - 60)` wide (hi-fi skin, default window 620 px), its font
+playtree is `PW - P(50)` wide (hi-fi skin, default window `PW` = `P(620)` px; the rows end
+6 logical px before the scroll track, as wide as the left gutter, PP8), its font
 `P(12)` = `round(12 x scale)` px (Python rounding, half to even), and the
 advance `round(px x 0.6021)` = 7 / 9 / 11 / 14 px at 100 / 125 / 150 / 200 %
 (measured with FreeType for digits, space, "…" and accented letters). Scale
-comes from the `-NNN.vlt` name in `skins2-last`, the width from the `"main"`
+comes from the last `-NNN` (50..400) in the file name in `skins2-last` (so a renamed copy such as
+`VLC-Amp-125 (1).vlt`, a browser's second download from the configurator, still gives 1.25; until PP25 only a name
+ending in `-NNN.vlt` counted, and such a copy at 125 % got the 100 % column count: every length cut to `4:..`), the width from the `"main"`
 entry of `skins2-config` (both read with `vlc.config.get`; the width is the one
-VLC saved at its last exit). The playtree is `P(620) - P(560)` px narrower
-than the window (60 / 75 / 90 / 120 px). skins2's `drawString` shows the whole
+VLC saved at its last exit). The playtree is `P(50)` px narrower
+than the window (50 / 62 / 75 / 100 px; it stretches with the window). skins2's `drawString` shows the whole
 line only if, after every character, the pen plus "..." (two advances and the
-ink width of ".", 3 px at 12-22 px, 4 px at 24 px) is left of the limit
+box width of ".", `dot` = `ceil(px x 1233 / 2048)` = 8 / 10 / 11 / 15 px: VLC Amp Mono's
+glyph boxes span the whole cell, PP13; with plain DejaVu it was the dot's ink, 3-4 px) is left of the limit
 `playtree - 7`;
 otherwise it ends the line with "..." (`maxIndex < len`), even when the text
 itself would fit. So columns = the largest `n` with `n x adv + 2 x adv + dot <
-playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin: 76 at 100 % (77
-cut), 74 at 125 % (75 cut); predicted 73 at 150 %, 77 at 200 % (the rule was
-also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
-the Windows helper is read on Windows only. The script also
+playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin and VLC Amp Mono (PP8, 2026-11-02, playtree
+`PW - P(50)`): 77 / 75 / 74 / 77 at 100 / 125 / 150 / 200 %, each with `columns=` one more cut with "...", and 99 in a
+window widened to 777 px at 100 % (100 cut). Before PP8 (playtree `P(W - 60)`) it was 75 / 73 / 72 / 76, with plain
+DejaVu 76 / 74 / 73 / 77 (the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
+the Windows helper is read on Windows only. **Without the helper's width file (Linux, PP36)** nothing reports the live window width, and a column padded for
+the saved width is cut to "..." by skins2 as soon as the window is narrowed (510 px after 620: every length). So
+there `pl_columns` pads for the minimum width, `PL_MIN_W` = 510 logical px x scale (= `MIN_W` in `source/build_skin.py`;
+change both together): 61 columns at 100 %, 59 at 150 % (measured), the same column in any wider window (it sits further left,
+never cut). On Windows the width file, else the saved width, is used as before. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
-the skin (a skin given on the command line). A title longer than the room is cut to leave an ellipsis and two
-spaces. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
+the skin (a skin given on the command line). Since PP25 the lengths sit in one field as wide as the widest length in
+the playlist (at least 5 characters, `mm:ss`; 7 with an hour-long item), two spaces after the title column, so a
+title longer than its column is cut with "..." (since PP37 the same ellipsis as skins2's cut of the plain playing row) at the same column in every row and the length itself is never cut
+(before, the cut point moved with each length's width). Items without a known length are not touched. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
 `columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
 text (VLC re-read the tags, the user renamed it) is decorated afresh. The
@@ -1052,9 +1072,41 @@ Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin
 70 at 100 % and 91 at a saved 706 px window): unplayed items show
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
-suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
-the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **76 / 74 / 73 / 77** (the rule above, recomputed for the 12 px font
-and the 60 px playtree margin; 76 and 74 were also measured in VLC, one more character was cut).
+suffixes, `off` shows none, a 120-character title is cut with an ellipsis ("…" then, "..." since PP37). Column counts for
+the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **77 / 75 / 74 / 77** (the rule above with VLC Amp Mono's
+cell-wide "." box, the 12 px font and the `P(50)` playtree margin; all four measured in VLC, one more character was cut).
+
+**Why the playing item has no length (PP25, reconsidered).** skins2's own title text (`$N`, strip, full player,
+video window) is read once per track: `VlcProc::update_current_input` runs only when a new input appears
+(`vlcproc.cpp` `on_intf_event_changed`), so a padded title set later would not show there. But the title meta is
+also what the web interface (`status.json`, the helper's taskbar card), MPRIS (`modules/control/dbus`, the Linux
+media panel) and SMTC (the Windows media flyout) show for the current item, live on every meta change: a padded
+`Title       3:42` would appear there. So the playing row stays plain (it is drawn in the play colour; the full
+player shows `of 4:12`). The track-change race (the next item still padded when skins2 reads `$N`) was won in
+6 of 6 Next presses in VLC 3.0.20 (restore within one 100 ms poll).
+
+**Where the lengths come from.** VLC preparses every item added to the playlist (`playlist_NodeAddInput` ->
+`playlist_Preparse`, `src/playlist/item.c:735-752`) when `auto-preparse` is on (the default, `libvlc-module.c:2109`)
+and the item does not have both an artist and an album yet; local files only (`vlc_MetadataRequest` flags 0, 5 s
+`preparse-timeout`). Folders and `.m3u` files expand into children that are preparsed the same way. So local files
+get a length a moment after they are added, on Windows and Linux alike; streams, missing files, and items that came
+with artist + album (some saved playlists) get one only once played. Lua 3.0 cannot request a preparse
+(`modules/lua/libs/input.c` has only `is_preparsed`). The right end of the column stays about 3 cells before the
+row end: skins2 shows a line whole only if "..." (2 advances + the "." box) fits after every character
+(`ft2_font.cpp:216-235`).
+
+**Why the column may not show (PP25).** In the order found likely for a user on Windows: (1) the playlist holds
+only the playing track (one file opened from Explorer): that row stays plain, so no length is seen at all;
+(2) the skin file was renamed by a browser or Explorer (`VLC-Amp-125 (1).vlt`) and the script took it for 100 %:
+every length cut to `4:..` (fixed in PP25); (3) the Lua extras are not installed: only Setup / `linux/setup.sh`
+install them (copying a `.vlt` or a configurator download alone does not), and both skip them when `vlcrc` already
+names another `lua-intf` (Windows Setup now says so in its Done message, Linux warns); (4) `auto-preparse=0` or
+streams: no lengths until played; (5) a narrower player than the one VLC saved at its last exit, without the
+Windows helper: lines cut with "..." until the next start. A skin built with a proportional font (configurator
+upload) cannot line up. Separate skins2 bug seen while testing (VLC 3.0.20, not a duration problem): after a folder
+or an `.m3u` given at start expands into its children, the list draws no rows at all until it is scrolled or the
+window resized (`ctrl_tree.cpp`: `m_firstPos` is left at the end of the tree and only a slider change, a resize or
+SORT recomputes it; the PL button does not). Not fixable from Lua or the skin.
 
 ### Start and install (what Setup / `linux/setup.sh` must do)
 
@@ -1178,10 +1230,49 @@ the script.
   one. The sample rate (`$S`) stays integer kHz ("44" for 44.1 kHz): skins2
   does `sample-rate / 1000` in integer arithmetic (`vlcproc.cpp`) and
   the skin has no other source for it, so neither Lua nor the skin can show "44.1".
+- **Title without the extension** (backlog item 40): `$N` falls back to the file name, extension and all,
+  for a file without a title tag. `bare_tick` (every tick, after `pl_tick` puts the real title back on a
+  track change) sets such a playing `file:` item's title meta to the name without its extension (1-5
+  letters / digits after the last dot). It reaches the skin although `$N` is read once per input: the meta
+  change comes within one tick of the start and skins2 picks it up (checked: first track and Next 4/4 in
+  the harness). The playlist rows keep the extension: `pl_pass` treats a title equal to `bare_name(item)`
+  as "no title tag" and decorates from `item:name()`.
 - Robustness: every part runs in `pcall`; an error is logged (once per 5 s per
   message) and the loop goes on. Nothing playing, empty playlist, stop / start,
   playlist changes were tried. The loop ends when VLC quits (`vlc.misc.mwait`
   raises "Interrupted"). CPU: 0.1 % more over 30 s while playing (harness).
+
+## Links from the browser (`browser/`)
+
+User guide: [browser/README.md](../browser/README.md); backlog item 39.
+
+- **Chain.** Extension / bookmarklet -> `vlc-amp:play?mode=video|audio&url=<enc>` -> handler (Windows
+  `HKCU\Software\Classes\vlc-amp` -> `wscript vlc-amp-url.vbs "%1"` -> hidden `vlc-amp-url.ps1`, link in
+  `VLCAMP_URI`; Linux `vlc-amp-url.desktop`, `x-scheme-handler/vlc-amp` -> `vlc-amp-url.py`) -> yt-dlp
+  (`-O` with a field subset, one JSON line) -> VLC. The two scripts implement the same flow; keep them in step.
+- **Why a relay.** googlevideo URLs answer 403 to an open-ended request (no `Range`, or `bytes=N-`), which
+  is all VLC's http access sends. The relay (`127.0.0.1:48081`, Python `--relay` mode / `VlcAmpRelay.cs`)
+  turns each VLC request into consecutive closed 10 MB ranges and streams them as one 200 / 206 response
+  with the full `Content-Length`, so VLC seeks by reconnecting. Streams are marked `chunked` when yt-dlp
+  gives `downloader_options.http_chunk_size` or the host is `*.googlevideo.com`; other streams go to VLC
+  directly with `:http-user-agent` / `:http-referrer`. The relay URL carries the stream URL and its
+  User-Agent / Referer, so it is stateless; the secret in the path (state dir, 0600 on Linux) keeps web
+  pages from using it. No User-Agent from yt-dlp = VLC's own (`VLC/3.0.20 LibVLC/3.0.20`): some servers
+  block `Python-urllib`.
+- **How the item reaches VLC.** Video + separate audio = one item with `:input-slave=<audio>`. Item options
+  survive VLC's command line and the web interface's `in_play&option=...` (the Lua http interface adds them
+  as trusted); they are dropped from an XSPF (`input-slave` is unsafe) and over D-Bus one-instance ("item
+  option ... incompatible with single instance"). So: VLC running and the web interface answers (probed
+  with a plain `status.json`) -> `in_play`; VLC not running -> start it with the options (Windows through
+  `taskbar\launch.vbs`, Linux with the `Exec` of `vlc-amp.desktop`); Linux VLC running without the web
+  interface -> `--one-instance <item>` with a single muxed stream (`b[...][acodec!=none]`).
+- **Network detail.** Python's `socket.create_connection` tries addresses one by one with the full
+  timeout; on a network with one dead address every chunk stalled. `Upstream.connect` remembers the
+  address that worked per host and uses a 4 s connect timeout. .NET's `HttpWebRequest` needs
+  `ServicePointManager.DefaultConnectionLimit` raised (default 2 per host: video + audio + a seek).
+- **Tests.** `VLCAMP_VLC` (Linux) replaces the VLC command, `VLCAMP_CHUNK` the chunk size (exercise chunk
+  changes with a small file). Run the Linux handler inside `dbus-run-session` so `--one-instance` cannot
+  reach another VLC on the desktop session.
 
 ## Building and testing
 
@@ -1213,3 +1304,4 @@ tools/doc-shots.sh                                    # regenerate docs/img-thin
 | The theme can set "always on top" | No attribute; not saved either |
 | Separate EQ / PL windows can share the width | They cannot; hence one window with 4 equal layouts |
 | `b_x.png` and `B_x.png` are different files | Not on Windows |
+| skins2 places glyphs like FreeType does | It drops `bitmap_left` (`ft2_font.cpp` `drawString`): a glyph's ink starts at the pen, so `:` `.` `r` lose their left bearing; the shipped font `VLCAmpMono.ttf` (PP13, `docs/font-notes.md`) works around it |

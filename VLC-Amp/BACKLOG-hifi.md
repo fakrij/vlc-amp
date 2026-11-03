@@ -6,7 +6,7 @@ One style only: flat panels, hairline outlines, no header bars / separators, no 
 standard and flat styles are gone (H4, H5).
 
 Build: `python3 source/build_skin.py --bar-height 24` (the default strip, for a title bar; window 620 px wide,
-minimum 490). `--bar-height 36` = taskbar, `--bar-height 40` = the concept's floating strip. `--scale 1.25 / 1.5 / 2.0`
+minimum 510). `--bar-height 36` = taskbar, `--bar-height 40` = the concept's floating strip. `--scale 1.25 / 1.5 / 2.0`
 for Windows display scaling. Names: `VLC-Amp-[taskbar-|bar<N>-]<pct>.vlt`. Test in real VLC: `tools/vlc-test.sh build 1 24`,
 then `start`, `shot`, `click` (see `tools/README.md`); screenshots: `tools/doc-shots.sh` writes `docs/img-thin/`.
 

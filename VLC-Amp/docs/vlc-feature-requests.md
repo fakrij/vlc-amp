@@ -75,3 +75,12 @@ Options and what they would give:
 - Whether `es_format` (codec, channels) is readable as an input variable from Lua (not checked; `docs/lua-api-notes.md` Q3 lists only `time`, `length`, `position`).
 
 Close H16 with this note; reopen only if draft 04 is accepted or the Lua points above are tested and work.
+
+## Format chip for names without an extension (PP39)
+
+Limit, no workaround in 3.0.x. `$F` is the stream URI / local path (`utils/var_text.cpp`, `VarText::get`; value set in
+`vlcproc.cpp` `update_current_input`), shown right-aligned in a 4-cell box, so "4 No extension" shows "sion" and an
+http URL shows its last 4 characters. skins2 has no extension variable, substring or conditional text; the booleans a
+`visible=` can test (`vlc.isPlaying`, `hasVout`, `hasAudio`, `isMute`, `equalizer.isEnabled`, `playtree.isRandom` ...) do not
+depend on the name; Lua cannot change the item URI (no setter) and `$F` is not a meta. Upstream fix: a codec or
+extension variable (draft 04).

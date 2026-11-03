@@ -1,6 +1,6 @@
 [
   {"id": "dejavu", "name": "DejaVu Sans Mono", "file": null, "licence": null,
-   "note": "Bitstream Vera licence; the generator ships it itself."},
+   "note": "Bitstream Vera licence; the generator ships it itself (as VLC Amp Mono: the same glyphs, placed right by skins2)."},
   {"id": "jetbrains", "name": "JetBrains Mono", "file": "fonts/JetBrainsMono-Regular.ttf",
    "licence": "fonts/LICENSE-JetBrainsMono.txt", "note": "SIL OFL 1.1"},
   {"id": "roboto", "name": "Roboto Mono", "file": "fonts/RobotoMono-VF.ttf",

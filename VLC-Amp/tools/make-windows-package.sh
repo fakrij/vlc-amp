@@ -9,7 +9,7 @@ OUT=${1:-dist}
 NAME=VLC-Amp-windows
 PKG="${OUT:?}/${NAME:?}"
 
-paths=(Install.cmd Uninstall.cmd README.md 'VLC-Amp-*.vlt' taskbar lua docs/img-thin)
+paths=(Install.cmd Uninstall.cmd README.md 'VLC-Amp-*.vlt' taskbar lua browser docs/img-thin)
 dirty=$(git status --porcelain -- "${paths[@]}")
 [ -z "$dirty" ] || { echo "warning: uncommitted changes in packaged files (not included):"; echo "$dirty"; }
 

@@ -19,6 +19,9 @@
 #                         linux/vlc-amp-pin.py --install-autostart (only if that
 #                         file exists); --no-pin-autostart skips the question
 #   --no-web              do not switch on VLC's local web interface
+#   --links, --no-links   play links from the browser (vlc-amp: handler for the
+#                         browser extension, browser/README.md) or not; asked
+#                         when neither is given
 #   --ignore-running      do not refuse when a VLC process is running (VLC
 #                         overwrites vlcrc when it exits: not recommended)
 #   --uninstall           restore vlcrc from the backup, remove what was added
@@ -54,6 +57,7 @@ DEFAULT_PLAYER=ask        # ask | yes | no
 PIN_AUTOSTART=ask         # ask | yes | no
 WANT_FLAVOR=""
 WEB=1
+LINKS=ask                 # ask | yes | no
 IGNORE_RUNNING=0
 
 while [ $# -gt 0 ]; do
@@ -69,6 +73,8 @@ while [ $# -gt 0 ]; do
         --vlc)                [ $# -ge 2 ] || die "--vlc needs native, flatpak or snap"; WANT_FLAVOR="$2"; shift ;;
         --vlc=*)              WANT_FLAVOR="${1#--vlc=}" ;;
         --no-web)             WEB=0 ;;
+        --links)              LINKS=yes ;;
+        --no-links)           LINKS=no ;;
         --ignore-running)     IGNORE_RUNNING=1 ;;
         -h|--help)            usage; exit 0 ;;
         *)                    usage >&2; die "unknown option: $1" ;;
@@ -91,6 +97,9 @@ DATA_HOME=$(xdg_dir "${XDG_DATA_HOME:-}" "$HOME/.local/share")
 STATE_HOME=$(xdg_dir "${XDG_STATE_HOME:-}" "$HOME/.local/state")
 APPS_DIR="$DATA_HOME/applications"
 DESKTOP_FILE="$APPS_DIR/$DESKTOP_ID"
+LINK_ID="vlc-amp-url.desktop"               # the vlc-amp: link handler (links from the browser)
+LINK_FILE="$APPS_DIR/$LINK_ID"
+LINK_MIME="x-scheme-handler/vlc-amp"
 STATE_FILE="$STATE_HOME/vlc-amp/linux-setup.state"
 
 # ------------------------------------------------------------------- state
@@ -98,7 +107,7 @@ STATE_FILE="$STATE_HOME/vlc-amp/linux-setup.state"
 # exactly what was changed: flavor, rc, rc_created, desktop, lua, mime.
 #   mime=<type> <desktop id that was the default before, or - for none>
 
-ST_FLAVOR=""; ST_RC=""; ST_RC_CREATED=0; ST_DESK=""; ST_LUA=""; ST_MIME=""; ST_PIN=""
+ST_FLAVOR=""; ST_RC=""; ST_RC_CREATED=0; ST_DESK=""; ST_LUA=""; ST_MIME=""; ST_PIN=""; ST_LINKS=""
 NL='
 '
 
@@ -113,6 +122,7 @@ load_state() {
     ST_LUA=$(state_values lua)
     ST_MIME=$(state_values mime)
     ST_PIN=$(state_values pin | tail -n 1)
+    ST_LINKS=$(state_values links | tail -n 1)
     [ -n "$ST_RC_CREATED" ] || ST_RC_CREATED=0
 }
 
@@ -123,6 +133,7 @@ write_state() {
         echo "rc=$ST_RC"
         echo "rc_created=$ST_RC_CREATED"
         [ -z "$ST_PIN" ] || echo "pin=$ST_PIN"
+        [ -z "$ST_LINKS" ] || echo "links=$ST_LINKS"
         [ -z "$ST_DESK" ] || echo "desktop=$ST_DESK"
         if [ -n "$ST_LUA" ]; then printf '%s\n' "$ST_LUA" | sed 's/^/lua=/'; fi
         if [ -n "$ST_MIME" ]; then printf '%s\n' "$ST_MIME" | sed 's/^/mime=/'; fi
@@ -331,7 +342,7 @@ repair_video_window() {
     awk -v pct="$1" '
     function rnd(v,   f) { f = int(v); if (v - f > 0.5 || (v - f == 0.5 && f % 2 == 1)) f++; return f }
     /^skins2-config=./ {
-        w = rnd(620 * pct / 100); h = rnd(439 * pct / 100)   # 620 x 439 = video-l of the skin, rounded half to even like the generator
+        w = rnd(620 * pct / 100); h = rnd(441 * pct / 100)   # 620 x 441 = video-l of the skin, rounded half to even like the generator
         if (index($0, "[\"video\" ") == 0) $0 = $0 "[\"video\" \"video-l\" 600 300 " w " " h " 1]"
         while (match($0, /\["video" "video-min" -?[0-9]+ -?[0-9]+ [0-9]+ [0-9]+ [01]\]/)) {
             e = substr($0, RSTART, RLENGTH); split(e, f, " ")
@@ -528,15 +539,48 @@ set_default_player() {
 }
 
 # Remove "<mime>=vlc-amp.desktop[;]" lines (xdg-mime has no "unset").
-drop_default() { # <mime>
+drop_default() { # <mime> [desktop id]
     for f in "$CONFIG_HOME"/mimeapps.list "$CONFIG_HOME"/*-mimeapps.list; do
         [ -f "$f" ] || continue
-        TB_LINE="$1=$DESKTOP_ID" awk '
+        TB_LINE="$1=${2:-$DESKTOP_ID}" awk '
         BEGIN { l = ENVIRON["TB_LINE"] }
         $0 == l || $0 == l ";" { next }
         { print }' "$f" >"$f.new" && cat "$f.new" >"$f"
         rm -f "$f.new"
     done
+}
+
+# ------------------------------------------------- links from the browser
+
+# The vlc-amp: handler: a hidden launcher that runs browser/vlc-amp-url.py with the link.
+make_link_handler() {
+    script="$ROOT/browser/vlc-amp-url.py"
+    # Exec quoting (Desktop Entry spec): the path in double quotes, with " ` $ \ escaped
+    q=$(printf '%s' "$script" | sed 's/[\\"`$]/\\&/g')
+    mkdir -p "$APPS_DIR"
+    cat >"$LINK_FILE.new" <<EOF
+# Written by the VLC Amp setup (linux/setup.sh --uninstall removes it).
+[Desktop Entry]
+$MARKER
+Type=Application
+Name=VLC Amp link
+Comment=Plays vlc-amp: links from the browser extension in VLC
+Exec=python3 "$q" %u
+Icon=vlc
+NoDisplay=true
+Terminal=false
+MimeType=$LINK_MIME;
+EOF
+    mv "$LINK_FILE.new" "$LINK_FILE"
+    chmod 644 "$LINK_FILE"
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
+    fi
+    if command -v xdg-mime >/dev/null 2>&1; then
+        xdg-mime default "$LINK_ID" "$LINK_MIME" 2>/dev/null || warn "xdg-mime could not set $LINK_MIME"
+    else
+        warn "xdg-mime not found: the browser may not find the vlc-amp: handler"
+    fi
 }
 
 # ----------------------------------------------------------------- uninstall
@@ -596,6 +640,16 @@ do_uninstall() {
             fi
         else
             say "  $desk was not written by this setup: left alone"
+        fi
+    fi
+
+    lf="${ST_LINKS:-$LINK_FILE}"
+    if [ -f "$lf" ] && grep -qx "$MARKER" "$lf"; then
+        rm -f "$lf"
+        drop_default "$LINK_MIME" "$LINK_ID"
+        say "  removed $lf (vlc-amp: links from the browser)"
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database "$(dirname "$lf")" >/dev/null 2>&1 || true
         fi
     fi
 
@@ -807,6 +861,36 @@ if [ -f "$PIN_SCRIPT" ]; then
             else
                 warn "vlc-amp-pin.py --install-autostart failed; start pinned not set up"
             fi
+        fi
+    fi
+fi
+
+# 6. links from the browser: the vlc-amp: handler (browser/vlc-amp-url.py, needs python3 and yt-dlp)
+if [ -f "$ROOT/browser/vlc-amp-url.py" ]; then
+    case "$LINKS" in
+        yes) want_links=1 ;;
+        no)  want_links=0 ;;
+        *)
+            want_links=0
+            if [ "$YES" = 1 ] || [ -t 0 ]; then
+                if ask_yes "Play videos and music from web pages in VLC (browser extension; YouTube and many other sites)?"; then want_links=1; fi
+            else
+                say "  links from the browser: not changed (no terminal to ask; use --links)"
+            fi
+            ;;
+    esac
+    if [ "$want_links" = 1 ] && ! command -v python3 >/dev/null 2>&1; then
+        say "  links from the browser: python3 not found, skipped"
+        want_links=0
+    fi
+    if [ "$want_links" = 1 ]; then
+        make_link_handler
+        ST_LINKS="$LINK_FILE"
+        write_state
+        say "  links from the browser: vlc-amp: handler $LINK_FILE"
+        say "    add the Chrome extension: chrome://extensions > Developer mode > Load unpacked > $ROOT/browser/extension"
+        if ! command -v yt-dlp >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/yt-dlp" ]; then
+            warn "yt-dlp is not installed: links will not play until it is (pipx install yt-dlp; distro packages are often too old for YouTube)"
         fi
     fi
 fi

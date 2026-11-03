@@ -18,7 +18,7 @@ or make your own colours in the [online configurator](https://fakrij.github.io/v
 Unpack it, then see [Install](#install).
 
 The skin is a thin hi-fi design (flat panels, hairline outlines). The player window is 620 x 676 px at 100 % (minimum
-width 490); the default strip is 24 px high (for a title bar), 36 px is the taskbar build and 40 px the
+width 510); the default strip is 24 px high (for a title bar), 36 px is the taskbar build and 40 px the
 floating strip of the original concept: `python3 source/build_skin.py --bar-height 24`.
 
 The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from real VLC 3.0.20 by
@@ -43,8 +43,7 @@ The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from re
   ![Strip with EQ and playlist, panels below the bar](docs/img-thin/strip-panels.png)
 
 - **Full player** (expand button): large time, title, bitrate, sample rate,
-  file format, shuffle / loop / repeat-one, speed, seek bar, transport (stop,
-  previous, slower, play / pause, faster, next), volume, VLC's menu, minimize, quit.
+  file format, shuffle / loop / repeat-one, speed, seek bar, transport (previous, slower, play / pause, faster, next), volume, VLC's menu, minimize, quit.
 
   ![Full player with equalizer and playlist](docs/img-thin/full-eq.png)
 
@@ -63,6 +62,10 @@ The screenshots (`docs/img-thin/`: 620 px window, 24 px strip) are taken from re
 - **Media controls**: keyboard media keys and the system's media panel show
   and control VLC. Windows: optional plugin, installed by Setup (see
   [Media controls](#media-controls)). Linux: built into VLC.
+- **Links from the browser**: right-click a page, link or video > Play in VLC
+  Amp (or audio only): YouTube (up to 1080p) and the other sites yt-dlp knows.
+  Optional; needs yt-dlp and the browser extension in `browser/`. See
+  [Links from the browser](#links-from-the-browser).
 
 ## Requirements
 
@@ -257,7 +260,7 @@ to the strip, minimize, quit. A skin built with several themes also has a
 round theme button there.
 Display: large time (click to switch elapsed / time left), the track length
 under it ("of 5:16"), title, bitrate and sample rate, SHUF / LOOP / REP1 toggles,
-speed. Then the seek bar, transport (stop, previous, slower, play / pause,
+speed. Then the seek bar, transport (previous, slower, play / pause,
 faster, next), volume, PL and EQ.
 
 ### Playlist and equalizer
@@ -316,6 +319,7 @@ do; other distributions are not checked).
 | **Next / previous equalizer preset** (turns the equalizer on; the EQ panel follows) | `Ctrl+Shift+Up` / `Down` | hotkey only |
 | **Bitrate for FLAC** and other lossless files (shown by the full player; VLC shows none) | automatic | |
 | **Durations in the playlist**, lined up at the right edge, for every item whose length VLC knows | automatic | |
+| **Song name without the file extension** in the strip, the full player and the video window, for a file without a title tag (`song.flac` shows as `song`; the format chip shows `.flac`; playlist rows keep the extension) | automatic | |
 
 - Folders are the directories of local files; streams are skipped. A folder
   must be in one piece in the playlist.
@@ -325,15 +329,20 @@ do; other distributions are not checked).
 - Durations: the skin's playlist can show only one text column (the title),
   so the script adds the length to each item's title in VLC's memory (files
   are not touched). The playlist font has equal-width characters, so the
-  title is padded with spaces to put the lengths in one column at the right
-  edge; a title that is too long is cut with "…" so its length stays visible.
+  title is padded with spaces to put the lengths in one right-aligned column
+  at the right edge; a title that is too long is cut with "…" at the same
+  place in every row, so its length stays visible.
   On Windows the column follows the player's width while you resize it (the
   helper tells the script the width; within about a second). Without the
   helper, and on Linux, the width is the one VLC saved at its last exit: after
   resizing, the column follows at the next start, and a much narrower player
   cuts the lengths off until then. The playing item keeps its real title, so the
   strip, the taskbar card and the media controls show it plain; it gets its
-  length back when another track plays. Lengths appear once VLC has read a
+  length back when another track plays (with only one track in the playlist
+  you therefore see no length: the full player shows it). Keep the skin's file
+  name (`VLC-Amp-125.vlt`, a copy such as `VLC-Amp-125 (1).vlt` also works):
+  the script reads the scale from it. Copying only a `.vlt` (or a configurator
+  download) does not install the script: run Setup once. Lengths appear once VLC has read a
   file (a moment after adding it); streams have none. The SORT button still
   sorts by name. A playlist saved with SAVE keeps the lengths in its titles
   (they are not doubled when it is loaded again). Options, in `vlcrc` as
@@ -533,6 +542,21 @@ Interface > Control interfaces > tick **Windows SMTC integration** > Save.
 desktop's media widget, media keys and `playerctl` control the skinned player.
 Tested with this skin.
 
+### Links from the browser
+
+Play a web page's video or music in VLC: right-click the page, a link or a
+video > **Play in VLC Amp** or **Play audio only in VLC Amp**, or click the
+extension's toolbar button. YouTube plays up to 1080p (H.264 + m4a); the other
+~1800 sites [yt-dlp](https://github.com/yt-dlp/yt-dlp) knows and direct media
+links work too. A running VLC gets it in its playlist, otherwise VLC starts.
+
+Setup asks for it (Windows: also offers to install yt-dlp with winget; Linux:
+`linux/setup.sh --links`). Then load the extension from `browser/extension`
+(Chrome: `chrome://extensions` > Developer mode > Load unpacked; Edge works too) and keep
+yt-dlp current: an old one gets cut off by YouTube. A bookmarklet works without
+the extension. Details, how it works and the limits:
+[browser/README.md](browser/README.md).
+
 ### Online configurator
 
 **<https://fakrij.github.io/vlc-amp/>** builds your own `.vlt` in the
@@ -707,7 +731,9 @@ by a taskbar click: steps 9-15). Debug log on (`$DebugLog = $true`), helper rest
 These come from VLC's skin engine (skins2); details in
 [docs/architecture.md](docs/architecture.md) and [BACKLOG.md](BACKLOG.md):
 
-- The playlist has a fixed height and shows one column (no duration column).
+- The playlist has a fixed height and draws one text column: the song lengths
+  are added to that text by the [Lua extras](#lua-extras) (no sortable
+  columns, no length on the playing item).
 - No A-B loop, EQ presets or "next folder" *buttons* (skins2 has no such
   actions): they are keyboard shortcuts and tray menu entries, see
   [Lua extras](#lua-extras).
@@ -746,6 +772,7 @@ These come from VLC's skin engine (skins2); details in
 | `source/build_skin.py` | Generator: draws every bitmap and writes the skin (Python 3 + Pillow) |
 | `source/fonts/` | DejaVu fonts used by the generator and the skin |
 | `configurator/` | The online configurator (static page, Pyodide; `sync.sh` copies the generator into it), [configurator/README.md](configurator/README.md) |
+| `browser/` | Links from the browser: the extension, the `vlc-amp:` handler and its local relay (`vlc-amp-url.py` for Linux, `vlc-amp-url.ps1` + `VlcAmpRelay.cs` for Windows), [browser/README.md](browser/README.md) |
 | `linux/` | Linux: `setup.sh` (VLC settings, launcher, default app, pin autostart, `--uninstall`), `vlc-amp-pin.py` (pin on start), `follow-system-theme.sh` (light / dark prototype) |
 | `custom-colour/` | Pick the Custom theme's accent colour: `Custom colour.cmd` + `custom-colour.ps1` (Windows), `custom-colour.py` (Linux / any Python 3) |
 | `tools/make-windows-package.sh` | Builds `dist/VLC-Amp-windows/` (+ zip) to copy to a Windows PC |
@@ -761,7 +788,7 @@ python3 source/build_skin.py --bar-height 40 --width 620 --scale 1   # concept s
 ```
 
 `--scale` 1 / 1.25 / 1.5 / 2 matches the display scaling, `--width` the default
-width in logical pixels (default 620, minimum 490 at every bar height; the video window is never narrower than 580), `--bar-height` the strip height in logical
+width in logical pixels (default 620, minimum 510 at every bar height; the video window is never narrower than 580), `--bar-height` the strip height in logical
 pixels (default 24; 36 for the taskbar build, written as
 `VLC-Amp-taskbar-NNN.vlt`, other heights as `VLC-Amp-bar<N>-NNN.vlt`; 24 to 60),
 `--out` the output folder (default
