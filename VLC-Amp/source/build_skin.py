@@ -1336,34 +1336,40 @@ def build(skin, W, BH=BAR_DEFAULT):
             hslice(skin, lay, "strip_bg", bg, 0, 0, 14, 10, tag=cap_tag(rt, rb))
         lay.vis = base_vis
         grip_tab(skin, lay, bg, grip_x(W), 3, BH - 6)
-        x = 16
-        lay.button("b_expand", P(x), P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
-        x += BW_ + G_
-        lay.button("b_prev", P(x), P(BY), "playlist.previous()", "Previous")
-        x += BW_ + G_
-        lay.checkbox("t_play", P(x), P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        x += BW_ + 4 + G_
-        lay.button("b_next", P(x), P(BY), "playlist.next()", "Next")
-        dx = x + BW_ + G_
-        RP = 14 + BW_ + 2 * (G_ + PLW)           # distance of the PL button's left edge from the right edge
-        MG = 3                                       # tight gap around the mode button
-        dw = W - (RP + G_ + TW + 2 * MG + MB) - dx
+        # PP41: both button groups are chained in device px (each step = P(width) + P(gap)), so equal
+        # logical gaps are equal device gaps at every scale; the title box takes what is left
+        bw, gp = P(BW_), P(G_)
+        x_exp = P(16)
+        x_prev = x_exp + bw + gp
+        x_play = x_prev + bw + gp
+        x_next = x_play + P(BW_ + 4) + gp            # the play bitmap is BW_ + 4 wide
+        dxp = x_next + bw + gp
+        x_top = PW - P(14) - bw                      # pin; EQ and PL chain leftwards from it
+        x_eq = x_top - gp - P(PLW)
+        x_pl = x_eq - gp - P(PLW)
+        tx = x_pl - gp - P(TW)                       # time box
+        x_mode = tx - P(3) - P(MB)                   # tight gap (3) around the mode button
+        dwp = x_mode - P(3) - dxp                    # title box width (device px)
+        dw = dwp / S                                 # logical width that renders as exactly dwp device px
+        dw = int(dw) if dw == int(dw) else dw
+        lay.button("b_expand", x_exp, P(BY), "main.setLayout(full-%s)" % d, "Expand to full player")
+        lay.button("b_prev", x_prev, P(BY), "playlist.previous()", "Previous")
+        lay.checkbox("t_play", x_play, P(BY), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("b_next", x_next, P(BY), "playlist.next()", "Next")
         c = Canvas(dw, BT)
         lcd(c, 0, 0, dw, BT, 3)
-        hslice(skin, lay, "strip_lcd", solid(c.done()), P(dx), P(BY), 4, 4)
+        hslice(skin, lay, "strip_lcd", solid(c.done()), dxp, P(BY), 4, 4)
         # the title window is also a seek bar: progress fills it from the left, a click jumps
         # there (and drags), the mouse wheel steps 5 %. The title text ignores the mouse.
         fw, fh = dw - 2, BT - 2
-        title_slider(lay, skin, "s_title_" + lay.id, "title", P(dx) + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
+        title_slider(lay, skin, "s_title_" + lay.id, "title", dxp + inset(), P(BY) + inset(), fw, fh, TITLE_FRAMES, "thumb_title")
         ty = round(BH / 2 - 0.582 * M["font"])   # text top: the line (1.164 em) is centred in the bar
-        lay.text(P(dx + 8), P(ty), P(dw - 16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
+        lay.text(dxp + P(8), P(ty), dwp - P(16), skin.strip_font[0], "$N", CYAN_TXT, rb="righttop", focus=False,
                  sample="Nightline Orchestra - Slow Burn Across the River (Extended Mix)")
-        R = lambda v: PW - P(v)
-        tx = R(RP + G_ + TW)
         # time box = volume bar filled from the left like the title's seek fill; click / drag / wheel sets
         # the volume. The small button on its left switches elapsed <-> time left (remembered by VLC)
         lay.image("c_time_s", tx, P(BY), action="move", **tr)
-        lay.checkbox("c_mode", R(RP + G_ + TW + MG + MB), P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
+        lay.checkbox("c_mode", x_mode, P(BY + (BT - MB) // 2), COUNTDOWN, "tflag.show()", "tflag.hide()",
                      "Elapsed time (click: time left)", "Time left (click: elapsed time)", **tr)
         vw, vfh = TW - TIME_ZONE - 1, BT - 2
         lay.vol_slider("s_vol_" + lay.id, tx + inset(), P(BY) + inset(), "(0,%d),(%d,%d)" % (P(vfh) // 2, P(vw) - 1, P(vfh) // 2),
@@ -1373,8 +1379,8 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.text(tx + P(TIME_ZONE), P(ty), P(TW - TIME_ZONE), skin.strip_font[0], text, CYAN_TXT,
                      lt="righttop", rb="righttop", align="center", scrolling="none", sample=sample,
                      focus=False).vis = vis_and(lay.theme_vis, vis)
-        panel_toggles(lay, "t_pl", "t_eq", R(RP), R(14 + BW_ + G_ + PLW), P(BY))
-        lay.checkbox("t_top", R(14 + BW_), P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
+        panel_toggles(lay, "t_pl", "t_eq", x_pl, x_eq, P(BY))
+        lay.checkbox("t_top", x_top, P(BY), "vlc.isOnTop", "vlc.onTop()", "vlc.onTop()",
                      "Always on top: off (click to pin)", "Always on top: on (click to unpin)", **tr)
 
     # ================= full player bar
