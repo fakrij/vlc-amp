@@ -1054,7 +1054,7 @@ never cut). On Windows the width file, else the saved width, is used as before. 
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
 the skin (a skin given on the command line). Since PP25 the lengths sit in one field as wide as the widest length in
 the playlist (at least 5 characters, `mm:ss`; 7 with an hour-long item), two spaces after the title column, so a
-title longer than its column is cut with "…" at the same column in every row and the length itself is never cut
+title longer than its column is cut with "..." (since PP37 the same ellipsis as skins2's cut of the plain playing row) at the same column in every row and the length itself is never cut
 (before, the cut point moved with each length's width). Items without a known length are not touched. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
 `columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
@@ -1072,7 +1072,7 @@ Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin
 70 at 100 % and 91 at a saved 706 px window): unplayed items show
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
-suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
+suffixes, `off` shows none, a 120-character title is cut with an ellipsis ("…" then, "..." since PP37). Column counts for
 the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **77 / 75 / 74 / 77** (the rule above with VLC Amp Mono's
 cell-wide "." box, the 12 px font and the `P(50)` playtree margin; all four measured in VLC, one more character was cut).
 

@@ -452,7 +452,7 @@ end
 
 -- Two columns in one line of pl.cols characters: the title, then the length right-aligned in a field
 -- of pl.field characters (the widest length in the playlist, at least "mm:ss"), PL_GAP spaces apart.
--- A title longer than its column is cut with an ellipsis, so every cut title ends at the same column
+-- A title longer than its column is cut with "..." (as skins2 cuts the playing row, PP37), so every cut title ends at the same column
 -- and the length is never cut. In "suffix" mode "Title (3:42)".
 local PL_GAP, PL_FIELD_MIN = 2, 5
 local function decorate(title, sec)
@@ -460,7 +460,7 @@ local function decorate(title, sec)
     if pl.mode == "suffix" then return title .. " (" .. len .. ")" end
     local field = math.max(pl.field or PL_FIELD_MIN, u_len(len))
     local room = pl.cols - field - PL_GAP              -- the title column
-    if u_len(title) > room then title = u_sub(title, room - 1) .. "\226\128\166" end   -- U+2026
+    if u_len(title) > room then title = u_sub(title, room - 3) .. "..." end   -- the same ellipsis as skins2's own cut
     return title .. string.rep(" ", pl.cols - u_len(title) - u_len(len)) .. len
 end
 
