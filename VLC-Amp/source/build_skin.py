@@ -605,9 +605,12 @@ def _light_theme():
 def on_label_look(st):
     """Lit label toggle: (ring, text colour, face tint). Dark themes: pale accent ring, accent text, plain face.
     Light themes (PP30): a pale accent ring and accent text read weaker than the dark off label, so the ring is the
-    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint."""
+    full accent, the text a darker accent shade (>= 4.5:1 on the tinted face) and the face a faint accent tint.
+    PP45: hover on a lit toggle (light themes) shows like the off hover: a lighter face (less tint) and a darker label."""
     if not _light_theme():
         return ring_colour(CYAN), CYAN if st != "down" else None, None
+    if st == "over":
+        return CYAN, mix(CYAN, "#000000", 0.5), (CYAN, 0.04)
     return CYAN, mix(CYAN, "#000000", 0.35), (CYAN, 0.12)
 
 
