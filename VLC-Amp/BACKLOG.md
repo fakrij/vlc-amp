@@ -2,7 +2,7 @@
 
 > **Hi-fi redesign fork:** open items, rules and assignments for the new design are in [BACKLOG-hifi.md](BACKLOG-hifi.md).
 
-Last updated 2026-11-02 (section 8: Jiri's design requests PP23-PP28; section 7: second pass; section 6: pixel-perfect audit, PP1-PP14; 2026-11-01: hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
+Last updated 2026-11-03 (section 10: focused audit PP41-PP46, PP40; section 9: final audit PP30-PP39; section 8: Jiri's design requests PP23-PP28; section 7: second pass; section 6: pixel-perfect audit, PP1-PP14; 2026-11-01: hi-fi integration verification pass: section 0; docs pass T4; item 35 and T26-T29 from the v1.0 code review; earlier: T19-T20 added; items 26-31 and T21-T23 from the Windows test; 32-33 and T25 from the second test). Status key:
 
 - **DONE**: built and tested in real VLC 3.0.20 (Linux, skins2).
 - **SKIN**: doable in the skin generator alone.
@@ -814,16 +814,16 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
 
 | ID | P | Task | Model | Group | Status |
 |----|---|------|-------|-------|--------|
-| PP30 | P2 | Light themes: a toggle's "on" look (accent text + pale accent ring) is weaker than its "off" look (dark label), so on reads like disabled | Sonnet, medium | G-bmp | open |
-| PP31 | P2 | Light themes: SHUF / LOOP / REP1 chips turn a dark grey block with dark text while pressed | Haiku, low | G-bmp | open |
-| PP32 | P2 | Volume group spacing differs: speaker -> groove ink gap 6 px (full player), 19 px (video panel), 3 px (fullscreen controller); fullscreen controller rhythm 12 / 10 / 10 px vs 12 / 8 / 12 in the video panel | Sonnet, medium | G-video | done (branch worktree-agent-a3eeb0756dde075ba, unmerged): video panel and fullscreen controller volume group follows the full player's rule (speaker zone, 4 px, 100 px groove, 8 px, % text; more / less button VW - 213, speaker VW - 182, groove VW - 156); fullscreen controller same x, transport y 30 (preview rows 12 / 8 / 12 px, FSH 70). Real VLC (Xvfb :212, `hasVout` -> `not isMute`): run-length scans speaker -> groove / groove -> text 7 / 8, 9 / 10, 12 / 13, 16 / 17 px identical in full player, video-l and video-x at 100 / 125 / 150 / 200 %; fullscreen controller via `preview_layout` (100 / 150 %). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp32-*.png` |
-| PP33 | P2 | Video panel and fullscreen controller show the time in hour format ("0:00:14 / 0:02:56") while the strip and full player show "01:32" | Haiku, low | G-video | done (branch worktree-agent-a3eeb0756dde075ba, unmerged): `$t / $d` in video_layout and the fullscreen controller. Real VLC: "00:10 / 03:34" (short file), "1:00:16 / 1:02:05" fits (long.wav, 100 %). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp33-*.png` |
-| PP34 | P2 | video-x: the corner resize tab touches the faster button's bottom-right corner (side effect of PP28) | Sonnet, medium (decision) | G-video | done (branch worktree-agent-a3eeb0756dde075ba, unmerged): `corner_handle` 7 x 7 at VW - 11 / VH - 11 (video-l and video-x), 1 px clear of the Faster button; `br` cap / seam checks pass at 100 / 125 / 150 / 200 % builds. Real VLC 12x crops at 4 scales: tab clear of button and outline; dragging the tab at 150 % resized 930 x 662 -> 1050 x 752. `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp34-*.png` |
-| PP35 | P3 | Full player transport gaps 5 / 4 / 5 / 5 px at 125 % (rounded logical positions) | Haiku, low | G-full | done (branch worktree-agent-a3eeb0756dde075ba, unmerged): `row_x` places the transport in device px (x0 = P(12), next = prev + P(w) + P(4)) in add_full, video_layout and the fullscreen controller. Real VLC run-length scans: gaps 4 / 5 / 6 / 8 px, all equal, in full player and video-l at 100 / 125 / 150 / 200 % (125 % was 5, 4, 5, 5). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp35-*.png` |
-| PP36 | P2 | Linux: narrowing the window live cuts every playlist length to "..." (the Lua keeps the start width's column count) | Opus, high (decision) | Lua | done (branch worktree-agent-a93949b36f829d011, unmerged): option (a): `pl_columns` without a width (Linux) pads for `PL_MIN_W` = 510 x scale (documented with `MIN_W` of build_skin.py, change both); Windows path (width file, else saved width) unchanged. Verified in real VLC 3.0.20, Lua extras, Xvfb :213, instance pp36, 100 / 150 %: 61 / 59 columns; start 620 / 930, narrowed to 510 / 765, widened +150: lengths never "...", column further left. Crops `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp36-*.png` |
-| PP37 | P3 | Playlist: Lua cuts long titles with "…" (one glyph), skins2 cuts the plain playing row with "..." | Haiku, low | Lua | done (branch worktree-agent-a93949b36f829d011, unmerged): Lua cuts with "..." (title cut to room - 3 + "..."), same style as skins2; DejaVu has the dot. Verified in VLC 100 / 150 %: cut rows and the plain playing row both end "...", lengths stay in one column. Crops `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp37-*.png` |
-| PP38 | P3 | Strip time / title text 1 px below the box centre at 150 % (ink pad top 7 / bottom 5) | Haiku, low | G-strip | done (branch worktree-agent-a162246a3e949a7b5, unmerged): time box at 150 % pads T 5 / B 5 (was 6 / 4 in the same measure, 7 / 5 in the audit's); 125 % T 3 / B 4 (whole pixels, was the same bytes); 200 % T 7 / B 7; 100 % and 200 % (and 125 %) `.vlt` byte-identical to design-tuning. Fix: `add_strip` text y in device px from the box's device centre |
-| PP39 | P3 | Format chip shows the last 4 letters of a name without extension ("No extension" -> "sion") | Haiku, low (decision) | G-full | **limit** (investigated 2026-11-03, branch worktree-agent-af9627ba016c54cb2, unmerged; no code changed): no clean workaround. Evidence (VLC 3.0.x, read from the source; not rendered, nothing changed): `utils/var_text.cpp` `VarText::get` (about lines 110-121) expands only `$N` `$F` `$B` etc. by plain string replace, `$F` = `getStreamURIVar()`, set in `vlcproc.cpp` `update_current_input` (about line 713) from `vlc_uri2path` or `input_item_GetURI`: no extension variable, no substring / conditional. The only booleans a `visible=` can test (`vlcproc.cpp` ctor, about lines 89-119): `playlist/playtree.isRandom/isLoop/isRepeat`, `vlc.isPlaying/isStopped/isPaused/isSeekable/canRecord/isRecording/isFullscreen/hasVout/hasAudio/isMute`, `dvd.isActive`, `equalizer.isEnabled`: none depends on the name, and Lua could only flip them by changing real playback state. Lua (`vlc.*`) has `item:set_meta` but no URI setter, and `$F` is the URI, not a meta; the skin cannot read a meta into the chip (`$N` is the title format, computed once per input). Normal .wav / .mp3 / .flac / .opus / .m4a unchanged. Documented in docs/vlc-feature-requests.md |
+| PP30 | P2 | Light themes: a toggle's "on" look (accent text + pale accent ring) is weaker than its "off" look (dark label), so on reads like disabled | Sonnet, medium | G-bmp | done (6b622fd, merged 2c08d12) |
+| PP31 | P2 | Light themes: SHUF / LOOP / REP1 chips turn a dark grey block with dark text while pressed | Haiku, low | G-bmp | done (6f7c1e4, merged 2c08d12) |
+| PP32 | P2 | Volume group spacing differs: speaker -> groove ink gap 6 px (full player), 19 px (video panel), 3 px (fullscreen controller); fullscreen controller rhythm 12 / 10 / 10 px vs 12 / 8 / 12 in the video panel | Sonnet, medium | G-video | done (branch worktree-agent-a3eeb0756dde075ba, merged into design-tuning): video panel and fullscreen controller volume group follows the full player's rule (speaker zone, 4 px, 100 px groove, 8 px, % text; more / less button VW - 213, speaker VW - 182, groove VW - 156); fullscreen controller same x, transport y 30 (preview rows 12 / 8 / 12 px, FSH 70). Real VLC (Xvfb :212, `hasVout` -> `not isMute`): run-length scans speaker -> groove / groove -> text 7 / 8, 9 / 10, 12 / 13, 16 / 17 px identical in full player, video-l and video-x at 100 / 125 / 150 / 200 %; fullscreen controller via `preview_layout` (100 / 150 %). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp32-*.png` |
+| PP33 | P2 | Video panel and fullscreen controller show the time in hour format ("0:00:14 / 0:02:56") while the strip and full player show "01:32" | Haiku, low | G-video | done (branch worktree-agent-a3eeb0756dde075ba, merged into design-tuning): `$t / $d` in video_layout and the fullscreen controller. Real VLC: "00:10 / 03:34" (short file), "1:00:16 / 1:02:05" fits (long.wav, 100 %). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp33-*.png` |
+| PP34 | P2 | video-x: the corner resize tab touches the faster button's bottom-right corner (side effect of PP28) | Sonnet, medium (decision) | G-video | done (branch worktree-agent-a3eeb0756dde075ba, merged into design-tuning): `corner_handle` 7 x 7 at VW - 11 / VH - 11 (video-l and video-x), 1 px clear of the Faster button; `br` cap / seam checks pass at 100 / 125 / 150 / 200 % builds. Real VLC 12x crops at 4 scales: tab clear of button and outline; dragging the tab at 150 % resized 930 x 662 -> 1050 x 752. `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp34-*.png` |
+| PP35 | P3 | Full player transport gaps 5 / 4 / 5 / 5 px at 125 % (rounded logical positions) | Haiku, low | G-full | done (branch worktree-agent-a3eeb0756dde075ba, merged into design-tuning): `row_x` places the transport in device px (x0 = P(12), next = prev + P(w) + P(4)) in add_full, video_layout and the fullscreen controller. Real VLC run-length scans: gaps 4 / 5 / 6 / 8 px, all equal, in full player and video-l at 100 / 125 / 150 / 200 % (125 % was 5, 4, 5, 5). `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp35-*.png` |
+| PP36 | P2 | Linux: narrowing the window live cuts every playlist length to "..." (the Lua keeps the start width's column count) | Opus, high (decision) | Lua | done (branch worktree-agent-a93949b36f829d011, merged into design-tuning): option (a): `pl_columns` without a width (Linux) pads for `PL_MIN_W` = 510 x scale (documented with `MIN_W` of build_skin.py, change both); Windows path (width file, else saved width) unchanged. Verified in real VLC 3.0.20, Lua extras, Xvfb :213, instance pp36, 100 / 150 %: 61 / 59 columns; start 620 / 930, narrowed to 510 / 765, widened +150: lengths never "...", column further left. Crops `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp36-*.png` |
+| PP37 | P3 | Playlist: Lua cuts long titles with "…" (one glyph), skins2 cuts the plain playing row with "..." | Haiku, low | Lua | done (branch worktree-agent-a93949b36f829d011, merged into design-tuning): Lua cuts with "..." (title cut to room - 3 + "..."), same style as skins2; DejaVu has the dot. Verified in VLC 100 / 150 %: cut rows and the plain playing row both end "...", lengths stay in one column. Crops `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/fix4/pp37-*.png` |
+| PP38 | P3 | Strip time / title text 1 px below the box centre at 150 % (ink pad top 7 / bottom 5) | Haiku, low | G-strip | done (branch worktree-agent-a162246a3e949a7b5, merged into design-tuning): time box at 150 % pads T 5 / B 5 (was 6 / 4 in the same measure, 7 / 5 in the audit's); 125 % T 3 / B 4 (whole pixels, was the same bytes); 200 % T 7 / B 7; 100 % and 200 % (and 125 %) `.vlt` byte-identical to design-tuning. Fix: `add_strip` text y in device px from the box's device centre |
+| PP39 | P3 | Format chip shows the last 4 letters of a name without extension ("No extension" -> "sion") | Haiku, low (decision) | G-full | **limit** (investigated 2026-11-03, branch worktree-agent-af9627ba016c54cb2, merged into design-tuning; no code changed): no clean workaround. Evidence (VLC 3.0.x, read from the source; not rendered, nothing changed): `utils/var_text.cpp` `VarText::get` (about lines 110-121) expands only `$N` `$F` `$B` etc. by plain string replace, `$F` = `getStreamURIVar()`, set in `vlcproc.cpp` `update_current_input` (about line 713) from `vlc_uri2path` or `input_item_GetURI`: no extension variable, no substring / conditional. The only booleans a `visible=` can test (`vlcproc.cpp` ctor, about lines 89-119): `playlist/playtree.isRandom/isLoop/isRepeat`, `vlc.isPlaying/isStopped/isPaused/isSeekable/canRecord/isRecording/isFullscreen/hasVout/hasAudio/isMute`, `dvd.isActive`, `equalizer.isEnabled`: none depends on the name, and Lua could only flip them by changing real playback state. Lua (`vlc.*`) has `item:set_meta` but no URI setter, and `$F` is the URI, not a meta; the skin cannot read a meta into the chip (`$N` is the title format, computed once per input). Normal .wav / .mp3 / .flac / .opus / .m4a unchanged. Documented in docs/vlc-feature-requests.md |
 ### PP30 - Light themes: "on" weaker than "off" (Sonnet, medium) - P2
 - **Where:** every `make_toggle` label toggle (full player PL / EQ, strip PL / EQ, EQ ON, playlist SHUF / LOOP / REP1, video row
   SHUF / LOOP / REP1, A-B), light themes; worst on Paper (all scales), then Sand / Sage / Rose. Dark themes fine (Carbon borderline).
@@ -908,7 +908,7 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
 - **Fix hint:** `vlcamp.lua` title cut: "..." (3 cells) instead of "…" (adjust the cut length by 2 cells).
 - **Verify:** long titles end in "..." everywhere, lengths still in one column at 100 / 150 %.
 
-### PP38 - Strip text 1 px low at 150 % (Haiku, low) - P3 - **DONE** (branch worktree-agent-a162246a3e949a7b5, unmerged)
+### PP38 - Strip text 1 px low at 150 % (Haiku, low) - P3 - **DONE** (branch worktree-agent-a162246a3e949a7b5, merged into design-tuning)
 - **Where:** strip time box and title box text (`ty = round(BH / 2 - 0.582 * font)`), 150 %, 24 px bar.
 - **Problem:** digits' ink rows 12..24 in the box interior 5..29: pad top 7, bottom 5 (1 px low; 100 / 125 / 200 % within 0.5 px; 36 / 40
   px strips: 14 / 13 and 17 / 16). The box itself is the 1 px-low limit in the bar; the text should follow the box, not the bar.
@@ -930,3 +930,140 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
   (not possible without changing $F); likely: document as a limit.
 - **Verify:** decision recorded; nothing to render.
 - **Result 2026-11-03:** limit, see the row in the table above (no clean workaround; source lines there).
+
+## 10. Pixel-perfect audit 2026-11-03, focused pass
+
+Fourth `/pixel-perfect` pass on `design-tuning` at 362cd6a (after the PP30 - PP38 and PP40 merges; release `VLC-Amp-125.vlt`
+byte-identical to a fresh build). Real VLC 3.0.20 + Xvfb (`tools/vlc-test.sh`, instance `ppaudit4`, display :231, root painted
+green), Lua extras loaded from **HEAD's** `lua/intf/vlcamp.lua` (the working tree has another session's uncommitted edits to it;
+they were not used), `--aout afile`, 26-item playlist (short, 95-char, hour-long, missing file, UTF-8). Each re-verified item got
+a verdict below. Nothing was fixed.
+
+**Rendered for real:** Midnight (release) at 100 / 125 / 150 / 200 %, Paper at 100 / 125 / 150 / 200 %, Sage at 100 / 150 %: strip,
+strip + PL + EQ, full player, full + PL + EQ, EQ ON on, SHUF / LOOP / REP1 chips on; up / hover / pressed of strip PL / EQ / pin,
+full-player PL / EQ / mute, EQ header flip + ON, playlist header flip, chip SHUF and footer SHUF, each off and on. Midnight 100 / 150
+and Paper 125: full + PL at 620, dragged to the minimum (510 / 765 / 638), full + PL + EQ and strip at the minimum, widened
+(920 / 1380 / 1151) strip and full + PL. Taskbar 36 px strip (release) at 100 / 125 / 150 % Midnight and Paper 150 %: strip, strip
++ panels, PL / EQ up / hover / pressed off and on. Video window (theme copy, `vlc.hasVout` -> `not vlc.isMute`) Midnight 100 / 125 /
+150 / 200 %, Paper 100 / 150 %: video-l, hover on more, video-x, corner tab hover, video-x resized; `long.wav` in video-l / video-x.
+**Approximated:** fullscreen controller (with / without extra row), video-l / video-x / video-min via `preview_layout` at 4 scales,
+Midnight + Paper. **Not checked:** Windows, Custom and the other themes (Sand / Rose / Ember / Forest / Nord / Dusk / Carbon),
+40 px strip, taskbar strip at the minimum width / 200 %, muted look (afile), video panel with a non-zero volume in VLC (the click
+missed the groove; 0 % shown), live length-column resize on Windows.
+
+Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/` (screens `.../audit4/shots/`: `m<pct>` Midnight,
+`p` Paper, `g` Sage, `t<pct>` / `tp150` taskbar, `v<theme>-<pct>_{l,x,x_big}` video, `vlong100_*` hour-long file; states
+`.../audit4/states/`; previews `.../audit4/pv/`; scripts `.../audit4/tools/`: `cap.sh` (views + states), `minw.sh` (minimum / wide),
+`tb.sh` (taskbar), `vid.sh` (video), `row.py` / `col.py` (run-length scans), `lbl.py` (label ink pads), `con.py` (face / ink / frame
+colour and contrast), `sheet.py` (state sheets)).
+
+**Re-verification (verdict per item):**
+- **PP30** fixed: Paper / Sage (Midnight unchanged) at 4 / 2 scales: lit PL / EQ / ON / footer toggles have the full accent frame
+  (Paper `1f7fc4`), darker accent label (`14537f`, 6.2:1 on the tinted face `d5e2eb`; Sage 7.8:1), faint tint; clearly stronger than
+  off (grey `b0b4b8` frame) in every crop. Side observations: PP44 (chips keep the pale ring), PP45 (hover on a lit toggle barely
+  visible). `.../audit4/evidence/pp30-paper-pleq-states-100.png`
+- **PP31** fixed: pressed chips on Paper are a slightly darker face (off `d2dae0`, on `b8cbda`), text 4.8 / 4.1:1, no grey block.
+  `.../audit4/evidence/pp31-paper-chips-states-100.png`
+- **PP32** fixed: run-length scans speaker -> groove 7 / 9 / 12 / 16 px and groove -> % text 8 / 10 / 13 / 17 px in video-l and video-x
+  (real VLC, 4 scales) = full player 7 / 8 at 100 %; fullscreen controller preview speaker -> groove 7 / 9 / 12 / 16, rows 12 / 8 / 12
+  (100), 13 / 11 / 13 (125, rounding), 16 / 12 / 16, 22 / 16 / 22 (incl. outline). `.../audit4/evidence/pp32-pp33-video-panels-100.png`,
+  `.../audit4/evidence/pp32-fsc-vs-videox-preview-100.png`
+- **PP33** fixed: video-l / video-x show "00:12 / 03:10"; hour-long file "00:09 / 1:03:00" fits at 100 %.
+- **PP34** fixed: video-x corner tab 1+ px clear of the faster button and of the outline at 100 / 125 / 150 / 200 % (Midnight) and 150 %
+  (Paper), also after a resize; tab drag resized 620 x 441 -> 770 x 541 (100 %), 930 x 662 -> 1155 x 812 (150 %).
+  `.../audit4/evidence/pp34-corner-tab-4scales.png`
+- **PP35** fixed: full-player transport gaps 4,4,4,4 / 5,5,5,5 / 6,6,6,6 / 8,8,8,8 (Midnight, Paper, Sage). The strip's own row still
+  has 2 / 3 px gaps at 125 %: PP41.
+- **PP36** fixed (as decided, option a): lengths never "..." at 620, at the minimum (510 / 765 / 638) or widened (920 / 1380 / 1151).
+  Consequence of the decision, not a new task: on Linux the column is parked at the 510 px position, so at the default 620 px it ends
+  about 136 px (100 %) before the stripe end and at 920 px about half way. `.../audit4/evidence/pp36-pp37-lengths-620-min-wide-150.png`
+- **PP37** fixed: cut titles end "..." like the plain playing row ("on and on...", "Across the R...").
+- **PP38** fixed: strip time ink pads T / B 4 / 3 (100), 4 / 5 (125), 6 / 6 (150), 8 / 8 (200) in the box interior; L / R 18 / 18, 22 / 22,
+  26 / 26, 37 / 37.
+- **PP40** fixed: PL / EQ / ON 36 / 45 / 54 / 72 px at 100 / 125 / 150 / 200 %; full player PL -> EQ gap 8 / 10 / 12 / 16, right margin
+  12 / 15 / 18 / 24 (Midnight, Paper, Sage); EQ header flip -> ON 6 / 8 / 9 / 12, ON's right edge = playlist flip's right edge at every
+  scale; strip PL / EQ / pin gaps 2 (100), 3 (150), 4 (200), title box 299 px at 620 and 189 px at 510 (100 %; the MIN_W comment says
+  188), 283 px at 765 (150 %); taskbar strip PL / EQ gaps 6 / 9 px, labels centred L / R 12 / 12, 18 / 18. Labels ink-centred
+  horizontally within 1 device px. Side effect: the full player's volume group is now 20 px (box) / 39 px (ink) from PL: PP43.
+  `.../audit4/evidence/pp40-min510-full-strip-100.png`, `.../audit4/evidence/overall-strip-100.png`, `.../audit4/evidence/overall-full-pleq-100.png`
+
+**Regression sweep (still fine):** window corners and section seams in all captured layouts; strip / full / EQ / playlist tab ribs;
+EQ band block and faders; title fill / thumb; format chip ".wav"; playlist stripes, scroll track, last row; video left frame; header
+buttons; STRIP button; time box text horizontal centring; no clipped labels in the narrower 36 px toggles at any scale (taskbar label
+size 9 included).
+
+**Serialization:** G-strip PP41 (`add_strip`); G-bmp PP42, PP44, PP45 (`make_toggle`, `on_label_look`, `make_chip_toggle`,
+`make_button` / `make_strip_button` label placement; PP42 touches every label bitmap, so do PP44 / PP45 first or in the same branch);
+G-full PP43 (`add_full` volume group). Every task ends with `tools/sync-configurator.py`; rebuild release `.vlt` / `preview.png` once.
+
+| ID | P | Task | Model | Group | Status |
+|----|---|------|-------|-------|--------|
+| PP40 | P2 | PL / EQ / ON toggles stayed 44 px wide after the LED was removed (Jiri) | Sonnet, medium | G-bmp + G-full + G-strip | done (87a0f54, merged 362cd6a): `PLW` = 36 for strip / full PL, EQ and ON; rows re-spaced, strip title +16 px. Verified in this pass (see verdicts above) |
+| PP41 | P3 | Strip row placed in rounded logical px: gaps 2,2,3,2 / 3,2,2 at 125 %, time box -> PL 4 vs PL -> EQ 3 at 150 %, taskbar strip 8,7,8,7 at 125 % | Sonnet, medium | G-strip | done (branch worktree-agent-a39d7bd89aa4d2845, 71904e6, merged 3e5e4cc): `add_strip` chains both groups in device px; gaps 2 / 2 / 3 px (24 px bar) and 6 / 8 / 9 px (36 px) at 100 / 125 / 150 %; 100 / 200 % `.vlt` byte-identical |
+| PP42 | P3 | Button / toggle / chip labels 1 - 1.5 px below the button's centre at 125 / 150 % (0.5 px high at 100 %) | Opus, high | G-bmp | done (branch worktree-agent-aac069af0ca6dea31, 2e300ab, merged 600dcc5): `button_label` helper, baseline on a device row with the "H" cap centred; T / B pads equal within 1 px at 4 scales (strip PL 125 %: 9/6 -> 7/8); 100 % byte-identical except ADD / CH- / CH+ (now ink-centred) |
+| PP43 | P3 | Full player: volume group now 20 px (box) / 39 px (ink) left of PL after PP40 (was 4 / 19) | Haiku, low | G-full | open: decided 2026-11-03 option (a), shift 16 px right |
+| PP44 | P3 | Light themes: lit SHUF / LOOP / REP1 chips keep the pale ring while every lit label toggle has the full accent frame (PP30) | Haiku, low | G-bmp | done (5cb2d6b, merged 600dcc5): lit chips take the ring from `on_label_look`; Paper `1f7fc4`, Sage `217239`; dark themes byte-identical |
+| PP45 | P3 | Light themes: hover on a lit label toggle is almost invisible (face +4 levels, label unchanged) | Sonnet, medium | G-bmp | done (c96639f, merged 600dcc5): lit hover face 4 % tint and label accent mixed 50 % with black; Paper d5e2eb -> e7ecf1, label 9.1:1 |
+| PP46 | P3 | Light themes: the strip's STRIP button (lit) still uses the pale `ring_colour` ring, label 3.8:1 (reported by the PP42 agent) | Haiku, low | G-bmp | open |
+
+### PP41 - Strip row gaps alternate at 125 % (Sonnet, medium) - P3
+- **Where:** strip (24 px) and taskbar strip (36 px), all themes, 125 % (and 1 px at 150 %): expand / prev / play / next, title box,
+  mode button, time box, PL, EQ, pin.
+- **Problem:** `add_strip` places every control at `P(x)` of a logical x, so equal logical gaps round differently: 24 px strip at 125 %
+  run-length gaps 2,2,3,2 (left group) and 3,2 (PL -> EQ -> pin), title -> mode -> time 4 / 3; 150 %: time box -> PL 4 vs PL -> EQ 3;
+  taskbar strip at 125 %: 8,7,8,7 and 8,7,7. Breaks "siblings evenly spaced" (PP35 fixed the same thing for the transport rows).
+  Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/pp41-strip-gaps-125.png` (3x),
+  scans of `.../audit4/shots/m125_strip.png`, `t125_strip.png`, `m150_strip.png` (`tools/row.py <img> <y> <x0> <x1> <bgx>`).
+- **Fix hint:** `add_strip`: chain the left group in device px like `row_x` (x0 = P(16), next = prev + P(w) + P(G_)), and the right
+  group the same way from the right edge (pin at PW - P(14) - P(BW_), EQ = pin - P(G_) - P(PLW), ...); the title box takes what is left.
+  Keep the 100 / 200 % output byte-identical.
+- **Verify:** `row.py` along the strip at 4 scales, 24 and 36 px bars: all G_ gaps equal (one value per scale); 100 / 200 % `.vlt` unchanged.
+
+### PP42 - Labels below centre at fractional scales (Opus, high) - P3
+- **Where:** every text label bitmap: PL / EQ / ON toggles, playlist footer (ADD .. SAVE, SHUF / LOOP / REP1), STRIP button, display
+  chips, video extra row; all themes; 125 / 150 % (200 % 0 - 1 px, 100 % 0.5 px high).
+- **Problem:** ink pads top / bottom inside the button (`tools/lbl.py`, Midnight): strip PL 6/6 (100), **9/6** (125), 10/8 (150), 13/11 (200);
+  full PL 10/11, 14/13, 17/15, 22/21; ADD / SHUF / STRIP 7/8, 11/9, 12/11; chip SHUF 4/5, 7/5, 8/6. Caps sit 1 - 1.5 px low at 125 / 150 %:
+  the text is placed with `anchor="lm"` at `h / 2 + 0.5` (middle of the font's ascender / descender box), while the horizontal position
+  is centred by measured ink (`_ink_x`). Breaks "content centred in its band". Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/pp42-strip-label-vcentre-4scales.png` (strip PL / EQ at 100 / 125 / 150 / 200 %; 125 % row: PL visibly low).
+- **Fix hint:** measure the cap ink (extend `_ink_x` to return top / bottom, or measure "H" so all labels share one baseline) and place
+  the baseline so the cap ink is centred on the button's device-pixel centre; one helper used by `make_toggle`, `make_button` labels,
+  `make_strip_button`, `make_chip_toggle`. Every label bitmap changes; 100 % must stay within 0.5 px.
+- **Verify:** `lbl.py` on the buttons above at 4 scales: T / B pads equal within 1 device px (caps-only labels); `bitmap-audit.py` 0;
+  12x crops of PL / EQ / ON / footer / chips.
+
+### PP43 - Full player volume group drifted from PL (Haiku, low; decision) - P3
+- **Where:** full player transport row, all scales / themes: speaker zone F(282), groove F(256), % text F(148) (box ends F(112)); PL
+  now at F(92) (was F(108)).
+- **Problem:** PP40 moved PL / EQ 16 px right but left the right-anchored volume group where it was: % text box -> PL 20 px (was 4),
+  "68%" ink -> PL 39 px (was 19) at 100 %; the group now floats between the transport and the toggles. Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/pp43-full-volume-to-pl-gap-100.png` (4x),
+  `.../audit4/evidence/overall-full-pleq-100.png`.
+- **Fix hint:** decide with Jiri: (a) shift the group 16 px right (mute F(266), groove F(240), % F(132)): old spacing back, Next -> speaker
+  gap at 510 px shrinks from 40 to 24 px (still clear); (b) keep. (a) is three constants in `add_full`.
+- **Verify:** `row.py` along y 209 at 100 / 150 %: % box -> PL as decided; 510 px minimum: Next clear of the speaker.
+
+### PP44 - Light chips: pale ring when on (Haiku, low) - P3
+- **Where:** SHUF / LOOP / REP1 chips in the full-player display, on, light themes (Paper, Sage, ...), all scales.
+- **Problem:** `make_chip_toggle` still uses `ring_colour(CYAN)` (Paper `70a8d0`) while the footer toggles with the same functions, PL / EQ
+  and ON use the full accent `1f7fc4` since PP30: two "on" frames for the same meaning in one window. Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/pp44-paper-chip-vs-footer-on-100.png` (top: chips on, bottom: footer on, 6x).
+- **Fix hint:** in light mode take the ring from `on_label_look` (full accent); dark themes unchanged (byte-identical).
+- **Verify:** Paper / Sage 100 / 150 %: chip and footer on-frames the same colour; Midnight `.vlt` byte-identical.
+
+### PP45 - Light themes: lit toggle hover nearly invisible (Sonnet, medium) - P3
+- **Where:** every lit label toggle (PL / EQ / ON / footer SHUF / LOOP / REP1), light themes, all scales, hover.
+- **Problem:** off -> hover: face `e6e8eb` -> `f7f7f8` and the label turns black (strong); on -> hover: face `d5e2eb` -> `d9e5ef`, label
+  unchanged (Paper; Sage `d7e3da` -> `dde8e0`), hard to see. Breaks "hover visible on every control". Evidence:
+  `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit4/evidence/pp45-paper-lit-hover-100.png` (left: up, right: hover; top off, bottom on).
+- **Fix hint:** `on_label_look` light branch: for "over" use a lighter face (less tint, e.g. 0.05) and / or a darker label (mix 0.5
+  with black), keeping >= 4.5:1; dark themes unchanged.
+- **Verify:** Paper / Sage 100 / 150 %: `con.py` on the lit toggle up vs over: face delta comparable to the off pair; Midnight byte-identical.
+
+
+### PP46 - Light themes: STRIP button pale ring (Haiku, low) - P3
+- **Problem:** after PP30 / PP44 every lit label toggle and chip uses the full accent frame from `on_label_look`; the STRIP button
+  (lit / on look) still uses the pale ring and its label is 3.8:1 (< 4.5:1).
+- **Fix hint:** take its on-look from `on_label_look` like the others; dark themes byte-identical.
+- **Verify:** Paper 100 / 150 %: STRIP frame = PL / EQ frame colour, label >= 4.5:1; Midnight `.vlt` byte-identical.
