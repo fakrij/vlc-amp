@@ -820,7 +820,7 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
 | PP35 | P3 | Full player transport gaps 5 / 4 / 5 / 5 px at 125 % (rounded logical positions) | Haiku, low | G-full | open |
 | PP36 | P2 | Linux: narrowing the window live cuts every playlist length to "..." (the Lua keeps the start width's column count) | Opus, high (decision) | Lua | open, decided 2026-11-03: (a) on Linux pad to the MIN_W column count |
 | PP37 | P3 | Playlist: Lua cuts long titles with "…" (one glyph), skins2 cuts the plain playing row with "..." | Haiku, low | Lua | open |
-| PP38 | P3 | Strip time / title text 1 px below the box centre at 150 % (ink pad top 7 / bottom 5) | Haiku, low | G-strip | open |
+| PP38 | P3 | Strip time / title text 1 px below the box centre at 150 % (ink pad top 7 / bottom 5) | Haiku, low | G-strip | done (branch worktree-agent-a162246a3e949a7b5, unmerged): time box at 150 % pads T 5 / B 5 (was 6 / 4 in the same measure, 7 / 5 in the audit's); 125 % T 3 / B 4 (whole pixels, was the same bytes); 200 % T 7 / B 7; 100 % and 200 % (and 125 %) `.vlt` byte-identical to design-tuning. Fix: `add_strip` text y in device px from the box's device centre |
 | PP39 | P3 | Format chip shows the last 4 letters of a name without extension ("No extension" -> "sion") | Haiku, low (decision) | G-full | open, decided 2026-11-03: investigate a workaround (hide / blank the chip without an extension) |
 ### PP30 - Light themes: "on" weaker than "off" (Sonnet, medium) - P2
 - **Where:** every `make_toggle` label toggle (full player PL / EQ, strip PL / EQ, EQ ON, playlist SHUF / LOOP / REP1, video row
@@ -906,13 +906,19 @@ video panel uses the same x values, so do PP35 after PP32 or in the same branch)
 - **Fix hint:** `vlcamp.lua` title cut: "..." (3 cells) instead of "…" (adjust the cut length by 2 cells).
 - **Verify:** long titles end in "..." everywhere, lengths still in one column at 100 / 150 %.
 
-### PP38 - Strip text 1 px low at 150 % (Haiku, low) - P3
+### PP38 - Strip text 1 px low at 150 % (Haiku, low) - P3 - **DONE** (branch worktree-agent-a162246a3e949a7b5, unmerged)
 - **Where:** strip time box and title box text (`ty = round(BH / 2 - 0.582 * font)`), 150 %, 24 px bar.
 - **Problem:** digits' ink rows 12..24 in the box interior 5..29: pad top 7, bottom 5 (1 px low; 100 / 125 / 200 % within 0.5 px; 36 / 40
   px strips: 14 / 13 and 17 / 16). The box itself is the 1 px-low limit in the bar; the text should follow the box, not the bar.
   Evidence: `/tmp/claude-1000/-home-jirif-dev-vlc/faf994bb-5ca0-4a91-9498-6937152c4065/scratchpad/audit3/evidence/pp38-strip-time-1px-low-150.png`.
 - **Fix hint:** `add_strip`: text y in device px from the box's device centre (P(BY) + P(BT) / 2 - line height / 2).
 - **Verify:** `tink.py` on the time box at 4 scales and 36 / 40 px: top / bottom pad equal within 1 px (0.5 px ideal).
+- **Done:** `ty` is now `round(P(BY) + P(BT) / 2 - 0.582 * P(font))` in device px (passed without a second `P()`). Verified in real VLC
+  3.0.20 (Xvfb :214, instance pp38): time box ink pads at 150 % T 5 / B 5 (baseline build: 6 / 4 by the same script; the audit's 7 / 5
+  was measured with a different interior), 200 % T 7 / B 7, 125 % T 3 / B 4 (18-row interior, 11-row ink: 0.5 px is the best whole
+  pixels allow). 100 %, 125 % and 200 % `.vlt` are byte-identical to design-tuning; only 150 % changes. Title text moves with the
+  time text (same `ty`), crops checked 10x. 36 / 40 px strips not re-measured; the formula gives the same y at 100 % there. Not rebuilt:
+  release `.vlt`, `preview.png`, `configurator/build_skin.py` (sync not run).
 
 ### PP39 - Format chip without an extension (Haiku, low; decision) - P3
 - **Where:** full player format chip, a file name with no "." in it (or a URL), all scales.
