@@ -62,5 +62,6 @@ from source) is in [VLC-Amp/README.md](VLC-Amp/README.md).
 
 ## Support
 
-VLC Amp is free. If you like it, you can
-[buy me a coffee on Ko-fi](https://ko-fi.com/jirkafiala).
+VLC Amp is free. If you like it, you can buy me a coffee on Ko-fi:
+
+[![Buy me a coffee on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jirkafiala)

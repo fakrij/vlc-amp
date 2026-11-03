@@ -26,6 +26,7 @@
   .box { border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; margin: 20px 0; }
   a { color: var(--accent); }
   footer { margin-top: 24px; }
+  footer svg { width: 1.25em; height: 1.25em; vertical-align: -0.25em; margin-right: 4px; }
   code { background: color-mix(in srgb, var(--fg) 10%, transparent); padding: 1px 4px; border-radius: 3px; }
 </style>
 </head>
@@ -93,7 +94,10 @@
       monospaced, so the time does not jitter.</p>
   </div>
   <footer class="muted">VLC Amp is free. If you like it, you can
-    <a href="https://ko-fi.com/jirkafiala" target="_blank" rel="noopener">buy me a coffee on Ko-fi</a>.</footer>
+    <a href="https://ko-fi.com/jirkafiala" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/>
+      <path d="M8 2.5c-.6.8-.6 1.7 0 2.5M12 2.5c-.6.8-.6 1.7 0 2.5"/></svg>buy me a coffee on Ko-fi</a>.</footer>
 </main>
 <script src="app.js"></script>
 </body>
