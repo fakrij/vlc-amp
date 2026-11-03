@@ -1112,8 +1112,9 @@ def make_chip_toggle(skin, base, w, h, label):
         for st in ("up", "over", "down"):
             c = Canvas(w, h)
             # same rules as the buttons: the outline (lit ring) is the same in every state, hover lightens
-            # the face, pressed darkens it and turns the text accent-coloured
-            edge = ring_colour(CYAN) if on else box_edge(0.16)
+            # the face, pressed darkens it and turns the text accent-coloured. Lit ring = the lit label toggles'
+            # (PP44: on light themes the full accent, like the footer SHUF / LOOP / REP1 with the same functions)
+            edge = on_label_look(st)[0] if on else box_edge(0.16)
             face = mix(LCD_BG, CYAN, 0.14 if on else 0.0)
             if st == "over":
                 face = mix(face, CYAN, 0.10)
