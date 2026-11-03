@@ -471,6 +471,16 @@ GRIP_W = 9                          # resize tab width
 GRIP_H = 70                         # tab height in the EQ, playlist and full player (the strip: bar height - 6)
 
 
+def row_x(*widths):
+    """Device x of each button of the transport row (PP35): the first at P(12), the next at the previous one's
+    x + P(its width) + P(4), so equal gaps stay equal after rounding (at 125 % P(46) alone would be 58, not 57.5)."""
+    x, out = P(12), []
+    for w in widths:
+        out.append(x)
+        x += P(w) + P(4)
+    return out
+
+
 def grip_x(w):
     """Left edge of the resize tab: 9 px centred in the 12 px right margin (W - 12 .. W - 1)."""
     return w - 12 + (12 - GRIP_W) // 2
@@ -1623,11 +1633,12 @@ def build(skin, W, BH=BAR_DEFAULT):
                    "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, rb="righttop")
         # transport row
         ty = 195
-        for nm, x, act, tip in (("fb_prev", 12, "playlist.previous()", "Previous"), ("fb_slower", 46, "vlc.slower()", "Slower")):
-            lay.button(nm, P(x), P(ty), act, tip)
-        lay.checkbox("ft_play", P(80), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster")
-        lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next")
+        x1, x2, x3, x4, x5 = row_x(30, 30, 40, 30, 30)
+        lay.button("fb_prev", x1, P(ty), "playlist.previous()", "Previous")
+        lay.button("fb_slower", x2, P(ty), "vlc.slower()", "Slower")
+        lay.checkbox("ft_play", x3, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        lay.button("fb_faster", x4, P(ty), "vlc.faster()", "Faster")
+        lay.button("fb_next", x5, P(ty), "playlist.next()", "Next")
         lay.checkbox("c_mute", F(282), P(ty), "vlc.isMute", "vlc.mute()", "vlc.mute()", "Mute", "Unmute", **tr)
         lay.vol_slider("s_vol_" + lay.id, F(256), P(ty + 9), "(%d,%d),(%d,%d)" % (V_LO, P(5), V_HI, P(5)), "thumb_v",
                    "Volume $V%", bg="vol100", nbvert=P(100), **tr)
@@ -1857,16 +1868,18 @@ def build(skin, W, BH=BAR_DEFAULT):
         lay.slider("s_seek_vid" + ("_x" if extra else ""), P(12), P(pb + 12), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)),
                    "thumb_s", "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES, lt="leftbottom", rb="rightbottom")
         ty = pb + 30
-        lay.button("fb_prev", P(12), P(ty), "playlist.previous()", "Previous", **bl)
+        x1, x2, x3, x4, x5 = row_x(30, 30, 40, 30, 30)    # device px (PP35)
+        lay.button("fb_prev", x1, P(ty), "playlist.previous()", "Previous", **bl)
         if extra:                                         # slower / faster are in the row, around the speed
-            lay.checkbox("ft_play", P(46), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-            lay.button("fb_next", P(90), P(ty), "playlist.next()", "Next", **bl)
+            _, x2, x3 = row_x(30, 40, 30)                 # prev, play, next
+            lay.checkbox("ft_play", x2, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_next", x3, P(ty), "playlist.next()", "Next", **bl)
             tx = 132
         else:
-            lay.button("fb_slower", P(46), P(ty), "vlc.slower()", "Slower", **bl)
-            lay.checkbox("ft_play", P(80), P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
-            lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster", **bl)
-            lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next", **bl)
+            lay.button("fb_slower", x2, P(ty), "vlc.slower()", "Slower", **bl)
+            lay.checkbox("ft_play", x3, P(ty), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause", **bl)
+            lay.button("fb_faster", x4, P(ty), "vlc.faster()", "Faster", **bl)
+            lay.button("fb_next", x5, P(ty), "playlist.next()", "Next", **bl)
             tx = 200
         lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$t / $d", CYAN_TXT, scrolling="none",
                  sample="1:02 / 4:12", focus=False, **bl)
@@ -1935,9 +1948,10 @@ def build(skin, W, BH=BAR_DEFAULT):
         hslice(skin, flay, "fsc_bg", c.done(hard_edges=True), 0, 0, 14, 14, action="none")
         flay.slider("s_seek_fsc", P(12), P(12), "(0,%d),(%d,%d)" % (P(5), P(sw) - 1, P(5)), "thumb_s",
                     "time", "$T / $D", bg="seek", nbvert=SEEK_FRAMES)
-        flay.button("fb_prev", P(12), P(30), "playlist.previous()", "Previous")
-        flay.checkbox("ft_play", P(46), P(30), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
-        flay.button("fb_next", P(90), P(30), "playlist.next()", "Next")
+        fx1, fx2, fx3 = row_x(30, 40, 30)
+        flay.button("fb_prev", fx1, P(30), "playlist.previous()", "Previous")
+        flay.checkbox("ft_play", fx2, P(30), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
+        flay.button("fb_next", fx3, P(30), "playlist.next()", "Next")
         flay.text(P(132), P(35), P(170), "lcd14", "$t / $d", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
                   focus=False)
         flay.checkbox("ft_more", P(W - 213), P(30), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
