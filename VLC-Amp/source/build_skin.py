@@ -1118,7 +1118,7 @@ def make_chip_toggle(skin, base, w, h, label):
             if st == "over":
                 face = mix(face, CYAN, 0.10)
             elif st == "down":
-                face = mix(face, "#000000", 0.35)
+                face = mix(face, "#000000", 0.35 if not _light_theme() else 0.10)   # PP31: light LCD: a slightly darker face, like the buttons
             c.rrect(0, 0, w, h, 3, edge)
             c.rrect(1, 1, w - 2, h - 2, 2, face)
             il, ir = _ink_x(FONT_MONO, 9, label)
