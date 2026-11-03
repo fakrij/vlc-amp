@@ -1004,7 +1004,7 @@ G-full PP43 (`add_full` volume group). Every task ends with `tools/sync-configur
 | PP43 | P3 | Full player: volume group now 20 px (box) / 39 px (ink) left of PL after PP40 (was 4 / 19) | Haiku, low | G-full | open: decided 2026-11-03 option (a), shift 16 px right |
 | PP44 | P3 | Light themes: lit SHUF / LOOP / REP1 chips keep the pale ring while every lit label toggle has the full accent frame (PP30) | Haiku, low | G-bmp | done (5cb2d6b, merged 600dcc5): lit chips take the ring from `on_label_look`; Paper `1f7fc4`, Sage `217239`; dark themes byte-identical |
 | PP45 | P3 | Light themes: hover on a lit label toggle is almost invisible (face +4 levels, label unchanged) | Sonnet, medium | G-bmp | done (c96639f, merged 600dcc5): lit hover face 4 % tint and label accent mixed 50 % with black; Paper d5e2eb -> e7ecf1, label 9.1:1 |
-| PP46 | P3 | Light themes: the strip's STRIP button (lit) still uses the pale `ring_colour` ring, label 3.8:1 (reported by the PP42 agent) | Haiku, low | G-bmp | open |
+| PP46 | P3 | Light themes: the strip's STRIP button (lit) still uses the pale `ring_colour` ring, label 3.8:1 (reported by the PP42 agent) | Haiku, low | G-bmp | done (branch worktree-agent-a29048290ab1b10f9, commit below): `make_strip_button` takes ring / label / face tint from `on_label_look` on light themes; Paper frame `70a8d0` -> `1f7fc4`, label 3.86 -> 6.37:1 (up; 100 %), 5.90:1 (150 %); Midnight byte-identical |
 
 ### PP41 - Strip row gaps alternate at 125 % (Sonnet, medium) - P3
 - **Where:** strip (24 px) and taskbar strip (36 px), all themes, 125 % (and 1 px at 150 %): expand / prev / play / next, title box,
@@ -1067,3 +1067,8 @@ G-full PP43 (`add_full` volume group). Every task ends with `tools/sync-configur
   (lit / on look) still uses the pale ring and its label is 3.8:1 (< 4.5:1).
 - **Fix hint:** take its on-look from `on_label_look` like the others; dark themes byte-identical.
 - **Verify:** Paper 100 / 150 %: STRIP frame = PL / EQ frame colour, label >= 4.5:1; Midnight `.vlt` byte-identical.
+- **Status: done.** `make_strip_button` (light themes only) takes ring, label colour and face tint from `on_label_look`; dark
+  branch keeps the old expressions. Measured (Paper, bitmaps rendered by `build_skin`): 100 %: STRIP up / over / down frame
+  `1f7fc4` (= lit PL), label 6.37 / 9.15 / 4.91:1 (up / over / down; was frame `70a8d0`, label 3.86 / 3.83 / 2.91); 150 %: frame
+  `1f7fc4`, label 5.90 / 9.66 / 4.91:1 (was frame `70a8d0`, label 3.83 / 4.01 / 2.88 for up / over / down). Midnight `.vlt` and stage `img/` byte-identical to 3c1acdc at 100 and 150 %;
+  `BH=24 tools/bitmap-audit.py` = 0. Not verified: VLC run, Sage, the release `.vlt` / preview (not rebuilt, per the brief).

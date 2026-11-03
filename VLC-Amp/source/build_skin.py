@@ -1053,8 +1053,14 @@ def make_strip_button(skin, base, w, h):
     x0 = (w - (16 + ir - il)) / 2                    # icon left
     for st in ("up", "over", "down"):
         c = Canvas(w, h)
-        button_face(c, w, h, st, ring_colour(CYAN))
-        col = CYAN if st != "down" else ICON[st]
+        if _light_theme():
+            # PP46: light themes take the lit look from on_label_look, like the lit label toggles and chips
+            ring, lc, tint = on_label_look(st)
+            col = lc
+        else:
+            ring, tint = ring_colour(CYAN), None
+            col = CYAN if st != "down" else ICON[st]
+        button_face(c, w, h, st, ring, tint)
         icon(c, "collapse", x0, (h - 10) / 2, 10, col)
         button_label(c, w, h, "STRIP", 9, col, x=x0 + 16 - il)
         skin.add("%s_%s" % (base, st), solid(c.done()))
