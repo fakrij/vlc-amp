@@ -1,8 +1,21 @@
 # VLC Amp
 
-**A VLC 3 skin inspired by the Winamp skin MMD3, with a title bar mode.** The player collapses
+**A VLC 3 skin inspired by the Winamp and its beloved MMD3 skin, with a title bar mode.** The player collapses
 into a slim 24 px strip that fits into a window's title bar (or the Windows taskbar), and expands
-into a full hi-fi player with equalizer and playlist. Windows and Linux.
+into a full player with equalizer and playlist. For Windows and Linux.
+
+With VLC Amp you can:
+
+- keep the player as a 24 px **strip in a title bar** or **the Windows taskbar**, or expand it into the
+  full player;
+- use it in a **dark or light** look, or build both and switch with one click. The Windows helper
+  can **follow the system's light / dark** setting;
+- make **your own skin** in the [online configurator](https://fakrij.github.io/vlc-amp/): size,
+  font, primary and secondary colour, built right in your browser.
+
+VLC Amp is and alwazs will be free. If you like it, you can
+[buy me a coffee on Ko-fi](https://ko-fi.com/jirkafiala).
+
 
 ![The strip](VLC-Amp/docs/img-thin/strip.png)
 
@@ -11,9 +24,6 @@ into a full hi-fi player with equalizer and playlist. Windows and Linux.
 ·
 [Linux (tar.gz)](https://github.com/fakrij/vlc-amp/releases/latest/download/VLC-Amp-linux.tar.gz)
 · [all releases](https://github.com/fakrij/vlc-amp/releases)
-
-**Your own colours, font and size:** the [online configurator](https://fakrij.github.io/vlc-amp/)
-builds a `.vlt` skin in your browser.
 
 ## Screenshots
 
@@ -52,5 +62,6 @@ from source) is in [VLC-Amp/README.md](VLC-Amp/README.md).
 
 ## Support
 
-VLC Amp is free. If you like it, you can
-[buy me a coffee on Ko-fi](https://ko-fi.com/jirkafiala).
+VLC Amp is free. If you like it, you can buy me a coffee on Ko-fi:
+
+[![Buy me a coffee on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jirkafiala)
