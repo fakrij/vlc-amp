@@ -353,6 +353,10 @@ end
 ----------------------------------------------------------------------
 local PL_EVERY_US = 2000000                    -- full playlist pass
 local PL_SKIN_W, PL_MARGIN, PL_FONT = 620, 50, 12   -- the skin's default width, playtree = width - P(margin), font px (build_skin.py add_pl)
+-- The narrowest window (logical px), = MIN_W in source/build_skin.py: change both together. Without the
+-- Windows helper's width file (Linux, macOS) the length column is padded for this width, so narrowing
+-- the window never cuts the lengths (PP36, pl_columns).
+local PL_MIN_W = 510
 local PL_DECORATED = {                         -- a title we (or a saved playlist) decorated
     "^(.-) %(%d+:%d%d%)$", "^(.-) %(%d+:%d%d:%d%d%)$", "^(.-)  +%d+:%d%d$", "^(.-)  +%d+:%d%d:%d%d$" }
 local pl = { mode = "right", cols = 72, next_pass = 0, cur = nil, items = {} }   -- items[id] = { orig = title meta or "", shown = decorated title }
@@ -386,10 +390,16 @@ end
 -- the playtree PW - P(50) wide (rows end 6 px before the scroll track, PP8). Scale from the skin's file name
 -- (VLC-Amp-150.vlt, skin_scale), window width from skins2-config (the width VLC saved at its last exit).
 -- source/build_skin.py preview_layout draws the preview's playlist with the same rule: change both together.
--- w = the main window's width in px (nil: the one VLC saved at its last exit, else the default)
+-- w = the main window's width in px (nil: where the helper's width file gives none, see below)
+-- Without w: on Windows the width VLC saved at its last exit, else the default (the helper's live
+-- width normally comes in as w); elsewhere nothing reports a live width, and a column padded for
+-- the saved width would be cut to "..." by a narrower window, so the minimum width (PL_MIN_W) is
+-- used: the column sits further left in a wider window, but is never cut.
 local function pl_columns(w)
     local s = skin_scale(vlc.config.get("skins2-last"))
-    if not w then
+    if not w and not is_windows then
+        w = py_round(PL_MIN_W * s)
+    elseif not w then
         w = py_round(PL_SKIN_W * s)
         local cfg = vlc.config.get("skins2-config") or ""
         local mw = cfg:match('%["main" "[^"]*" %-?%d+ %-?%d+ (%d+) %d+')
@@ -442,7 +452,7 @@ end
 
 -- Two columns in one line of pl.cols characters: the title, then the length right-aligned in a field
 -- of pl.field characters (the widest length in the playlist, at least "mm:ss"), PL_GAP spaces apart.
--- A title longer than its column is cut with an ellipsis, so every cut title ends at the same column
+-- A title longer than its column is cut with "..." (as skins2 cuts the playing row, PP37), so every cut title ends at the same column
 -- and the length is never cut. In "suffix" mode "Title (3:42)".
 local PL_GAP, PL_FIELD_MIN = 2, 5
 local function decorate(title, sec)
@@ -450,7 +460,7 @@ local function decorate(title, sec)
     if pl.mode == "suffix" then return title .. " (" .. len .. ")" end
     local field = math.max(pl.field or PL_FIELD_MIN, u_len(len))
     local room = pl.cols - field - PL_GAP              -- the title column
-    if u_len(title) > room then title = u_sub(title, room - 1) .. "\226\128\166" end   -- U+2026
+    if u_len(title) > room then title = u_sub(title, room - 3) .. "..." end   -- the same ellipsis as skins2's own cut
     return title .. string.rep(" ", pl.cols - u_len(title) - u_len(len)) .. len
 end
 

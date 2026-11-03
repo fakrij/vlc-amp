@@ -1046,11 +1046,15 @@ playtree - 7`. Checked in VLC 3.0.20 with the hi-fi skin and VLC Amp Mono (PP8, 
 `PW - P(50)`): 77 / 75 / 74 / 77 at 100 / 125 / 150 / 200 %, each with `columns=` one more cut with "...", and 99 in a
 window widened to 777 px at 100 % (100 cut). Before PP8 (playtree `P(W - 60)`) it was 75 / 73 / 72 / 76, with plain
 DejaVu 76 / 74 / 73 / 77 (the rule was also exact for the earlier 556 px skin at 100 / 125 / 150 %). The width file of
-the Windows helper is read on Windows only. The script also
+the Windows helper is read on Windows only. **Without the helper's width file (Linux, PP36)** nothing reports the live window width, and a column padded for
+the saved width is cut to "..." by skins2 as soon as the window is narrowed (510 px after 620: every length). So
+there `pl_columns` pads for the minimum width, `PL_MIN_W` = 510 logical px x scale (= `MIN_W` in `source/build_skin.py`;
+change both together): 61 columns at 100 %, 59 at 150 % (measured), the same column in any wider window (it sits further left,
+never cut). On Windows the width file, else the saved width, is used as before. The script also
 re-reads `skins2-last` every 0.5 s, because skins2 stores it only after loading
 the skin (a skin given on the command line). Since PP25 the lengths sit in one field as wide as the widest length in
 the playlist (at least 5 characters, `mm:ss`; 7 with an hour-long item), two spaces after the title column, so a
-title longer than its column is cut with "…" at the same column in every row and the length itself is never cut
+title longer than its column is cut with "..." (since PP37 the same ellipsis as skins2's cut of the plain playing row) at the same column in every row and the length itself is never cut
 (before, the cut point moved with each length's width). Items without a known length are not touched. `durations='suffix'` gives the plain ` (m:ss)` suffix instead,
 `columns=N` overrides the width. It remembers the original title meta per item id
 (`""` when there was none) and the text it set; a title that differs from that
@@ -1068,7 +1072,7 @@ Verified in VLC 3.0.20 under the harness (2026-11-01, on the earlier 556 px skin
 70 at 100 % and 91 at a saved 706 px window): unplayed items show
 lengths (incl. `1:03:00`), the playing one stays plain in the playlist and the
 strip, Next moves the plain title along, SORT sorts by name, no doubled
-suffixes, `off` shows none, a 120-character title is cut with "…". Column counts for
+suffixes, `off` shows none, a 120-character title is cut with an ellipsis ("…" then, "..." since PP37). Column counts for
 the 620 px hi-fi skin at 100 / 125 / 150 / 200 %: **77 / 75 / 74 / 77** (the rule above with VLC Amp Mono's
 cell-wide "." box, the 12 px font and the `P(50)` playtree margin; all four measured in VLC, one more character was cut).
 
