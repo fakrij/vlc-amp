@@ -1848,7 +1848,7 @@ def build(skin, W, BH=BAR_DEFAULT):
             lay.button("fb_faster", P(124), P(ty), "vlc.faster()", "Faster", **bl)
             lay.button("fb_next", P(158), P(ty), "playlist.next()", "Next", **bl)
             tx = 200
-        lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$T / $D", CYAN_TXT, scrolling="none",
+        lay.text(P(tx), P(ty + 5), P(150), "lcd14", "$t / $d", CYAN_TXT, scrolling="none",
                  sample="1:02 / 4:12", focus=False, **bl)
         if extra:
             lay.button("fb_less", P(VW - 213), P(ty), "video.setLayout(video-l)", "Fewer controls", **rbk)
@@ -1918,7 +1918,7 @@ def build(skin, W, BH=BAR_DEFAULT):
         flay.button("fb_prev", P(12), P(30), "playlist.previous()", "Previous")
         flay.checkbox("ft_play", P(46), P(30), "vlc.isPlaying", "vlc.play()", "vlc.pause()", "Play", "Pause")
         flay.button("fb_next", P(90), P(30), "playlist.next()", "Next")
-        flay.text(P(132), P(35), P(170), "lcd14", "$T / $D", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
+        flay.text(P(132), P(35), P(170), "lcd14", "$t / $d", CYAN_TXT, scrolling="none", sample="1:02 / 4:12",
                   focus=False)
         flay.checkbox("ft_more", P(W - 213), P(30), "fxflag.isVisible", "fxflag.show()", "fxflag.hide()",
                       "More controls", "Fewer controls")
